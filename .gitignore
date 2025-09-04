@@ -1,0 +1,325 @@
+# GitHub Actions Self-Hosted Runner - .gitignore
+
+# ===============================
+# Secrets and Sensitive Data
+# ===============================
+*.env
+*.env.local
+*.env.production
+*.env.staging
+*.env.development
+.env*
+!.env.template
+!.env.example
+
+# GitHub tokens and credentials
+*token*
+*secret*
+*credential*
+github-token.txt
+runner-token.txt
+
+# SSH keys and certificates
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+known_hosts
+
+# ===============================
+# Runtime and Cache Files
+# ===============================
+# Runner working directories
+_work/
+workspace/
+actions-runner/
+runner-cache/
+build-cache/
+
+# Docker cache and data
+docker-data/
+docker-cache/
+.docker/
+
+# Volume mount points
+volumes/
+data/
+cache/
+logs/
+storage/
+
+# ===============================
+# Docker and Container Files
+# ===============================
+# Docker Compose overrides
+docker-compose.override.yml
+docker-compose.local.yml
+docker-compose.dev.yml
+docker-compose.*.local.yml
+
+# Docker build context
+.dockerignore.local
+
+# Container logs
+*.log
+logs/
+log/
+
+# ===============================
+# Operating System Files
+# ===============================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===============================
+# Development Tools
+# ===============================
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vim/
+.netrwhist
+
+# Backup files
+*.backup
+*.bak
+*.tmp
+*.orig
+*.save
+
+# ===============================
+# CI/CD and Automation
+# ===============================
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+terraform.tfvars.json
+
+# Ansible
+*.retry
+.ansible/
+
+# Build artifacts
+dist/
+build/
+target/
+out/
+
+# ===============================
+# Monitoring and Logging
+# ===============================
+# Prometheus data
+prometheus_data/
+prometheus/data/
+
+# Grafana data
+grafana_data/
+grafana/data/
+
+# Log files
+*.log
+*.log.*
+logs/
+log/
+
+# ===============================
+# Package Managers
+# ===============================
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+package-lock.json
+yarn.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+
+# Go
+vendor/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+go.sum
+
+# ===============================
+# Emergency and Backup Files
+# ===============================
+# Emergency backups
+emergency-backups/
+*.emergency
+.emergency-*
+
+# Backup directories
+backup/
+backups/
+*.backup/
+backup-*/
+
+# ===============================
+# Wiki and Documentation
+# ===============================
+# Wiki repository clone
+wiki-repo/
+*.wiki/
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+site/
+
+# ===============================
+# Testing and Coverage
+# ===============================
+# Test results
+test-results/
+coverage/
+.coverage
+.nyc_output
+.pytest_cache/
+
+# ===============================
+# Cloud and Infrastructure
+# ===============================
+# AWS
+.aws/
+
+# Azure
+.azure/
+
+# Google Cloud
+.gcloud/
+gcloud/
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+
+# ===============================
+# Custom Project Files
+# ===============================
+# GitHub runner specific
+runner-registration.json
+runner-settings.json
+.runner
+.credentials
+.credentials_rsaparams
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Configuration backups
+config/*.backup
+config/*.bak
+config/local.*
+
+# Scripts output
+scripts/output/
+scripts/logs/
+
+# ===============================
+# Temporary and Scratch Files
+# ===============================
+# General temporary files
+temp/
+tmp/
+.tmp/
+scratch/
+
+# Archive files (unless needed)
+*.zip
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.rar
+*.7z
+
+# ===============================
+# Performance and Profiling
+# ===============================
+*.prof
+*.pprof
+*.trace
+
+# ===============================
+# Security Scanning
+# ===============================
+# Vulnerability scan results
+security-scan-results/
+*.sarif
+trivy-results.json
+snyk-results.json
+
+# ===============================
+# Local Development Overrides
+# ===============================
+# Local configuration overrides
+local.*
+*.local
+development.*
+dev.*
+
+# Personal notes and todos
+TODO.md
+NOTES.md
+PERSONAL.md
+*.personal
+
+# ===============================
+# Network and Proxy
+# ===============================
+# Proxy configurations
+proxy.conf
+.proxy
+
+# ===============================
+# End of .gitignore
+# ===============================
