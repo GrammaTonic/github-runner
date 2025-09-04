@@ -41,7 +41,7 @@ docker logs -f --tail 100 <chrome-container>
 📚 **Full Documentation**: [Chrome Runner Guide](Chrome-Runner)
 Complete guide for deploying GitHub Actions self-hosted runners in production environments.
 
-## � **Chrome Runner Production Ready** ✅
+## 🎯 **Chrome Runner Production Ready** ✅
 
 ### **New: Chrome Runner for Web UI Testing** (Sep 4, 2025)
 
