@@ -131,12 +131,8 @@ cleanup() {
             fi
         fi
         
-        # Fallback to registration token if removal token fails
-        if ./config.sh remove --token "${GITHUB_TOKEN}" --unattended; then
-            log_success "Runner successfully deregistered with registration token"
-        else
-            log_warning "Failed to deregister runner (may already be removed)"
-        fi
+        # Do not use registration token for deregistration to avoid exposing sensitive token
+        log_warning "Could not obtain removal token; skipping deregistration to avoid exposing GITHUB_TOKEN"
     fi
     
     exit 0
