@@ -26,6 +26,9 @@ services:
 
     volumes:
       # Docker socket for Docker-in-Docker
+      # SECURITY WARNING: This grants the container root-level access to the host Docker daemon.
+      # This is necessary for CI/CD workflows that need to build Docker images but presents
+      # significant security risks. Consider Docker-in-Docker alternatives for enhanced isolation.
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
       # Persistent storage for workspace and cache

@@ -5,8 +5,8 @@ global:
   scrape_interval: 30s
   evaluation_interval: 30s
   external_labels:
-    environment: "${ENVIRONMENT:-production}"
-    instance: "${HOSTNAME:-github-runner}"
+    environment: "production" # Use Docker Compose environment substitution
+    instance: "github-runner" # Use Docker Compose environment substitution
 
 # Alertmanager configuration
 alerting:

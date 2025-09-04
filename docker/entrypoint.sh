@@ -68,6 +68,50 @@ health_check() {
     fi
 }
 
+# Get removal token for runner deregistration
+get_removal_token() {
+    local http_code
+    local max_retries=3
+    local attempt=1
+    local token
+    local response
+    
+    while [[ $attempt -le $max_retries ]]; do
+        log_info "Attempting to get removal token (attempt $attempt/$max_retries)..."
+        
+        response=$(curl -s -w "%{http_code}" -o /tmp/removal_response.json \
+            --connect-timeout 10 --max-time 30 \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners/remove-token")
+        
+        http_code="$response"
+        
+        if [[ "$http_code" == "201" ]]; then
+            token=$(jq -r '.token // empty' /tmp/removal_response.json 2>/dev/null)
+            if [[ -n "$token" && "$token" != "null" ]]; then
+                rm -f /tmp/removal_response.json
+                echo "$token"
+                return 0
+            fi
+        fi
+        
+        log_warning "Attempt $attempt to get removal token failed (HTTP $http_code). Retrying..."
+        if [[ -f /tmp/removal_response.json ]]; then
+            log_warning "Response: $(cat /tmp/removal_response.json)"
+        fi
+        
+        attempt=$((attempt + 1))
+        sleep 2
+    done
+    
+    log_warning "Failed to get removal token after $max_retries attempts, will try with registration token"
+    rm -f /tmp/removal_response.json
+    return 1
+}
+
 # Cleanup function
 cleanup() {
     log_info "Cleaning up runner registration..."
@@ -75,9 +119,21 @@ cleanup() {
     if [[ -f "/home/runner/actions-runner/.runner" ]]; then
         cd /home/runner/actions-runner
         
-        # Get registration token for cleanup
+        # Try to get proper removal token first
+        local removal_token
+        if removal_token=$(get_removal_token); then
+            log_info "Using removal token for deregistration"
+            if ./config.sh remove --token "$removal_token" --unattended; then
+                log_success "Runner successfully deregistered with removal token"
+                exit 0
+            else
+                log_warning "Failed to deregister with removal token, trying registration token"
+            fi
+        fi
+        
+        # Fallback to registration token if removal token fails
         if ./config.sh remove --token "${GITHUB_TOKEN}" --unattended; then
-            log_success "Runner successfully deregistered"
+            log_success "Runner successfully deregistered with registration token"
         else
             log_warning "Failed to deregister runner (may already be removed)"
         fi
@@ -92,24 +148,49 @@ trap cleanup SIGTERM SIGINT
 # Get registration token from GitHub API
 get_registration_token() {
     log_info "Getting registration token for repository: ${GITHUB_REPOSITORY}"
-    
-    local response
-    response=$(curl -s -X POST \
-        -H "Accept: application/vnd.github+json" \
-        -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-        -H "X-GitHub-Api-Version: 2022-11-28" \
-        "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token")
-    
+    local http_code
+    local max_retries=3
+    local attempt=1
     local token
-    token=$(echo "$response" | jq -r '.token // empty')
+    local response
     
-    if [[ -z "$token" || "$token" == "null" ]]; then
-        log_error "Failed to get registration token"
-        log_error "Response: $response"
-        exit 1
+    while [[ $attempt -le $max_retries ]]; do
+        log_info "Attempting to get registration token (attempt $attempt/$max_retries)..."
+        
+        response=$(curl -s -w "%{http_code}" -o /tmp/gh_response.json \
+            --connect-timeout 10 --max-time 30 \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token")
+        
+        http_code="$response"
+        
+        if [[ "$http_code" == "201" ]]; then
+            token=$(jq -r '.token // empty' /tmp/gh_response.json 2>/dev/null)
+            if [[ -n "$token" && "$token" != "null" ]]; then
+                rm -f /tmp/gh_response.json
+                echo "$token"
+                return 0
+            fi
+        fi
+        
+        log_warning "Attempt $attempt to get registration token failed (HTTP $http_code). Retrying..."
+        if [[ -f /tmp/gh_response.json ]]; then
+            log_warning "Response: $(cat /tmp/gh_response.json)"
+        fi
+        
+        attempt=$((attempt + 1))
+        sleep 2
+    done
+    
+    log_error "Failed to get registration token after $max_retries attempts"
+    if [[ -f /tmp/gh_response.json ]]; then
+        log_error "Last response: $(cat /tmp/gh_response.json)"
     fi
-    
-    echo "$token"
+    rm -f /tmp/gh_response.json
+    exit 1
 }
 
 # Configure runner

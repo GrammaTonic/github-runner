@@ -24,10 +24,15 @@ echo "Reason: $REASON"
 echo "Time: $TIMESTAMP"
 echo "User: $(gh api user --jq .login)"
 
+# Create secure backup directory
+BACKUP_DIR="${BACKUP_DIR:-./emergency-backups}"
+mkdir -p "$BACKUP_DIR"
+chmod 700 "$BACKUP_DIR"
+
 # Backup current protection settings
-echo "Backing up current protection settings..."
-gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/main/protection" > .emergency-backup-main.json || true
-gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection" > .emergency-backup-develop.json || true
+echo "Backing up current protection settings to $BACKUP_DIR..."
+gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/main/protection" > "$BACKUP_DIR/.emergency-backup-main.json" || true
+gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection" > "$BACKUP_DIR/.emergency-backup-develop.json" || true
 
 # Disable protection temporarily
 echo "Disabling branch protection..."

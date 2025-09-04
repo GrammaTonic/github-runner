@@ -164,12 +164,15 @@ check_prerequisites() {
     
     # Check if logged into registry for push
     if [[ "$PUSH" == "true" ]]; then
-        if ! docker info | grep -q "Username"; then
-            log_warning "Not logged into Docker registry. Attempting login..."
+        # More reliable registry authentication check
+        if ! docker system info --format '{{json .}}' | jq -e '.RegistryConfig.IndexConfigs' >/dev/null 2>&1; then
+            log_warning "Docker registry authentication check failed. Attempting login..."
             if ! docker login "${REGISTRY}"; then
                 log_error "Failed to login to registry. Use: docker login ${REGISTRY}"
                 exit 1
             fi
+        else
+            log_info "Docker registry authentication verified"
         fi
     fi
     

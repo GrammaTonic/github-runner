@@ -5,9 +5,9 @@ set -euo pipefail
 # This script configures branch protection rules for the github-runner repository
 # following security best practices and CI/CD workflow requirements
 
-# Configuration
-REPO_OWNER="GrammaTonic"
-REPO_NAME="github-runner"
+# Configuration - Allow override via environment variables
+REPO_OWNER="${REPO_OWNER:-GrammaTonic}"
+REPO_NAME="${REPO_NAME:-github-runner}"
 GITHUB_API_URL="https://api.github.com"
 
 # Colors for output

@@ -4,6 +4,9 @@ set -euo pipefail
 # GitHub Runner Deployment Script
 # Handles deployment, scaling, and management of runner containers
 
+# Configuration
+ENTRYPOINT_PATH="${ENTRYPOINT_PATH:-/usr/local/bin/entrypoint.sh}"
+
 # Source configuration
 if [[ -f "config/docker.env" ]]; then
     # shellcheck source=../config/docker.env
@@ -409,11 +412,14 @@ health_check() {
         
         echo -n "Checking $container... "
         
-        if docker exec "$container" /usr/local/bin/entrypoint.sh health-check &> /dev/null; then
+        health_output=$(docker exec "$container" "$ENTRYPOINT_PATH" health-check 2>&1)
+        if [[ $? -eq 0 ]]; then
             echo -e "${GREEN}HEALTHY${NC}"
             healthy=$((healthy + 1))
         else
             echo -e "${RED}UNHEALTHY${NC}"
+            echo -e "${YELLOW}Health check output for $container:${NC}"
+            echo "$health_output" | sed 's/^/  /'
         fi
     done
     
