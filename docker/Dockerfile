@@ -76,11 +76,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     docker.io \
     # Utilities
     jq \
-    yq \
     zip \
     # Network tools
     iputils-ping \
-    netcat \
+    netcat-openbsd \
     # Process tools
     htop \
     psmisc \
