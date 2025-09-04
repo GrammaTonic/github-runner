@@ -31,8 +31,19 @@ chmod 700 "$BACKUP_DIR"
 
 # Backup current protection settings
 echo "Backing up current protection settings to $BACKUP_DIR..."
-gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/main/protection" > "$BACKUP_DIR/.emergency-backup-main.json" || true
-gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection" > "$BACKUP_DIR/.emergency-backup-develop.json" || true
+if gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/main/protection" > "$BACKUP_DIR/.emergency-backup-main.json" 2>/dev/null; then
+    echo "✅ Main branch protection backed up"
+else
+    echo "⚠️  No existing protection on main branch or backup failed"
+    echo '{}' > "$BACKUP_DIR/.emergency-backup-main.json"
+fi
+
+if gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection" > "$BACKUP_DIR/.emergency-backup-develop.json" 2>/dev/null; then
+    echo "✅ Develop branch protection backed up"
+else
+    echo "⚠️  No existing protection on develop branch or backup failed"
+    echo '{}' > "$BACKUP_DIR/.emergency-backup-develop.json"
+fi
 
 # Disable protection temporarily
 echo "Disabling branch protection..."

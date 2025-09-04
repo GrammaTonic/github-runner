@@ -85,9 +85,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install additional tools via pip
-# NOTE: Installing multiple cloud provider CLIs increases image size significantly.
-# Consider creating specialized images for specific cloud providers or using multi-stage builds.
-# For minimal installations, remove unused cloud CLIs (boto3, azure-cli, google-cloud-storage)
+# WARNING: Installing multiple cloud provider CLIs (boto3, azure-cli, google-cloud-storage)
+# significantly increases image size and attack surface. Consider creating specialized images
+# for specific cloud providers or using multi-stage builds to reduce the final image size.
+# For minimal installations, remove unused cloud CLIs.
 # hadolint ignore=DL3013
 RUN python3 -m pip install --no-cache-dir \
     pyyaml \
