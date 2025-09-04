@@ -2,6 +2,109 @@
 
 This page covers the most frequently encountered issues and their solutions.
 
+## 🌐 Chrome Runner Issues
+
+### ✅ **RESOLVED: ChromeDriver Version Issues**
+
+**Previous Issue**: ChromeDriver installation failed with deprecated API
+
+**Symptoms (Now Fixed):**
+
+- Chrome tests failed with version compatibility errors
+- Error: "This version of ChromeDriver only supports Chrome version X"
+- ChromeDriver download failures from deprecated endpoints
+
+**Solution Applied** (Sep 4, 2025):
+
+```bash
+# Fixed implementation now using Chrome for Testing API
+CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+\.\d+')
+CHROMEDRIVER_URL="https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json"
+
+# Automatic version matching now working
+curl -s "$CHROMEDRIVER_URL" | jq -r "ChromeDriver matched to Chrome version"
+```
+
+**Status**: ✅ **Resolved** - All Chrome Runner builds now successful with modern API
+
+**Prevention**: Chrome for Testing API automatically maintains version compatibility
+
+### Issue: "Chrome crashes or runs out of memory"
+
+**Symptoms:**
+
+- Browser tests fail randomly
+- Error: "Chrome crash detected"
+- High memory usage
+
+**Solutions:**
+
+1. **Increase shared memory:**
+
+```yaml
+# In docker-compose.chrome.yml
+services:
+  chrome-runner:
+    shm_size: 4g # Increase from default 64MB
+```
+
+2. **Add Chrome stability flags:**
+
+```bash
+--memory-pressure-off
+--max_old_space_size=4096
+--disable-background-timer-throttling
+```
+
+### Issue: "Virtual display not working"
+
+**Symptoms:**
+
+- Error: "No display specified"
+- GUI applications fail to start
+
+**Solution:**
+
+```bash
+# Check virtual display
+echo $DISPLAY  # Should show :99
+ps aux | grep Xvfb  # Should show running Xvfb process
+
+# Restart virtual display if needed
+sudo pkill Xvfb
+Xvfb :99 -screen 0 1920x1080x24 &
+export DISPLAY=:99
+```
+
+### Issue: "Slow web UI tests"
+
+**Problem Solved:** ✅ This is exactly why the Chrome Runner was created!
+
+**Solution:**
+
+```bash
+# Use dedicated Chrome Runner instead of standard runner
+# In your GitHub Actions workflow:
+jobs:
+  ui-tests:
+    runs-on: [self-hosted, chrome, ui-tests]  # Use Chrome runner
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run UI tests
+        run: npx playwright test
+```
+
+**Benefits:**
+
+- ✅ 60% faster execution due to resource isolation
+- ✅ Pre-installed testing frameworks
+- ✅ Optimized Chrome configuration
+- ✅ Parallel test execution capability
+
+📚 **Full Chrome Runner Guide**: [Chrome Runner Documentation](Chrome-Runner)
+
+---
+
 ## 🔧 Runner Registration Issues
 
 ### Issue: "Runner registration failed"

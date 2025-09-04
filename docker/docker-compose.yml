@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        RUNNER_VERSION: "2.309.0"
+        RUNNER_VERSION: "2.328.0"
     image: ghcr.io/grammatonic/github-runner:latest
     container_name: github-runner-${RUNNER_INSTANCE:-1}
     restart: unless-stopped

@@ -23,9 +23,9 @@ create_wiki_pages() {
     if [ ! -d "wiki-repo" ]; then
         echo "Cloning wiki repository..."
         git clone https://github.com/GrammaTonic/github-runner.wiki.git wiki-repo
-        cd wiki-repo
+        cd wiki-repo || exit 1
     else
-        cd wiki-repo
+        cd wiki-repo || exit 1
         git pull origin main
     fi
     

@@ -28,6 +28,7 @@ nano config/runner.env
 ```
 
 **Minimal required configuration:**
+
 ```bash
 GITHUB_TOKEN=ghp_your_personal_access_token_here
 GITHUB_REPOSITORY=your-username/your-repository

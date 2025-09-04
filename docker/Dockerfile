@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Download and prepare GitHub Actions runner
-ARG RUNNER_VERSION="2.309.0"
+ARG RUNNER_VERSION="2.328.0"
 ARG TARGETPLATFORM
 
 WORKDIR /actions-runner
