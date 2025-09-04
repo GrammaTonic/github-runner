@@ -9,6 +9,7 @@ on:
       - "config/**"
       - "monitoring/**"
       - ".github/workflows/**"
+    tags: ["v*.*.*"] # Tags trigger regardless of paths
   pull_request:
     branches: [main, develop]
     paths:
@@ -138,7 +139,7 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: main
+          base: ${{ github.event.before }}
           head: HEAD
           extra_args: --debug --only-verified
 
@@ -153,6 +154,7 @@ jobs:
     outputs:
       image-digest: ${{ steps.build.outputs.digest }}
       image-tag: ${{ steps.meta.outputs.tags }}
+      image-primary: ${{ steps.get-primary-tag.outputs.primary-tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -177,6 +179,10 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
             type=sha,prefix=sha-,enable={{is_default_branch}}
             type=raw,value=latest,enable={{is_default_branch}}
 
@@ -192,6 +198,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           no-cache: ${{ inputs.force_rebuild || false }}
+
+      - name: Get primary tag for security scan
+        id: get-primary-tag
+        run: |
+          # Extract the first tag from the multi-line tags output for security scanning
+          TAGS="${{ steps.meta.outputs.tags }}"
+          PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
+          echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
+          echo "Primary tag for security scan: $PRIMARY_TAG"
 
   test:
     name: Test Runner Configuration
@@ -302,7 +317,7 @@ jobs:
       - name: Run Trivy vulnerability scanner on container
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build.outputs.image-tag }}
+          image-ref: ${{ needs.build.outputs.image-primary }}
           format: "sarif"
           output: "trivy-container-results.sarif"
 
