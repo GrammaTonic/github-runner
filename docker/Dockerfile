@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Download and prepare GitHub Actions runner
 ARG RUNNER_VERSION="2.309.0"
-ARG TARGETPLATFORM="linux/x64"
+ARG TARGETPLATFORM
 
 WORKDIR /actions-runner
 
