@@ -900,9 +900,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support
 
 - 📖 [Documentation](docs/)
-- 🐛 [Issue Tracker](https://github.com/owner/repo/issues)
-- 💬 [Discussions](https://github.com/owner/repo/discussions)
-- 📧 Email: support@example.com
+- ⚙️ [GitHub Actions Workflows](.github/WORKFLOWS.md)
+- 🐛 [Issue Tracker](https://github.com/GrammaTonic/github-runner/issues)
+- 💬 [Discussions](https://github.com/GrammaTonic/github-runner/discussions)
 
 ## 🙏 Acknowledgments
 
