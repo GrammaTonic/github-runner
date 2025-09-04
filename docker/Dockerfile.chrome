@@ -60,13 +60,20 @@ RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor
     && rm -rf /var/lib/apt/lists/*
 
 # Install ChromeDriver
-RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+') \
-    && DRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION%%.*}") \
-    && curl -L -o chromedriver.zip "https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip" \
+RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+\.\d+') \
+    && echo "Chrome version: $CHROME_VERSION" \
+    && CHROMEDRIVER_URL="https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json" \
+    && DRIVER_VERSION=$(curl -s "$CHROMEDRIVER_URL" | jq -r --arg version "$CHROME_VERSION" '.versions[] | select(.version == $version) | .downloads.chromedriver[] | select(.platform == "linux64") | .url' | head -1) \
+    && if [ -z "$DRIVER_VERSION" ]; then \
+    echo "ChromeDriver not found for exact version, getting latest stable" && \
+    DRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/latest-versions-per-milestone-with-downloads.json" | jq -r --arg major "${CHROME_VERSION%%.*}" '.milestones[$major].downloads.chromedriver[] | select(.platform == "linux64") | .url' | head -1); \
+    fi \
+    && echo "ChromeDriver URL: $DRIVER_VERSION" \
+    && curl -L -o chromedriver.zip "$DRIVER_VERSION" \
     && unzip chromedriver.zip \
-    && chmod +x chromedriver \
-    && mv chromedriver /usr/local/bin/ \
-    && rm chromedriver.zip
+    && chmod +x chromedriver-linux64/chromedriver \
+    && mv chromedriver-linux64/chromedriver /usr/local/bin/ \
+    && rm -rf chromedriver.zip chromedriver-linux64
 
 # Install Node.js (for npm-based testing tools)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
