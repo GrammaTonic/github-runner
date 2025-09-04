@@ -291,8 +291,7 @@ show_status() {
     # Get container names and handle empty result safely
     container_names=$(docker ps --filter "name=github-runner" --format "{{.Names}}" 2>/dev/null || echo "")
     if [[ -n "$container_names" ]]; then
-        docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" \
-            $container_names
+        echo "$container_names" | xargs docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"
     else
         echo "No GitHub runner containers found"
     fi
