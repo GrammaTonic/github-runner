@@ -8,7 +8,6 @@ set -euo pipefail
 # Configuration - Allow override via environment variables
 REPO_OWNER="${REPO_OWNER:-GrammaTonic}"
 REPO_NAME="${REPO_NAME:-github-runner}"
-GITHUB_API_URL="https://api.github.com"
 
 # Colors for output
 RED='\033[0;31m'
