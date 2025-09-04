@@ -3,13 +3,13 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [main, develop]
-    tags: ["v*.*.*"]
     paths:
       - "docker/**"
       - "scripts/**"
       - "config/**"
       - "monitoring/**"
       - ".github/workflows/**"
+    tags: ["v*.*.*"] # Tags trigger regardless of paths
   pull_request:
     branches: [main, develop]
     paths:
