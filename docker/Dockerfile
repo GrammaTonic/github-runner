@@ -8,10 +8,9 @@ FROM ubuntu:22.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install build dependencies
-# hadolint ignore=DL3008,DL3015
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    wget \
+    ca-certificates \
     unzip \
     tar \
     build-essential \
