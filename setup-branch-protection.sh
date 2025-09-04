@@ -92,7 +92,7 @@ setup_main_branch_protection() {
         },
         "enforce_admins": true,
         "required_pull_request_reviews": {
-            "required_approving_review_count": 2,
+            "required_approving_review_count": 1,
             "dismiss_stale_reviews": true,
             "require_code_owner_reviews": true,
             "require_last_push_approval": true
@@ -377,7 +377,7 @@ show_summary() {
     log_info "=== Branch Protection Setup Summary ==="
     echo ""
     echo "📋 Configured Branches:"
-    echo "  • main: Full protection with 2 required reviewers"
+    echo "  • main: Full protection with 1 required reviewer"
     echo "  • develop: Basic protection with 1 required reviewer"
     echo ""
     echo "🔒 Security Features:"

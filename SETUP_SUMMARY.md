@@ -24,7 +24,7 @@
   - Container Security Scan
 
 ✅ Pull Request Reviews:
-  - Required reviewers: 2
+  - Required reviewers: 1
   - Dismiss stale reviews: Yes
   - Require code owner reviews: Yes
   - Require review of last push: Yes
