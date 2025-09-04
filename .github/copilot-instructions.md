@@ -140,6 +140,7 @@ This project is built entirely on Docker technology:
 - Implement comprehensive logging for troubleshooting runner issues
 - Use version pinning for runner software to ensure consistency
 - Document environment-specific setup requirements clearly
+- Consider dedicated Chrome runner if web UI tests remain slow
 
 ## Troubleshooting Common Issues
 
@@ -147,3 +148,20 @@ This project is built entirely on Docker technology:
 - Job execution failures: Verify runner environment and dependency availability
 - Network connectivity: Ensure proper firewall and proxy configurations
 - Resource constraints: Monitor CPU, memory, and disk usage patterns
+- Performance optimization: Consider dedicated Chrome runner if web UI tests remain slow
+
+## Performance Optimization
+
+### Web UI Testing Performance
+
+- **Dedicated Chrome Runner**: If web UI tests (Selenium, Playwright, Cypress) are slow, consider deploying a dedicated runner with Chrome browser optimizations
+- **Browser Container Isolation**: Use separate Docker containers for browser-heavy workloads to prevent resource contention
+- **Headless Browser Configuration**: Configure headless Chrome with optimized flags for CI/CD environments
+- **Parallel Test Execution**: Scale Chrome runners horizontally for parallel browser test execution
+
+### Runner Specialization Strategies
+
+- **General Purpose Runners**: Standard runners for building, testing, and deployment tasks
+- **Browser Test Runners**: Specialized runners with Chrome, Firefox, and browser testing tools pre-installed
+- **Build-Heavy Runners**: High-CPU runners for compilation-intensive workloads
+- **Cache-Optimized Runners**: Runners with persistent volume mounts for dependency caching
