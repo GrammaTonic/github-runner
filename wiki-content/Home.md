@@ -2,6 +2,16 @@
 
 Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Runner project!
 
+## 🎯 **Latest Updates**
+
+### ✅ **Chrome Runner Implementation Complete** (Sep 4, 2025)
+
+- **New Feature**: Specialized Chrome Runner for web UI testing
+- **Status**: ✅ Production Ready - All CI/CD checks passing
+- **Performance**: Dedicated browser automation environment
+- **Frameworks**: Playwright, Cypress, Selenium pre-installed
+- **Documentation**: [Chrome Runner Guide](Chrome-Runner)
+
 ## 📖 Table of Contents
 
 ### Getting Started
@@ -9,45 +19,43 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 - [Home](Home) - Overview and quick start
 - [Installation Guide](Installation-Guide) - Step-by-step installation
 - [Quick Start](Quick-Start) - Get up and running in 5 minutes
-- [System Requirements](System-Requirements) - Hardware and software requirements
+
+### Specialized Runners
+
+- **[Chrome Runner](Chrome-Runner) 🆕** - Web UI testing and browser automation
+- [Docker Configuration](Docker-Configuration) - General Docker setup
 
 ### Configuration
 
-- [Environment Configuration](Environment-Configuration) - Environment variables and settings
-- [Docker Configuration](Docker-Configuration) - Docker and Docker Compose setup
-- [Security Configuration](Security-Configuration) - Security policies and token management
-- [Network Configuration](Network-Configuration) - Networking and firewall setup
-
-### Deployment
-
-- [Local Development](Local-Development) - Development environment setup
 - [Production Deployment](Production-Deployment) - Production-ready deployment
-- [Multi-Environment Setup](Multi-Environment-Setup) - Dev, staging, and production environments
-- [Scaling and Load Balancing](Scaling-and-Load-Balancing) - Auto-scaling and load distribution
+- [Common Issues](Common-Issues) - Troubleshooting and solutions
 
-### Monitoring & Maintenance
+## 🚀 Quick Start Options
 
-- [Health Monitoring](Health-Monitoring) - Health checks and monitoring setup
-- [Prometheus Metrics](Prometheus-Metrics) - Metrics collection and alerting
-- [Grafana Dashboards](Grafana-Dashboards) - Visualization and dashboards
-- [Log Management](Log-Management) - Centralized logging and analysis
-- [Backup and Recovery](Backup-and-Recovery) - Data protection strategies
+### 🌐 **For Web UI Testing**
 
-### Troubleshooting
+```bash
+# Chrome Runner (Recommended for browser tests)
+./scripts/build-chrome.sh --push
+docker-compose -f docker/docker-compose.chrome.yml up -d
+```
 
-- [Common Issues](Common-Issues) - Frequently encountered problems
-- [Debugging Guide](Debugging-Guide) - Step-by-step debugging procedures
-- [Performance Tuning](Performance-Tuning) - Optimization techniques
-- [Error Codes](Error-Codes) - Complete error reference
+### 🐳 **For General Workloads**
 
-### Advanced Topics
+```bash
+# Standard Runner
+docker build -t github-runner:latest ./docker
+docker-compose up -d
+```
 
-- [Custom Docker Images](Custom-Docker-Images) - Building custom runner images
-- [CI/CD Integration](CICD-Integration) - Pipeline integration patterns
-- [API Reference](API-Reference) - REST API documentation
-- [Architecture Deep Dive](Architecture-Deep-Dive) - Technical architecture details
+## 🔗 **Quick Links**
 
-### Development
+| Component             | Status              | Documentation                                  |
+| --------------------- | ------------------- | ---------------------------------------------- |
+| **Chrome Runner**     | ✅ Production Ready | [Chrome Runner Guide](Chrome-Runner)           |
+| **Standard Runner**   | ✅ Stable           | [Installation Guide](Installation-Guide)       |
+| **CI/CD Pipeline**    | ✅ Passing          | [Production Deployment](Production-Deployment) |
+| **Security Scanning** | ✅ Clean            | [Common Issues](Common-Issues)                 |
 
 - [Contributing](Contributing) - How to contribute to the project
 - [Development Workflow](Development-Workflow) - Development processes and standards
