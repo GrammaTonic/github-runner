@@ -164,15 +164,21 @@ check_prerequisites() {
     
     # Check if logged into registry for push
     if [[ "$PUSH" == "true" ]]; then
-        # More reliable registry authentication check using Docker system info and jq
-        if ! docker system info --format '{{json .}}' | jq -e '.RegistryConfig.IndexConfigs' >/dev/null 2>&1; then
-            log_warning "Docker registry authentication check failed. Attempting login..."
+        # More reliable registry authentication check using docker pull of a test image
+        TEST_IMAGE="${REGISTRY}/alpine:latest"
+        if ! docker pull "$TEST_IMAGE" >/dev/null 2>&1; then
+            log_warning "Docker registry authentication check failed (unable to pull test image). Attempting login..."
             if ! docker login "${REGISTRY}"; then
                 log_error "Failed to login to registry. Use: docker login ${REGISTRY}"
                 exit 1
             fi
+            # Try pulling again after login
+            if ! docker pull "$TEST_IMAGE" >/dev/null 2>&1; then
+                log_error "Authentication to registry failed even after login. Please check your credentials."
+                exit 1
+            fi
         else
-            log_info "Docker registry authentication verified"
+            log_info "Docker registry authentication verified (test image pull succeeded)"
         fi
     fi
     
