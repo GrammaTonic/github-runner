@@ -84,7 +84,7 @@ jobs:
         run: |
           # Validate docker-compose.yml syntax
           if [[ -f "docker/docker-compose.yml" ]]; then
-            docker-compose -f docker/docker-compose.yml config --quiet
+            docker compose -f docker/docker-compose.yml config --quiet
           fi
 
       - name: Validate shell scripts
