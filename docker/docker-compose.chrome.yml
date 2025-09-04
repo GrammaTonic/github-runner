@@ -1,0 +1,102 @@
+services:
+  chrome-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.chrome
+      args:
+        RUNNER_VERSION: "2.328.0"
+    image: ghcr.io/grammatonic/github-runner:chrome-latest
+    container_name: github-chrome-runner-${RUNNER_INSTANCE:-1}
+    restart: unless-stopped
+
+    environment:
+      # Required variables (must be provided)
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
+
+      # Chrome runner specific configuration
+      - RUNNER_NAME=${RUNNER_NAME:-chrome-runner-${RUNNER_INSTANCE:-1}}
+      - RUNNER_LABELS=${RUNNER_LABELS:-chrome,ui-tests,selenium,playwright,cypress,headless}
+      - RUNNER_GROUP=${RUNNER_GROUP:-chrome-runners}
+      - RUNNER_WORK_DIR=${RUNNER_WORK_DIR:-/home/runner/workspace}
+
+      # Chrome specific environment
+      - DISPLAY=:99
+      - CHROME_FLAGS=--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --remote-debugging-port=9222
+      - PLAYWRIGHT_BROWSERS_PATH=/home/runner/.cache/ms-playwright
+      - PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+
+      # Performance optimization
+      - NODE_OPTIONS=--max-old-space-size=4096
+      - PYTHON_UNBUFFERED=1
+
+    volumes:
+      # Persistent workspace for test artifacts
+      - chrome-workspace:/home/runner/workspace
+      - chrome-cache:/home/runner/.cache
+
+      # Playwright browsers cache
+      - playwright-browsers:/home/runner/.cache/ms-playwright
+
+      # Chrome user data (for session persistence if needed)
+      - chrome-user-data:/home/runner/.config/google-chrome
+
+      # Shared volume for test reports (optional)
+      - ./test-reports:/home/runner/test-reports:rw
+
+      # Docker socket (if Docker-in-Docker is needed)
+      # - /var/run/docker.sock:/var/run/docker.sock
+
+    # Resource limits for browser testing
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2"
+        reservations:
+          memory: 2G
+          cpus: "1"
+
+    # Security context
+    security_opt:
+      - seccomp:unconfined # Required for Chrome sandboxing
+
+    # Shared memory size for Chrome
+    shm_size: 2gb
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "Runner.Listener"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Network configuration
+    networks:
+      - github-runner-network
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+        labels: "runner_type=chrome,service=github-actions"
+
+volumes:
+  chrome-workspace:
+    driver: local
+  chrome-cache:
+    driver: local
+  playwright-browsers:
+    driver: local
+  chrome-user-data:
+    driver: local
+
+networks:
+  github-runner-network:
+    driver: bridge
+# Example scaling configuration
+# To run multiple Chrome runners:
+# docker-compose up -d --scale chrome-runner=3
