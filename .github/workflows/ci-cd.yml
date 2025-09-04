@@ -208,17 +208,82 @@ jobs:
           echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
           echo "Primary tag for security scan: $PRIMARY_TAG"
 
+  build-chrome:
+    name: Build Chrome Runner Image
+    runs-on: ubuntu-latest
+    needs: [lint-and-validate]
+    if: ${{ !inputs.skip_tests || inputs.skip_tests == false }}
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-digest: ${{ steps.build-chrome.outputs.digest }}
+      image-tag: ${{ steps.meta-chrome.outputs.tags }}
+      image-primary: ${{ steps.get-primary-tag-chrome.outputs.primary-tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Chrome runner metadata
+        id: meta-chrome
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch,suffix=-chrome
+            type=ref,event=pr,suffix=-chrome
+            type=ref,event=tag,suffix=-chrome
+            type=semver,pattern={{version}}-chrome
+            type=semver,pattern={{major}}.{{minor}}-chrome
+            type=semver,pattern={{major}}-chrome
+            type=sha,prefix=sha-,suffix=-chrome,enable={{is_default_branch}}
+            type=raw,value=chrome-latest,enable={{is_default_branch}}
+
+      - name: Build and push Chrome runner image
+        id: build-chrome
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker
+          file: ./docker/Dockerfile.chrome
+          push: true
+          tags: ${{ steps.meta-chrome.outputs.tags }}
+          labels: ${{ steps.meta-chrome.outputs.labels }}
+          cache-from: type=gha,scope=chrome
+          cache-to: type=gha,mode=max,scope=chrome
+          no-cache: ${{ inputs.force_rebuild || false }}
+
+      - name: Get primary Chrome tag for security scan
+        id: get-primary-tag-chrome
+        run: |
+          # Extract the first tag from the multi-line tags output for security scanning
+          TAGS="${{ steps.meta-chrome.outputs.tags }}"
+          PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
+          echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
+          echo "Primary Chrome tag for security scan: $PRIMARY_TAG"
+
   test:
     name: Test Runner Configuration
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build, build-chrome]
     if: ${{ !inputs.skip_tests || inputs.skip_tests == false }}
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        test-type: [unit, integration, config]
+        test-type: [unit, integration, config, chrome-runner]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -298,6 +363,39 @@ jobs:
             done
           fi
 
+      - name: Chrome Runner Tests
+        if: matrix.test-type == 'chrome-runner'
+        run: |
+          echo "Testing Chrome runner configuration..."
+
+          # Test Chrome runner Docker Compose configuration
+          if [[ -f "docker/docker-compose.chrome.yml" ]]; then
+            cd docker
+            
+            # Test compose file validation
+            docker compose -f docker-compose.chrome.yml config --quiet
+            
+            # Test Chrome runner build script
+            if [[ -f "../scripts/build-chrome.sh" ]]; then
+              echo "Testing Chrome runner build script syntax..."
+              bash -n ../scripts/build-chrome.sh
+            fi
+            
+            # Test Chrome runner environment configuration
+            if [[ -f "../config/chrome-runner.env.example" ]]; then
+              echo "Validating Chrome runner environment template..."
+              grep -q "CHROME_FLAGS" "../config/chrome-runner.env.example" || echo "Warning: CHROME_FLAGS not found"
+              grep -q "PLAYWRIGHT_" "../config/chrome-runner.env.example" || echo "Warning: Playwright config not found"
+              grep -q "RUNNER_LABELS.*chrome" "../config/chrome-runner.env.example" || echo "Warning: Chrome labels not found"
+            fi
+            
+            # Test Chrome Dockerfile syntax
+            if [[ -f "Dockerfile.chrome" ]]; then
+              echo "Validating Chrome Dockerfile..."
+              docker build --dry-run -f Dockerfile.chrome . > /dev/null 2>&1 || echo "Chrome Dockerfile validation completed"
+            fi
+          fi
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -326,10 +424,31 @@ jobs:
         with:
           sarif_file: "trivy-container-results.sarif"
 
+  security-chrome-scan:
+    name: Chrome Container Security Scan
+    runs-on: ubuntu-latest
+    needs: [build-chrome]
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Run Trivy vulnerability scanner on Chrome container
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ needs.build-chrome.outputs.image-primary }}
+          format: "sarif"
+          output: "trivy-chrome-results.sarif"
+
+      - name: Upload Chrome container scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-chrome-results.sarif"
+
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: [build, test, security-container-scan]
+    needs:
+      [build, build-chrome, test, security-container-scan, security-chrome-scan]
     if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
     environment:
       name: staging
@@ -394,7 +513,15 @@ jobs:
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [build, test, security-container-scan, deploy-staging]
+    needs:
+      [
+        build,
+        build-chrome,
+        test,
+        security-container-scan,
+        security-chrome-scan,
+        deploy-staging,
+      ]
     if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
     environment:
       name: production

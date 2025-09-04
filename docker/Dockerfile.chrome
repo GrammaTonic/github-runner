@@ -1,0 +1,137 @@
+# GitHub Actions Self-Hosted Chrome Runner Docker Image
+# Specialized for web UI testing with browser automation tools
+
+FROM ubuntu:22.04
+
+# Metadata
+LABEL maintainer="GrammaTonic"
+LABEL description="GitHub Actions Self-Hosted Runner optimized for Chrome and web UI testing"
+LABEL version="1.0.0"
+
+# Avoid prompts from apt
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Basic system tools
+    curl \
+    wget \
+    unzip \
+    tar \
+    ca-certificates \
+    gnupg \
+    lsb-release \
+    software-properties-common \
+    # Build tools
+    build-essential \
+    git \
+    jq \
+    # Chrome dependencies
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libdrm2 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libxss1 \
+    libasound2 \
+    libatspi2.0-0 \
+    libgtk-3-0 \
+    # Fonts for proper rendering
+    fonts-liberation \
+    fonts-noto-color-emoji \
+    fonts-noto-cjk \
+    # Virtual display
+    xvfb \
+    # Docker CLI (for Docker-in-Docker if needed)
+    apt-transport-https \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Google Chrome
+RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
+    > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install ChromeDriver
+RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+') \
+    && DRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION%%.*}") \
+    && curl -L -o chromedriver.zip "https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip" \
+    && unzip chromedriver.zip \
+    && chmod +x chromedriver \
+    && mv chromedriver /usr/local/bin/ \
+    && rm chromedriver.zip
+
+# Install Node.js (for npm-based testing tools)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+
+# Install Python (for Selenium testing)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install common testing frameworks
+RUN npm install -g \
+    playwright \
+    cypress \
+    @playwright/test \
+    && npx playwright install chromium
+
+# Install Python testing packages
+RUN pip3 install --no-cache-dir \
+    selenium \
+    pytest \
+    pytest-selenium \
+    webdriver-manager
+
+# Create runner user
+RUN useradd -m -s /bin/bash runner \
+    && usermod -aG sudo runner \
+    && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Download and install GitHub Actions runner
+ARG RUNNER_VERSION="2.328.0"
+ARG TARGETPLATFORM
+
+WORKDIR /actions-runner
+
+# Download the appropriate runner based on architecture
+RUN case "${TARGETPLATFORM}" in \
+    "linux/amd64") RUNNER_ARCH="x64" ;; \
+    "linux/arm64") RUNNER_ARCH="arm64" ;; \
+    *) echo "Unsupported platform: ${TARGETPLATFORM}" && exit 1 ;; \
+    esac \
+    && curl -o "actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
+    -L "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
+    && tar xzf "actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
+    && rm "actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
+    && chown -R runner:runner /actions-runner
+
+# Create necessary directories
+RUN mkdir -p /home/runner/.cache \
+    && mkdir -p /home/runner/workspace \
+    && chown -R runner:runner /home/runner
+
+# Chrome configuration for headless mode
+ENV CHROME_BIN=/usr/bin/google-chrome-stable
+ENV DISPLAY=:99
+
+# Copy entrypoint script
+COPY entrypoint-chrome.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Set up working directory and user
+WORKDIR /actions-runner
+USER runner
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD pgrep -f "Runner.Listener" > /dev/null || exit 1
+
+ENTRYPOINT ["/entrypoint.sh"]
