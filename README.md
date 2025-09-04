@@ -1,7 +1,31 @@
-# GitHub Actions Self-Hosted Runner
+# GitHub Actions Self-Hosted Runner### Using Release Archive
 
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/GrammaTonic/github-runner)](https://github.com/GrammaTonic/github-runner/releases/latest)
-[![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2Fgrammamtonic%2Fgithub--runner-blue)](https://ghcr.io/grammatonic/github-runner)
+```bash
+wget https://github.com/GrammaTonic/github-runner/archive/v1.0.0.tar.gz
+tar -xzf v1.0.0.tar.gz
+cd github-runner-1.0.0
+```
+
+### Using Docker Images
+
+Pre-built Docker images are available for each release:
+
+```bash
+# Latest release (recommended)
+docker pull ghcr.io/grammatonic/github-runner:v1.0.1
+
+# Specific version
+docker pull ghcr.io/grammatonic/github-runner:v1.0.0
+
+# Semantic versioning
+docker pull ghcr.io/grammatonic/github-runner:1.0.1
+docker pull ghcr.io/grammatonic/github-runner:1.0
+docker pull ghcr.io/grammatonic/github-runner:1
+```
+
+## 📋 Prerequisitesub release (latest by date)](https://img.shields.io/github/v/release/GrammaTonic/github-runner)](https://github.com/GrammaTonic/github-runner/releases/latest)
+
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2Fgrammatonic%2Fgithub--runner-blue)](https://ghcr.io/grammatonic/github-runner)
 [![CI/CD Pipeline](https://github.com/GrammaTonic/github-runner/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/GrammaTonic/github-runner/actions/workflows/ci-cd.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
