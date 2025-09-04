@@ -1,5 +1,10 @@
 # GitHub Actions Self-Hosted Runner
 
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/GrammaTonic/github-runner)](https://github.com/GrammaTonic/github-runner/releases/latest)
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2Fgrammamtonic%2Fgithub--runner-blue)](https://ghcr.io/grammatonic/github-runner)
+[![CI/CD Pipeline](https://github.com/GrammaTonic/github-runner/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/GrammaTonic/github-runner/actions/workflows/ci-cd.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A comprehensive, production-ready GitHub Actions self-hosted runner solution with monitoring, scaling, and security features.
 
 ## 🚀 Features
@@ -12,7 +17,31 @@ A comprehensive, production-ready GitHub Actions self-hosted runner solution wit
 - **High Availability**: Health checks, automatic restarts, and failover
 - **Multi-Environment**: Support for dev, staging, and production environments
 
-## 📋 Prerequisites
+## � Installation
+
+### Using Git Clone
+
+```bash
+git clone https://github.com/GrammaTonic/github-runner.git
+cd github-runner
+```
+
+### Using GitHub CLI
+
+```bash
+gh repo clone GrammaTonic/github-runner
+cd github-runner
+```
+
+### Using Release Archive
+
+```bash
+wget https://github.com/GrammaTonic/github-runner/archive/v1.0.0.tar.gz
+tar -xzf v1.0.0.tar.gz
+cd github-runner-1.0.0
+```
+
+## �📋 Prerequisites
 
 - Docker 20.10+ and Docker Compose v2
 - GitHub Personal Access Token with repo permissions
@@ -24,7 +53,7 @@ A comprehensive, production-ready GitHub Actions self-hosted runner solution wit
 ### 1. Clone and Setup
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/GrammaTonic/github-runner.git
 cd github-runner
 cp config/runner.env.template config/runner.env
 ```
