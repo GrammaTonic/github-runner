@@ -247,23 +247,23 @@ jobs:
             cd docker
             
             # Test compose file validation
-            docker-compose config --quiet
+            docker compose config --quiet
             
             # Test container startup (without actual GitHub token)
             export GITHUB_TOKEN="dummy-token-for-testing"
             export GITHUB_REPOSITORY="test/repo"
             
             # Start services in test mode
-            docker-compose up -d --scale runner=1
+            docker compose up -d --scale runner=1
             
             # Wait for containers to be ready
             sleep 30
             
             # Check container health
-            docker-compose ps
+            docker compose ps
             
             # Cleanup
-            docker-compose down -v
+            docker compose down -v
           fi
 
       - name: Configuration Tests
