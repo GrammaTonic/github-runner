@@ -50,7 +50,8 @@ setup_chrome() {
     export PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
     
     # Set memory limits for Chrome processes
-    ulimit -v 4194304  # 4GB virtual memory limit
+    MEMORY_LIMIT_KB=$((4 * 1024 * 1024))  # 4GB virtual memory limit
+    ulimit -v "$MEMORY_LIMIT_KB"
     
     log_success "Chrome environment configured successfully"
 }
@@ -105,8 +106,9 @@ validate_testing_tools() {
     fi
     
     # Check Selenium
-    if python3 -c "import selenium; print(f'Selenium {selenium.__version__}')" 2>/dev/null; then
-        log_success "Selenium available: $(python3 -c "import selenium; print(f'Selenium {selenium.__version__}')")"
+    SELENIUM_VERSION=$(python3 -c "import selenium; print(f'Selenium {selenium.__version__}')" 2>/dev/null)
+    if [ -n "$SELENIUM_VERSION" ]; then
+        log_success "Selenium available: $SELENIUM_VERSION"
     else
         log_warning "Selenium not available"
     fi

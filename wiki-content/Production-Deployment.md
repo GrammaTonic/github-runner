@@ -39,28 +39,6 @@ docker logs -f --tail 100 <chrome-container>
 ```
 
 📚 **Full Documentation**: [Chrome Runner Guide](Chrome-Runner)
-Complete guide for deploying GitHub Actions self-hosted runners in production environments.
-
-## 🎯 **Chrome Runner Production Ready** ✅
-
-### **New: Chrome Runner for Web UI Testing** (Sep 4, 2025)
-
-The **Chrome Runner** is now production-ready and successfully passing all CI/CD checks! This specialized runner addresses performance issues with web UI testing.
-
-```bash
-# Deploy Chrome Runner
-./scripts/build-chrome.sh --push
-docker-compose -f docker/docker-compose.chrome.yml up -d --scale chrome-runner=3
-```
-
-**Benefits:**
-
-- ✅ **60% faster** web UI tests due to resource isolation
-- ✅ **Parallel execution** with multiple Chrome instances
-- ✅ **Pre-configured** with Playwright, Cypress, Selenium
-- ✅ **Production tested** with comprehensive CI/CD validation
-
-📚 **Full Documentation**: [Chrome Runner Guide](Chrome-Runner)
 
 ---
 
