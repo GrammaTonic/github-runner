@@ -64,7 +64,7 @@ docker-compose -f docker/docker-compose.chrome.yml up -d --scale chrome-runner=3
 
 ---
 
-## �🏗️ Production Architecture
+## 🏗️ Production Architecture
 
 ### Recommended Architecture
 
