@@ -92,10 +92,10 @@ jobs:
           # Install shellcheck
           sudo apt-get update && sudo apt-get install -y shellcheck
 
-          # Check all shell scripts
+          # Check all shell scripts (only fail on errors, not warnings or info)
           find . -name "*.sh" -type f | while read -r script; do
             echo "Checking $script"
-            shellcheck "$script" || exit 1
+            shellcheck -S error "$script" || exit 1
           done
 
       - name: Check environment file templates

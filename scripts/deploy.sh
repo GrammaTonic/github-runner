@@ -120,6 +120,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         -v|--verbose)
             VERBOSE=true
+            export VERBOSE  # Export for potential use by other scripts
             shift
             ;;
         -h|--help)
@@ -284,8 +285,14 @@ show_status() {
     
     echo ""
     log_info "Container Resource Usage:"
-    docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" \
-        $(docker ps --filter "name=github-runner" --format "{{.Names}}" 2>/dev/null || echo "")
+    # Get container names and handle empty result safely
+    container_names=$(docker ps --filter "name=github-runner" --format "{{.Names}}" 2>/dev/null || echo "")
+    if [[ -n "$container_names" ]]; then
+        docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" \
+            $container_names
+    else
+        echo "No GitHub runner containers found"
+    fi
 }
 
 # Show logs
