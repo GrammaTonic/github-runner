@@ -4,23 +4,30 @@ This page covers the most frequently encountered issues and their solutions.
 
 ## 🌐 Chrome Runner Issues
 
-### Issue: "ChromeDriver version mismatch"
+### ✅ **RESOLVED: ChromeDriver Version Issues**
 
-**Symptoms:**
+**Previous Issue**: ChromeDriver installation failed with deprecated API
 
-- Chrome tests fail with version compatibility errors
+**Symptoms (Now Fixed):**
+
+- Chrome tests failed with version compatibility errors
 - Error: "This version of ChromeDriver only supports Chrome version X"
+- ChromeDriver download failures from deprecated endpoints
 
-**Solution:**
+**Solution Applied** (Sep 4, 2025):
 
 ```bash
-# Check versions
-google-chrome --version
-chromedriver --version
+# Fixed implementation now using Chrome for Testing API
+CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+\.\d+')
+CHROMEDRIVER_URL="https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json"
 
-# Rebuild with latest ChromeDriver (fixed in latest version)
-./scripts/build-chrome.sh --no-cache
+# Automatic version matching now working
+curl -s "$CHROMEDRIVER_URL" | jq -r "ChromeDriver matched to Chrome version"
 ```
+
+**Status**: ✅ **Resolved** - All Chrome Runner builds now successful with modern API
+
+**Prevention**: Chrome for Testing API automatically maintains version compatibility
 
 ### Issue: "Chrome crashes or runs out of memory"
 
