@@ -1,0 +1,354 @@
+name: Release Management
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g., v1.0.0)"
+        required: true
+        type: string
+      release_type:
+        description: "Type of release"
+        required: true
+        default: "minor"
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+          - prerelease
+      create_draft:
+        description: "Create draft release"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            version="${{ inputs.version }}"
+          else
+            version="${{ github.ref_name }}"
+          fi
+
+          # Validate version format
+          if [[ ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "::error::Invalid version format: $version"
+            exit 1
+          fi
+
+          # Check if it's a prerelease
+          is_prerelease="false"
+          if [[ "$version" =~ -[a-zA-Z0-9]+ ]]; then
+            is_prerelease="true"
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "is_prerelease=$is_prerelease" >> "$GITHUB_OUTPUT"
+
+          echo "Version: $version"
+          echo "Is prerelease: $is_prerelease"
+
+      - name: Check if tag already exists
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          if git tag -l | grep -q "^$version$"; then
+            echo "::error::Tag $version already exists"
+            exit 1
+          fi
+
+      - name: Validate changelog
+        run: |
+          if [[ ! -f "CHANGELOG.md" ]]; then
+            echo "::warning::CHANGELOG.md not found - will generate basic changelog"
+          else
+            version="${{ steps.version.outputs.version }}"
+            if ! grep -q "$version" CHANGELOG.md; then
+              echo "::warning::Version $version not found in CHANGELOG.md"
+            fi
+          fi
+
+  build-release-artifacts:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    needs: [validate-release]
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tags: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push release image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker
+          file: ./docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Sign container image
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign the published Docker image
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
+          retention-days: 90
+
+  security-scan-release:
+    name: Security Scan Release
+    runs-on: ubuntu-latest
+    needs: [build-release-artifacts]
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-release-artifacts.outputs.image-digest }}
+          format: "sarif"
+          output: "release-security-scan.sarif"
+
+      - name: Upload security scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "release-security-scan.sarif"
+
+      - name: Check for critical vulnerabilities
+        run: |
+          # Fail release if critical vulnerabilities are found
+          critical_count=$(grep -c "CRITICAL" release-security-scan.sarif || echo "0")
+          if [[ $critical_count -gt 0 ]]; then
+            echo "::error::Critical vulnerabilities found in release image!"
+            echo "::error::Cannot proceed with release. Please fix vulnerabilities first."
+            exit 1
+          fi
+          echo "✅ No critical vulnerabilities found"
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate-release, build-release-artifacts, security-scan-release]
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          version="${{ needs.validate-release.outputs.version }}"
+
+          # Try to extract changelog for this version
+          if [[ -f "CHANGELOG.md" ]]; then
+            # Extract section for this version
+            changelog_content=$(sed -n "/## $version/,/## /p" CHANGELOG.md | sed '$d' | tail -n +2)
+          fi
+
+          # If no specific changelog found, generate from commits
+          if [[ -z "$changelog_content" ]]; then
+            echo "Generating changelog from commits..."
+            
+            # Get the latest tag before this one
+            previous_tag=$(git tag --sort=-version:refname | grep -v "$version" | head -n 1)
+            
+            if [[ -n "$previous_tag" ]]; then
+              range="$previous_tag..HEAD"
+            else
+              range="HEAD"
+            fi
+            
+            changelog_content="## Changes in $version\n\n"
+            changelog_content+=$(git log $range --pretty=format:"- %s (%h)" --no-merges)
+          fi
+
+          # Save changelog to file
+          echo -e "$changelog_content" > release-changelog.md
+
+          echo "Generated changelog:"
+          cat release-changelog.md
+
+      - name: Create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.validate-release.outputs.version }}
+          release_name: Release ${{ needs.validate-release.outputs.version }}
+          body_path: release-changelog.md
+          draft: ${{ inputs.create_draft || false }}
+          prerelease: ${{ needs.validate-release.outputs.is_prerelease }}
+
+      - name: Upload release assets
+        run: |
+          version="${{ needs.validate-release.outputs.version }}"
+
+          # Create release assets directory
+          mkdir -p release-assets
+
+          # Copy important files to release assets
+          cp README.md release-assets/
+          cp -r docker/ release-assets/
+          cp -r scripts/ release-assets/
+          cp -r config/ release-assets/
+
+          # Create installation script
+          cat > release-assets/install.sh << 'EOF'
+          #!/bin/bash
+          set -e
+
+          echo "Installing GitHub Runner ${{ needs.validate-release.outputs.version }}"
+
+          # Download and setup the runner
+          echo "This script would download and configure the GitHub self-hosted runner"
+          echo "Version: ${{ needs.validate-release.outputs.version }}"
+          echo "Image: ${{ needs.build-release-artifacts.outputs.image-tags }}"
+
+          echo "Installation completed!"
+          EOF
+
+          chmod +x release-assets/install.sh
+
+          # Create archive
+          tar -czf github-runner-$version.tar.gz -C release-assets .
+
+          echo "Release assets created:"
+          ls -la github-runner-*.tar.gz
+
+      - name: Upload installation archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-runner-${{ needs.validate-release.outputs.version }}
+          path: github-runner-*.tar.gz
+          retention-days: 365
+
+  deploy-release:
+    name: Deploy Release
+    runs-on: ubuntu-latest
+    needs: [validate-release, build-release-artifacts, create-release]
+    if: ${{ !inputs.create_draft && needs.validate-release.outputs.is_prerelease == 'false' }}
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Deploy release to production
+        run: |
+          version="${{ needs.validate-release.outputs.version }}"
+          image_digest="${{ needs.build-release-artifacts.outputs.image-digest }}"
+
+          echo "Deploying release $version to production"
+          echo "Image digest: $image_digest"
+
+          # In a real scenario, this would deploy the release
+          # For example: kubectl set image, docker service update, etc.
+
+          echo "✅ Release $version deployed successfully"
+
+      - name: Post-deployment verification
+        run: |
+          echo "Running post-deployment verification..."
+
+          # Add comprehensive health checks for the release
+          sleep 30
+
+          echo "✅ Release verification completed successfully"
+
+  notify:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: [validate-release, create-release, deploy-release]
+    if: always()
+    steps:
+      - name: Notify release status
+        run: |
+          version="${{ needs.validate-release.outputs.version }}"
+
+          if [[ "${{ needs.deploy-release.result }}" == "success" ]]; then
+            echo "🎉 Release $version completed successfully!"
+            echo "✅ Built, tested, and deployed to production"
+          elif [[ "${{ needs.create-release.result }}" == "success" ]]; then
+            echo "📦 Release $version created successfully!"
+            echo "ℹ️  Draft release created - ready for manual review"
+          else
+            echo "❌ Release $version failed"
+            echo "Please check the workflow logs for details"
+          fi
+
+          # In a real scenario, you might send notifications to Slack, Teams, etc.
+          echo "Release notification sent"

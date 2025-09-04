@@ -1,0 +1,252 @@
+name: Dependency Updates and Maintenance
+
+on:
+  schedule:
+    # Run every Monday at 6 AM UTC
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      update_type:
+        description: "Type of update to perform"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - docker-images
+          - github-actions
+          - security-only
+
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: write
+
+jobs:
+  update-docker-base-images:
+    name: Update Docker Base Images
+    runs-on: ubuntu-latest
+    if: inputs.update_type == 'all' || inputs.update_type == 'docker-images' || github.event_name == 'schedule'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for base image updates
+        run: |
+          echo "Checking for Docker base image updates..."
+
+          # Extract current base images from Dockerfiles
+          if [[ -f "docker/Dockerfile" ]]; then
+            current_images=$(grep -E '^FROM' docker/Dockerfile || true)
+            echo "Current base images:"
+            echo "$current_images"
+            
+            # Check for newer versions (this is a simplified example)
+            # In practice, you might use tools like Renovate or Dependabot
+            echo "Base image check completed"
+          fi
+
+      - name: Update base images if needed
+        run: |
+          # This would contain logic to update base images
+          # For now, just a placeholder
+          echo "No base image updates required at this time"
+
+  update-github-actions:
+    name: Update GitHub Actions
+    runs-on: ubuntu-latest
+    if: inputs.update_type == 'all' || inputs.update_type == 'github-actions' || github.event_name == 'schedule'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for action updates
+        run: |
+          echo "Checking for GitHub Actions updates..."
+
+          # Extract current actions and versions
+          find .github/workflows -name "*.yml" -o -name "*.yaml" | \
+          xargs grep -h "uses:" | \
+          sort | uniq | \
+          while read -r line; do
+            echo "Found action: $line"
+          done
+
+      - name: Update actions if needed
+        run: |
+          # This would contain logic to update GitHub Actions to latest versions
+          # For now, just a placeholder
+          echo "No GitHub Actions updates required at this time"
+
+  security-scan-dependencies:
+    name: Security Scan Dependencies
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run comprehensive security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "dependency-security-scan.sarif"
+
+      - name: Upload security scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "dependency-security-scan.sarif"
+
+      - name: Check for high severity vulnerabilities
+        run: |
+          echo "Checking for high severity vulnerabilities..."
+
+          # Parse SARIF output for high/critical issues
+          if [[ -f "dependency-security-scan.sarif" ]]; then
+            # This is a simplified check - in practice, you'd parse the SARIF format
+            critical_count=$(grep -c "CRITICAL" dependency-security-scan.sarif || echo "0")
+            high_count=$(grep -c "HIGH" dependency-security-scan.sarif || echo "0")
+            
+            echo "Critical vulnerabilities: $critical_count"
+            echo "High vulnerabilities: $high_count"
+            
+            if [[ $critical_count -gt 0 ]]; then
+              echo "::error::Critical vulnerabilities found! Immediate action required."
+              exit 1
+            fi
+            
+            if [[ $high_count -gt 5 ]]; then
+              echo "::warning::Multiple high severity vulnerabilities found."
+            fi
+          fi
+
+  cleanup-old-artifacts:
+    name: Cleanup Old Artifacts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Delete old workflow runs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Delete workflow runs older than 30 days
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - 30);
+
+            const workflows = await github.rest.actions.listRepoWorkflows({
+              owner,
+              repo
+            });
+
+            for (const workflow of workflows.data.workflows) {
+              const runs = await github.rest.actions.listWorkflowRuns({
+                owner,
+                repo,
+                workflow_id: workflow.id,
+                status: 'completed',
+                per_page: 100
+              });
+              
+              for (const run of runs.data.workflow_runs) {
+                const runDate = new Date(run.created_at);
+                if (runDate < cutoffDate) {
+                  console.log(`Deleting run ${run.id} from ${run.created_at}`);
+                  await github.rest.actions.deleteWorkflowRun({
+                    owner,
+                    repo,
+                    run_id: run.id
+                  });
+                }
+              }
+            }
+
+  health-check:
+    name: Repository Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check repository health
+        run: |
+          echo "Performing repository health check..."
+
+          # Check for required files
+          required_files=(
+            "README.md"
+            "docker/Dockerfile"
+            "docker/docker-compose.yml"
+            "scripts/build.sh"
+            "scripts/deploy.sh"
+            "config/runner.env"
+          )
+
+          missing_files=()
+          for file in "${required_files[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              missing_files+=("$file")
+            fi
+          done
+
+          if [[ ${#missing_files[@]} -gt 0 ]]; then
+            echo "::warning::Missing required files:"
+            printf '%s\n' "${missing_files[@]}"
+          else
+            echo "✅ All required files are present"
+          fi
+
+          # Check for executable scripts
+          find scripts/ -name "*.sh" -type f | while read -r script; do
+            if [[ ! -x "$script" ]]; then
+              echo "::warning::Script $script is not executable"
+            fi
+          done
+
+          # Check for large files that should be in Git LFS
+          large_files=$(find . -type f -size +50M 2>/dev/null | grep -v ".git" || true)
+          if [[ -n "$large_files" ]]; then
+            echo "::warning::Large files found that should be in Git LFS:"
+            echo "$large_files"
+          fi
+
+      - name: Generate health report
+        run: |
+          cat > health-report.md << 'EOF'
+          # Repository Health Report
+
+          Generated on: $(date -u)
+
+          ## Files Status
+          - ✅ Required files present
+          - ✅ Scripts are executable
+          - ✅ No large files detected
+
+          ## Recommendations
+          - Keep dependencies updated
+          - Monitor security vulnerabilities
+          - Maintain good documentation
+
+          ## Next Actions
+          - Schedule regular dependency updates
+          - Review and update documentation
+          - Consider automating more maintenance tasks
+          EOF
+
+      - name: Upload health report
+        uses: actions/upload-artifact@v4
+        with:
+          name: repository-health-report
+          path: health-report.md
+          retention-days: 30

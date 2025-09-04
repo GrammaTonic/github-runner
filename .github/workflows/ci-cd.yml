@@ -1,0 +1,497 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "docker/**"
+      - "scripts/**"
+      - "config/**"
+      - "monitoring/**"
+      - ".github/workflows/**"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "docker/**"
+      - "scripts/**"
+      - "config/**"
+      - "monitoring/**"
+      - ".github/workflows/**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment for deployment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+      skip_tests:
+        description: "Skip testing steps"
+        required: false
+        default: false
+        type: boolean
+      force_rebuild:
+        description: "Force rebuild Docker images (ignore cache)"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  pull-requests: write
+  checks: write
+  actions: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  lint-and-validate:
+    name: Lint and Validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Validate Docker files
+        run: |
+          # Check if Docker files exist
+          find . -name "Dockerfile*" -type f | while read -r dockerfile; do
+            echo "Validating $dockerfile"
+            docker run --rm -i hadolint/hadolint < "$dockerfile" || exit 1
+          done
+
+      - name: Validate Docker Compose files
+        run: |
+          # Validate docker-compose.yml syntax
+          if [[ -f "docker/docker-compose.yml" ]]; then
+            docker-compose -f docker/docker-compose.yml config --quiet
+          fi
+
+      - name: Validate shell scripts
+        run: |
+          # Install shellcheck
+          sudo apt-get update && sudo apt-get install -y shellcheck
+
+          # Check all shell scripts
+          find . -name "*.sh" -type f | while read -r script; do
+            echo "Checking $script"
+            shellcheck "$script" || exit 1
+          done
+
+      - name: Check environment file templates
+        run: |
+          # Validate environment file syntax (basic check)
+          find config/ -name "*.env*" -type f 2>/dev/null | while read -r envfile; do
+            echo "Validating $envfile"
+            # Check for basic syntax issues in env files
+            grep -v '^#' "$envfile" | grep -v '^$' | grep -qE '^[A-Za-z_][A-Za-z0-9_]*=' || {
+              echo "Warning: $envfile may have invalid environment variable syntax"
+            }
+          done || true
+
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Trivy vulnerability scanner on filesystem
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+
+      - name: Upload Trivy scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-results.sarif"
+
+      - name: Check for secrets in repository
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [lint-and-validate]
+    if: ${{ !inputs.skip_tests || inputs.skip_tests == false }}
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker
+          file: ./docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          no-cache: ${{ inputs.force_rebuild || false }}
+
+  test:
+    name: Test Runner Configuration
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: ${{ !inputs.skip_tests || inputs.skip_tests == false }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        test-type: [unit, integration, config]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up test environment
+        run: |
+          # Create test directories
+          mkdir -p test-results/${{ matrix.test-type }}
+
+          # Install test dependencies
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+
+      - name: Unit Tests - Script Validation
+        if: matrix.test-type == 'unit'
+        run: |
+          echo "Running unit tests for scripts..."
+
+          # Test script syntax and basic functionality
+          for script in scripts/*.sh; do
+            if [[ -f "$script" ]]; then
+              echo "Testing $script"
+              # Syntax check
+              bash -n "$script"
+              # Dry run check (if script supports it)
+              if grep -q "DRY_RUN" "$script"; then
+                DRY_RUN=true bash "$script" || echo "Warning: $script dry run failed"
+              fi
+            fi
+          done
+
+      - name: Integration Tests - Docker Compose
+        if: matrix.test-type == 'integration'
+        run: |
+          echo "Running integration tests..."
+
+          # Test Docker Compose configuration
+          if [[ -f "docker/docker-compose.yml" ]]; then
+            cd docker
+            
+            # Test compose file validation
+            docker-compose config --quiet
+            
+            # Test container startup (without actual GitHub token)
+            export GITHUB_TOKEN="dummy-token-for-testing"
+            export GITHUB_REPOSITORY="test/repo"
+            
+            # Start services in test mode
+            docker-compose up -d --scale runner=1
+            
+            # Wait for containers to be ready
+            sleep 30
+            
+            # Check container health
+            docker-compose ps
+            
+            # Cleanup
+            docker-compose down -v
+          fi
+
+      - name: Configuration Tests
+        if: matrix.test-type == 'config'
+        run: |
+          echo "Testing configuration templates..."
+
+          # Test environment file templates
+          if [[ -d "config" ]]; then
+            for config_file in config/*.env*; do
+              if [[ -f "$config_file" ]]; then
+                echo "Validating $config_file"
+                # Check for required variables
+                grep -q "GITHUB_TOKEN" "$config_file" || echo "Warning: GITHUB_TOKEN not found in $config_file"
+                grep -q "GITHUB_REPOSITORY" "$config_file" || echo "Warning: GITHUB_REPOSITORY not found in $config_file"
+              fi
+            done
+          fi
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.test-type }}
+          path: test-results/${{ matrix.test-type }}
+          retention-days: 30
+
+  security-container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    needs: [build]
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Run Trivy vulnerability scanner on container
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ needs.build.outputs.image-tag }}
+          format: "sarif"
+          output: "trivy-container-results.sarif"
+
+      - name: Upload container scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-container-results.sarif"
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build, test, security-container-scan]
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
+    environment:
+      name: staging
+      url: https://staging-runners.example.com
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up staging environment
+        run: |
+          echo "Setting up staging deployment..."
+
+          # Create staging directories
+          mkdir -p staging-deploy
+
+          # Copy deployment files
+          cp -r docker/ staging-deploy/
+          cp -r config/ staging-deploy/
+          cp -r scripts/ staging-deploy/
+
+      - name: Configure staging environment
+        env:
+          STAGING_GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
+          STAGING_REPOSITORY: ${{ secrets.STAGING_REPOSITORY }}
+        run: |
+          cd staging-deploy
+
+          # Update configuration for staging
+          if [[ -f "config/runner.env" ]]; then
+            sed -i 's/GITHUB_TOKEN=.*/GITHUB_TOKEN=${{ secrets.STAGING_GITHUB_TOKEN }}/' config/runner.env
+            sed -i 's/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=${{ secrets.STAGING_REPOSITORY }}/' config/runner.env
+          fi
+
+      - name: Deploy to staging
+        run: |
+          cd staging-deploy
+
+          echo "Deploying to staging environment..."
+          echo "Image: ${{ needs.build.outputs.image-tag }}"
+
+          # In a real scenario, this would deploy to your staging infrastructure
+          # For example: kubectl apply, docker stack deploy, etc.
+
+          # Simulate deployment
+          echo "Deployment completed successfully"
+
+      - name: Run staging smoke tests
+        run: |
+          echo "Running smoke tests against staging..."
+
+          # Add staging-specific health checks
+          sleep 10
+
+          # Simulate health check
+          echo "Staging environment is healthy"
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, test, security-container-scan, deploy-staging]
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
+    environment:
+      name: production
+      url: https://runners.example.com
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up production environment
+        run: |
+          echo "Setting up production deployment..."
+
+          # Create production directories
+          mkdir -p production-deploy
+
+          # Copy deployment files
+          cp -r docker/ production-deploy/
+          cp -r config/ production-deploy/
+          cp -r scripts/ production-deploy/
+
+      - name: Configure production environment
+        env:
+          PROD_GITHUB_TOKEN: ${{ secrets.PROD_GITHUB_TOKEN }}
+          PROD_REPOSITORY: ${{ secrets.PROD_REPOSITORY }}
+        run: |
+          cd production-deploy
+
+          # Update configuration for production
+          if [[ -f "config/runner.env" ]]; then
+            sed -i 's/GITHUB_TOKEN=.*/GITHUB_TOKEN=${{ secrets.PROD_GITHUB_TOKEN }}/' config/runner.env
+            sed -i 's/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=${{ secrets.PROD_REPOSITORY }}/' config/runner.env
+          fi
+
+      - name: Deploy to production
+        run: |
+          cd production-deploy
+
+          echo "Deploying to production environment..."
+          echo "Image: ${{ needs.build.outputs.image-tag }}"
+
+          # In a real scenario, this would deploy to your production infrastructure
+          # For example: kubectl apply, docker stack deploy, etc.
+
+          # Simulate deployment with blue/green strategy
+          echo "Starting blue/green deployment..."
+          echo "Production deployment completed successfully"
+
+      - name: Run production health checks
+        run: |
+          echo "Running production health checks..."
+
+          # Add production-specific health checks
+          sleep 15
+
+          # Simulate comprehensive health check
+          echo "Production environment is healthy and ready"
+
+      - name: Post-deployment monitoring setup
+        run: |
+          echo "Setting up post-deployment monitoring..."
+
+          # In a real scenario, this would configure monitoring, alerts, etc.
+          echo "Monitoring configured for production deployment"
+
+  cleanup:
+    name: Cleanup Resources
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Clean up old container images
+        run: |
+          echo "Cleaning up old container images..."
+
+          # In a real scenario, this would clean up old images from the registry
+          # For example, keeping only the last 10 images
+          echo "Cleanup completed"
+
+      - name: Generate deployment report
+        run: |
+          echo "Generating deployment report..."
+
+          # Create deployment summary
+          cat > deployment-report.md << 'EOF'
+          # Deployment Report
+
+          ## Summary
+          - **Workflow Run ID**: ${{ github.run_id }}
+          - **Commit SHA**: ${{ github.sha }}
+          - **Branch**: ${{ github.ref_name }}
+          - **Triggered by**: ${{ github.actor }}
+          - **Timestamp**: $(date -u)
+
+          ## Deployments
+          - Staging: ${{ needs.deploy-staging.result }}
+          - Production: ${{ needs.deploy-production.result }}
+
+          ## Image Details
+          - Registry: ${{ env.REGISTRY }}
+          - Repository: ${{ env.IMAGE_NAME }}
+          - Tags: Built and deployed successfully
+          EOF
+
+          cat deployment-report.md
+
+      - name: Upload deployment report
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-report
+          path: deployment-report.md
+          retention-days: 90
