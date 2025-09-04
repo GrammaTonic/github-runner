@@ -1,0 +1,22 @@
+# GitHub Runner Repository Code Owners
+# These users will be automatically requested for review when someone opens a pull request
+
+# Global ownership - all files require review from repository maintainers
+* @GrammaTonic
+
+# CI/CD Workflows require DevOps team review
+/.github/workflows/ @GrammaTonic
+/.github/instructions/ @GrammaTonic
+
+# Docker and deployment files require infrastructure team review
+/docker/ @GrammaTonic
+/scripts/ @GrammaTonic
+/config/ @GrammaTonic
+
+# Security-related files require security team review
+/security/ @GrammaTonic
+*.security.yml @GrammaTonic
+
+# Documentation requires technical writing review
+*.md @GrammaTonic
+/docs/ @GrammaTonic

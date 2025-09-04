@@ -1,0 +1,157 @@
+services:
+  runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        RUNNER_VERSION: "2.309.0"
+    image: ghcr.io/grammatonic/github-runner:latest
+    container_name: github-runner-${RUNNER_INSTANCE:-1}
+    restart: unless-stopped
+
+    environment:
+      # Required variables (must be provided)
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
+
+      # Optional configuration
+      - RUNNER_NAME=${RUNNER_NAME:-github-runner-${HOSTNAME:-container}-${RUNNER_INSTANCE:-1}}
+      - RUNNER_LABELS=${RUNNER_LABELS:-docker,self-hosted,linux,x64}
+      - RUNNER_GROUP=${RUNNER_GROUP:-default}
+      - RUNNER_WORKDIR=/home/runner/_work
+      - RUNNER_REPLACE_EXISTING=${RUNNER_REPLACE_EXISTING:-true}
+
+      # Docker configuration
+      - DOCKER_HOST=unix:///var/run/docker.sock
+
+    volumes:
+      # Docker socket for Docker-in-Docker
+      # SECURITY WARNING: This grants the container root-level access to the host Docker daemon.
+      # This is necessary for CI/CD workflows that need to build Docker images but presents
+      # significant security risks. Consider Docker-in-Docker alternatives for enhanced isolation.
+      # See: https://docs.docker.com/engine/security/security/#docker-daemon-attack-surface
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+      # Persistent storage for workspace and cache
+      - runner-work:/home/runner/_work
+      - runner-cache:/home/runner/.cache
+
+      # Local cache mounts (for faster builds)
+      - ../cache/build:/home/runner/.cache/build
+      - ../cache/deps:/home/runner/.cache/deps
+      - ../cache/workspace:/home/runner/.cache/workspace
+
+      # Configuration files (read-only)
+      - ../config:/home/runner/config:ro
+
+    networks:
+      - runner-network
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2.0"
+        reservations:
+          memory: 1G
+          cpus: "0.5"
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/entrypoint.sh", "health-check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+
+    # Prevent container from running as root
+    user: "1001:1001"
+
+    # Log configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Additional runner instances for scaling
+  runner-2:
+    extends:
+      service: runner
+    container_name: github-runner-2
+    environment:
+      - RUNNER_NAME=${RUNNER_NAME:-github-runner-${HOSTNAME:-container}-2}
+      - RUNNER_INSTANCE=2
+    profiles:
+      - scale
+
+  runner-3:
+    extends:
+      service: runner
+    container_name: github-runner-3
+    environment:
+      - RUNNER_NAME=${RUNNER_NAME:-github-runner-${HOSTNAME:-container}-3}
+      - RUNNER_INSTANCE=3
+    profiles:
+      - scale
+
+  # Monitoring and logging stack (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: github-runner-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    networks:
+      - runner-network
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: github-runner-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ../monitoring/grafana:/etc/grafana/provisioning:ro
+    networks:
+      - runner-network
+    profiles:
+      - monitoring
+
+# Volumes for persistent data
+volumes:
+  runner-work:
+    driver: local
+  runner-cache:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+# Network configuration
+networks:
+  runner-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
