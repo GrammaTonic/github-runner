@@ -149,6 +149,9 @@ setup_develop_branch_protection() {
 setup_codeowners() {
     log_info "Setting up CODEOWNERS file..."
     
+    # Ensure .github directory exists
+    mkdir -p .github
+    
     cat > .github/CODEOWNERS << 'EOF'
 # GitHub Runner Repository Code Owners
 # These users will be automatically requested for review when someone opens a pull request
@@ -210,13 +213,13 @@ echo "User: $(gh api user --jq .login)"
 
 # Backup current protection settings
 echo "Backing up current protection settings..."
-gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/main/protection" > .emergency-backup-main.json
-gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection" > .emergency-backup-develop.json
+gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/main/protection" > .emergency-backup-main.json || true
+gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection" > .emergency-backup-develop.json || true
 
 # Disable protection temporarily
 echo "Disabling branch protection..."
-gh api --method DELETE "/repos/$REPO_OWNER/$REPO_NAME/branches/main/protection"
-gh api --method DELETE "/repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection"
+gh api --method DELETE "/repos/$REPO_OWNER/$REPO_NAME/branches/main/protection" || true
+gh api --method DELETE "/repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection" || true
 
 echo "✅ Branch protection disabled"
 echo "⚠️  REMEMBER TO RE-ENABLE PROTECTION AFTER EMERGENCY FIX"
@@ -251,16 +254,28 @@ echo "🔄 Restoring branch protection..."
 
 if [[ -f .emergency-backup-main.json ]]; then
     echo "Restoring main branch protection..."
-    gh api --method PUT "/repos/$REPO_OWNER/$REPO_NAME/branches/main/protection" \
-        --input .emergency-backup-main.json
-    rm .emergency-backup-main.json
+    # Validate backup file contains valid JSON
+    if jq empty .emergency-backup-main.json 2>/dev/null; then
+        gh api --method PUT "/repos/$REPO_OWNER/$REPO_NAME/branches/main/protection" \
+            --input .emergency-backup-main.json
+        rm .emergency-backup-main.json
+    else
+        echo "ERROR: Invalid backup file for main branch protection"
+        exit 1
+    fi
 fi
 
 if [[ -f .emergency-backup-develop.json ]]; then
     echo "Restoring develop branch protection..."
-    gh api --method PUT "/repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection" \
-        --input .emergency-backup-develop.json
-    rm .emergency-backup-develop.json
+    # Validate backup file contains valid JSON
+    if jq empty .emergency-backup-develop.json 2>/dev/null; then
+        gh api --method PUT "/repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection" \
+            --input .emergency-backup-develop.json
+        rm .emergency-backup-develop.json
+    else
+        echo "ERROR: Invalid backup file for develop branch protection"
+        exit 1
+    fi
 fi
 
 echo "✅ Branch protection restored"
@@ -323,12 +338,7 @@ setup_environments() {
     # Production environment with required reviewers
     local production_config='{
         "wait_timer": 5,
-        "reviewers": [
-            {
-                "type": "User",
-                "id": null
-            }
-        ],
+        "reviewers": [],
         "deployment_branch_policy": {
             "protected_branches": true,
             "custom_branch_policies": false

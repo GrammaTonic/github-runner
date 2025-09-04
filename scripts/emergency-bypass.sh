@@ -26,13 +26,13 @@ echo "User: $(gh api user --jq .login)"
 
 # Backup current protection settings
 echo "Backing up current protection settings..."
-gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/main/protection" > .emergency-backup-main.json
-gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection" > .emergency-backup-develop.json
+gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/main/protection" > .emergency-backup-main.json || true
+gh api "/repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection" > .emergency-backup-develop.json || true
 
 # Disable protection temporarily
 echo "Disabling branch protection..."
-gh api --method DELETE "/repos/$REPO_OWNER/$REPO_NAME/branches/main/protection"
-gh api --method DELETE "/repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection"
+gh api --method DELETE "/repos/$REPO_OWNER/$REPO_NAME/branches/main/protection" || true
+gh api --method DELETE "/repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection" || true
 
 echo "✅ Branch protection disabled"
 echo "⚠️  REMEMBER TO RE-ENABLE PROTECTION AFTER EMERGENCY FIX"
