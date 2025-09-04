@@ -8,7 +8,8 @@ FROM ubuntu:22.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y \
+# hadolint ignore=DL3008,DL3015
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     wget \
     unzip \
@@ -25,15 +26,15 @@ ARG TARGETPLATFORM="linux/x64"
 WORKDIR /actions-runner
 
 # Download the appropriate runner based on architecture
-RUN case ${TARGETPLATFORM} in \
+RUN case "${TARGETPLATFORM}" in \
     "linux/amd64") RUNNER_ARCH="x64" ;; \
     "linux/arm64") RUNNER_ARCH="arm64" ;; \
     *) echo "Unsupported platform: ${TARGETPLATFORM}" && exit 1 ;; \
     esac \
-    && curl -o actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz \
-    -L https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz \
-    && tar xzf actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz \
-    && rm actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz
+    && curl -o "actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
+    -L "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
+    && tar xzf "actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
+    && rm "actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz"
 
 # Production stage - Minimal runtime image
 FROM ubuntu:22.04
@@ -50,7 +51,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN useradd -m -s /bin/bash runner
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y \
+# hadolint ignore=DL3008,DL3015
+RUN apt-get update && apt-get install -y --no-install-recommends \
     # Core tools
     curl \
     wget \
@@ -76,7 +78,6 @@ RUN apt-get update && apt-get install -y \
     jq \
     yq \
     zip \
-    unzip \
     # Network tools
     iputils-ping \
     netcat \
@@ -86,6 +87,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install additional tools via pip
+# hadolint ignore=DL3013
 RUN python3 -m pip install --no-cache-dir \
     pyyaml \
     requests \
@@ -94,6 +96,7 @@ RUN python3 -m pip install --no-cache-dir \
     google-cloud-storage
 
 # Install additional tools via npm
+# hadolint ignore=DL3016
 RUN npm install -g \
     @actions/core \
     @actions/github \
@@ -101,18 +104,14 @@ RUN npm install -g \
     eslint \
     prettier
 
-# Copy runner from builder stage
+# Copy runner from builder stage and set up directories
 COPY --from=builder /actions-runner /home/runner/actions-runner
-RUN chown -R runner:runner /home/runner
-
-# Create directories for runner
-RUN mkdir -p /home/runner/work \
+RUN chown -R runner:runner /home/runner \
+    && mkdir -p /home/runner/work \
     && mkdir -p /home/runner/_work \
     && mkdir -p /home/runner/.cache \
-    && chown -R runner:runner /home/runner
-
-# Add runner to docker group for Docker-in-Docker
-RUN usermod -aG docker runner
+    && chown -R runner:runner /home/runner \
+    && usermod -aG docker runner
 
 # Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
