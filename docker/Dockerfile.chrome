@@ -60,7 +60,7 @@ RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor
     && rm -rf /var/lib/apt/lists/*
 
 # Install ChromeDriver using dedicated script
-COPY docker/install-chromedriver.sh /tmp/install-chromedriver.sh
+COPY install-chromedriver.sh /tmp/install-chromedriver.sh
 RUN chmod +x /tmp/install-chromedriver.sh \
     && /tmp/install-chromedriver.sh \
     && rm /tmp/install-chromedriver.sh
