@@ -234,12 +234,19 @@ process_trivy_json() {
     
     log_info "Found $vuln_count vulnerabilities in $json_file"
     
-    # Process each vulnerability
-    jq -c '.Results[]?.Vulnerabilities[]?' "$json_file" 2>/dev/null | while read -r vuln_data; do
-        if [[ -n "$vuln_data" ]]; then
-            create_security_issue "$vuln_data" "$scan_target"
-        fi
-    done
+    # Process each vulnerability - use a more robust approach
+    local temp_vulns
+    temp_vulns=$(jq -c '.Results[]?.Vulnerabilities[]?' "$json_file" 2>/dev/null || echo "")
+    
+    if [[ -n "$temp_vulns" ]]; then
+        echo "$temp_vulns" | while read -r vuln_data; do
+            if [[ -n "$vuln_data" ]]; then
+                create_security_issue "$vuln_data" "$scan_target"
+            fi
+        done
+    else
+        log_info "No vulnerability data to process (this is normal for empty scans)"
+    fi
 }
 
 # Main function
