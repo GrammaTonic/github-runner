@@ -50,6 +50,7 @@ start_test() {
     local test_name="$1"
     TESTS_TOTAL=$((TESTS_TOTAL + 1))
     log_test "Starting: $test_name"
+    mkdir -p "$TEST_RESULTS_DIR"
     echo "$(date -Iseconds): START $test_name" >> "$TEST_RESULTS_DIR/startup.log"
 }
 
@@ -142,7 +143,7 @@ test_main_runner_startup() {
     local config_file="$TEST_RESULTS_DIR/config/main-runner.env"
     
     cd "$docker_dir" || {
-        fail_test "Main Runner Container Startup" "Could not access docker directory"
+        fail_test "Main Runner Container Startup" "Could not access docker directory: $docker_dir"
         return 1
     }
     
@@ -223,7 +224,7 @@ test_chrome_runner_startup() {
     local config_file="$TEST_RESULTS_DIR/config/chrome-runner.env"
     
     cd "$docker_dir" || {
-        fail_test "Chrome Runner Container Startup" "Could not access docker directory"
+        fail_test "Chrome Runner Container Startup" "Could not access docker directory: $docker_dir"
         return 1
     }
     
