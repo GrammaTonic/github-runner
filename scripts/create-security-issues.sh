@@ -86,13 +86,21 @@ create_security_issue() {
     local scan_target="$2"
     
     # Extract vulnerability details
-    local cve_id=$(echo "$vuln_data" | jq -r '.VulnerabilityID // "N/A"')
-    local severity=$(echo "$vuln_data" | jq -r '.Severity // "UNKNOWN"')
-    local pkg_name=$(echo "$vuln_data" | jq -r '.PkgName // "unknown"')
-    local installed_version=$(echo "$vuln_data" | jq -r '.InstalledVersion // "unknown"')
-    local fixed_version=$(echo "$vuln_data" | jq -r '.FixedVersion // "N/A"')
-    local title=$(echo "$vuln_data" | jq -r '.Title // "Unknown vulnerability"')
-    local description=$(echo "$vuln_data" | jq -r '.Description // "No description available"')
+    local cve_id
+    local severity
+    local pkg_name
+    local installed_version
+    local fixed_version
+    local title
+    local description
+    
+    cve_id=$(echo "$vuln_data" | jq -r '.VulnerabilityID // "N/A"')
+    severity=$(echo "$vuln_data" | jq -r '.Severity // "UNKNOWN"')
+    pkg_name=$(echo "$vuln_data" | jq -r '.PkgName // "unknown"')
+    installed_version=$(echo "$vuln_data" | jq -r '.InstalledVersion // "unknown"')
+    fixed_version=$(echo "$vuln_data" | jq -r '.FixedVersion // "N/A"')
+    title=$(echo "$vuln_data" | jq -r '.Title // "Unknown vulnerability"')
+    description=$(echo "$vuln_data" | jq -r '.Description // "No description available"')
     
     # Skip if below minimum severity
     case "$severity" in
@@ -117,7 +125,8 @@ create_security_issue() {
     fi
     
     # Check if issue already exists
-    local existing_count=$(issue_exists "$cve_id" "$pkg_name")
+    local existing_count
+    existing_count=$(issue_exists "$cve_id" "$pkg_name")
     if [[ "$existing_count" -gt 0 ]]; then
         log_warning "Issue for $cve_id already exists, skipping"
         return 0
@@ -130,7 +139,8 @@ create_security_issue() {
     fi
     
     # Create issue body
-    local priority=$(severity_to_priority "$severity")
+    local priority
+    priority=$(severity_to_priority "$severity")
     local issue_body="## 🔒 Security Vulnerability Report
 
 **Severity:** $severity  
@@ -185,7 +195,8 @@ $priority
     else
         log_info "Creating issue for $cve_id ($severity)"
         
-        local labels="security,vulnerability,trivy,$(echo "$severity" | tr '[:upper:]' '[:lower:]')"
+        local labels
+        labels="security,vulnerability,trivy,$(echo "$severity" | tr '[:upper:]' '[:lower:]')"
         
         if gh issue create \
             --repo "$REPO_OWNER/$REPO_NAME" \
@@ -213,7 +224,8 @@ process_trivy_json() {
     log_info "Scan target: $scan_target"
     
     # Extract vulnerabilities from JSON
-    local vuln_count=$(jq -r '[.Results[]?.Vulnerabilities[]?] | length' "$json_file" 2>/dev/null || echo "0")
+    local vuln_count
+    vuln_count=$(jq -r '[.Results[]?.Vulnerabilities[]?] | length' "$json_file" 2>/dev/null || echo "0")
     
     if [[ "$vuln_count" -eq 0 ]]; then
         log_success "No vulnerabilities found in $json_file"
