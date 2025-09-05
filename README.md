@@ -305,6 +305,38 @@ echo "RUNNER_DEBUG=1" >> config/runner.env
 docker compose logs -f runner
 ```
 
+## 🔒 Security
+
+This project includes comprehensive security scanning and monitoring:
+
+### Automated Security Scanning
+
+- **Weekly Vulnerability Scans**: Automated Trivy scans every Monday
+- **Multi-Target Analysis**: Filesystem, container, and Chrome runner scanning
+- **GitHub Security Integration**: Results uploaded to Security tab (not cluttering issues)
+- **SARIF Format**: Rich vulnerability data with remediation guidance
+
+### Security Features
+
+- **Container Security**: Regular base image updates and vulnerability patches
+- **Dependency Scanning**: Automated detection of vulnerable packages
+- **Secret Management**: Secure token handling and environment isolation
+- **Security Policies**: Defined security standards and response procedures
+
+### Viewing Security Results
+
+1. **Security Tab**: Go to repository's Security tab → Code scanning
+2. **Workflow Artifacts**: Download detailed reports from Actions → Security Advisory Management
+3. **Weekly Summaries**: Automated summary reports with priority actions
+
+### Security Documentation
+
+- 📋 [Security Advisory Workflow](docs/features/SECURITY_ADVISORY_WORKFLOW.md)
+- 🔄 [Security Migration Guide](docs/features/SECURITY_WORKFLOW_MIGRATION.md)
+- 🛡️ [Security Policy](.github/SECURITY.md)
+
+**Note**: Security vulnerabilities are managed through GitHub's Security tab, not through GitHub Issues, keeping your project issues clean and organized.
+
 ## 🆘 Support
 
 - 📖 [Documentation](docs/)
@@ -323,14 +355,20 @@ We welcome contributions! Please see our [Contributing Guide](docs/community/CON
 git clone https://github.com/yourusername/github-runner.git
 cd github-runner
 
-# Create feature branch
+# Switch to develop branch (primary development branch)
+git checkout develop
+git pull origin develop
+
+# Create feature branch from develop
 git checkout -b feature/amazing-feature
 
 # Make changes and test
 make test
 
-# Submit pull request
+# Submit pull request to develop branch
 ```
+
+**Important**: All development work should be done on the `develop` branch. Never work directly on `main`.
 
 ## 📄 License
 

@@ -1,0 +1,366 @@
+name: Security Advisory Management
+
+on:
+  schedule:
+    - cron: "0 2 * * 1" # Weekly on Monday at 2 AM UTC
+  workflow_dispatch:
+    inputs:
+      severity_filter:
+        description: "Minimum severity level"
+        required: false
+        default: "HIGH"
+        type: choice
+        options:
+          - "CRITICAL"
+          - "HIGH"
+          - "MEDIUM"
+          - "LOW"
+      scan_targets:
+        description: "Scan targets (comma-separated: filesystem,container,chrome)"
+        required: false
+        default: "filesystem,container,chrome"
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      repository-projects: write
+      packages: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up scan parameters
+        id: params
+        run: |
+          echo "severity_filter=${{ github.event.inputs.severity_filter || 'HIGH' }}" >> $GITHUB_OUTPUT
+          echo "scan_targets=${{ github.event.inputs.scan_targets || 'filesystem,container,chrome' }}" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u '+%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Create results directory
+        run: mkdir -p trivy-results
+
+      # Filesystem vulnerability scan
+      - name: Run Trivy filesystem scan
+        if: contains(steps.params.outputs.scan_targets, 'filesystem')
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results/filesystem.sarif"
+          severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+
+      - name: Upload filesystem scan to Security tab
+        if: contains(steps.params.outputs.scan_targets, 'filesystem')
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-results/filesystem.sarif"
+          category: "filesystem-scan"
+        continue-on-error: true
+
+      - name: Generate filesystem JSON report
+        if: contains(steps.params.outputs.scan_targets, 'filesystem')
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "json"
+          output: "trivy-results/filesystem.json"
+          severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+
+      # Container vulnerability scan
+      - name: Set up Docker Buildx
+        if: contains(steps.params.outputs.scan_targets, 'container')
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build standard runner image for scanning
+        if: contains(steps.params.outputs.scan_targets, 'container')
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: false
+          tags: github-runner:scan
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify image exists
+        if: contains(steps.params.outputs.scan_targets, 'container')
+        run: |
+          echo "Checking if image exists..."
+          docker images github-runner:scan
+          if ! docker image inspect github-runner:scan >/dev/null 2>&1; then
+            echo "❌ Image github-runner:scan not found"
+            exit 1
+          fi
+          echo "✅ Image github-runner:scan found"
+
+      - name: Run Trivy container scan
+        if: contains(steps.params.outputs.scan_targets, 'container')
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "github-runner:scan"
+          format: "sarif"
+          output: "trivy-results/container.sarif"
+          severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+        continue-on-error: false
+
+      - name: Upload container scan to Security tab
+        if: contains(steps.params.outputs.scan_targets, 'container')
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-results/container.sarif"
+          category: "container-scan"
+        continue-on-error: true
+
+      - name: Generate container JSON report
+        if: contains(steps.params.outputs.scan_targets, 'container')
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "github-runner:scan"
+          format: "json"
+          output: "trivy-results/container.json"
+          severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+
+      # Chrome runner container scan
+      - name: Build Chrome runner image for scanning
+        if: contains(steps.params.outputs.scan_targets, 'chrome')
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile.chrome
+          push: false
+          tags: github-runner-chrome:scan
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify Chrome image exists
+        if: contains(steps.params.outputs.scan_targets, 'chrome')
+        run: |
+          echo "Checking if Chrome image exists..."
+          docker images github-runner-chrome:scan
+          if ! docker image inspect github-runner-chrome:scan >/dev/null 2>&1; then
+            echo "❌ Image github-runner-chrome:scan not found"
+            exit 1
+          fi
+          echo "✅ Image github-runner-chrome:scan found"
+
+      - name: Run Trivy Chrome container scan
+        if: contains(steps.params.outputs.scan_targets, 'chrome')
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "github-runner-chrome:scan"
+          format: "sarif"
+          output: "trivy-results/chrome.sarif"
+          severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+        continue-on-error: false
+
+      - name: Upload Chrome scan to Security tab
+        if: contains(steps.params.outputs.scan_targets, 'chrome')
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-results/chrome.sarif"
+          category: "chrome-container-scan"
+        continue-on-error: true
+
+      - name: Generate Chrome JSON report
+        if: contains(steps.params.outputs.scan_targets, 'chrome')
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "github-runner-chrome:scan"
+          format: "json"
+          output: "trivy-results/chrome.json"
+          severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+
+      # Generate comprehensive security summary
+      - name: Install jq for JSON processing
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Generate Security Summary
+        run: |
+          echo "## 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "📅 **Scan Date**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "🎯 **Severity Filter**: ${{ steps.params.outputs.severity_filter }}" >> $GITHUB_STEP_SUMMARY
+          echo "🎯 **Scan Targets**: ${{ steps.params.outputs.scan_targets }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count vulnerabilities by severity and target
+          total_critical=0
+          total_high=0
+          total_medium=0
+          total_low=0
+
+          echo "### 📊 Results by Target" >> $GITHUB_STEP_SUMMARY
+          echo "| Target | Critical | High | Medium | Low | Total |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|----------|------|--------|-----|-------|" >> $GITHUB_STEP_SUMMARY
+
+          for result_file in trivy-results/*.json; do
+            if [[ -f "$result_file" ]]; then
+              target=$(basename "$result_file" .json)
+              
+              critical=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' "$result_file" 2>/dev/null || echo "0")
+              high=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' "$result_file" 2>/dev/null || echo "0")
+              medium=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM")] | length' "$result_file" 2>/dev/null || echo "0")
+              low=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "LOW")] | length' "$result_file" 2>/dev/null || echo "0")
+              
+              target_total=$((critical + high + medium + low))
+              
+              total_critical=$((total_critical + critical))
+              total_high=$((total_high + high))
+              total_medium=$((total_medium + medium))
+              total_low=$((total_low + low))
+              
+              echo "| $target | $critical | $high | $medium | $low | $target_total |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+          total_all=$((total_critical + total_high + total_medium + total_low))
+          echo "| **TOTAL** | **$total_critical** | **$total_high** | **$total_medium** | **$total_low** | **$total_all** |" >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚨 Priority Actions Required" >> $GITHUB_STEP_SUMMARY
+
+          if [[ $total_critical -gt 0 ]]; then
+            echo "- 🔴 **$total_critical CRITICAL** vulnerabilities require immediate attention" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ $total_high -gt 0 ]]; then
+            echo "- 🟠 **$total_high HIGH** severity vulnerabilities should be addressed soon" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ $((total_critical + total_high)) -eq 0 ]]; then
+            echo "- ✅ No critical or high severity vulnerabilities found!" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Security Resources" >> $GITHUB_STEP_SUMMARY
+          echo "- 📋 [Security Overview](https://github.com/${{ github.repository }}/security)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🛡️ [Security Advisories](https://github.com/${{ github.repository }}/security/advisories)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🤖 [Dependabot Alerts](https://github.com/${{ github.repository }}/security/dependabot)" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 [Security Policy](https://github.com/${{ github.repository }}/security/policy)" >> $GITHUB_STEP_SUMMARY
+          echo "- 📊 Detailed reports available in workflow artifacts" >> $GITHUB_STEP_SUMMARY
+
+          # Set outputs for potential follow-up workflows
+          echo "critical-count=$total_critical" >> $GITHUB_OUTPUT
+          echo "high-count=$total_high" >> $GITHUB_OUTPUT
+          echo "total-count=$total_all" >> $GITHUB_OUTPUT
+
+      - name: Upload Security Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-reports-${{ steps.params.outputs.timestamp }}
+          path: |
+            trivy-results/
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Create Security Summary Report
+        run: |
+          cat > security-report.md << 'EOF'
+          # 🔒 GitHub Runner Security Report
+
+          **Generated**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')  
+          **Repository**: ${{ github.repository }}  
+          **Branch**: ${{ github.ref_name }}  
+          **Workflow Run**: [${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          ## 📊 Scan Configuration
+
+          - **Severity Filter**: ${{ steps.params.outputs.severity_filter }} and above
+          - **Scan Targets**: ${{ steps.params.outputs.scan_targets }}
+          - **Scanner**: Trivy (Aqua Security)
+
+          ## 📋 Summary
+
+          This automated security scan identifies vulnerabilities in:
+          - Filesystem dependencies and packages
+          - Docker container images (standard runner)
+          - Docker container images (Chrome runner)
+
+          Results are uploaded to GitHub's Security tab for detailed analysis and remediation tracking.
+
+          ## 🛠️ Remediation Workflow
+
+          1. **Review findings** in the [Security tab](https://github.com/${{ github.repository }}/security)
+          2. **Prioritize fixes** based on severity and exploitability
+          3. **Update dependencies** and rebuild container images
+          4. **Verify fixes** by re-running this workflow
+          5. **Monitor continuously** through scheduled scans
+
+          ## 📚 Additional Resources
+
+          - [Trivy Documentation](https://trivy.dev/)
+          - [GitHub Security Features](https://docs.github.com/en/code-security)
+          - [Container Security Best Practices](https://docs.docker.com/develop/security-best-practices/)
+
+          ---
+          *This report is automatically generated by the Security Advisory Management workflow.*
+          EOF
+
+      - name: Upload Security Summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-summary-${{ steps.params.outputs.timestamp }}
+          path: security-report.md
+          retention-days: 90
+
+  cleanup-old-artifacts:
+    name: Cleanup Old Security Artifacts
+    runs-on: ubuntu-latest
+    needs: security-scan
+    if: always()
+    permissions:
+      actions: write
+
+    steps:
+      - name: Delete old security scan artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: artifacts } = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+
+            // Filter security-related artifacts older than 30 days
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            const oldSecurityArtifacts = artifacts.artifacts.filter(artifact => {
+              const isSecurityArtifact = artifact.name.includes('security-scan-reports') || 
+                                       artifact.name.includes('security-summary');
+              const isOld = new Date(artifact.created_at) < thirtyDaysAgo;
+              return isSecurityArtifact && isOld;
+            });
+
+            console.log(`Found ${oldSecurityArtifacts.length} old security artifacts to clean up`);
+
+            for (const artifact of oldSecurityArtifacts) {
+              try {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+                console.log(`✅ Deleted old artifact: ${artifact.name} (${artifact.created_at})`);
+              } catch (error) {
+                console.log(`❌ Could not delete artifact ${artifact.name}: ${error.message}`);
+              }
+            }
+
+            if (oldSecurityArtifacts.length === 0) {
+              console.log('🧹 No old security artifacts found to clean up');
+            }

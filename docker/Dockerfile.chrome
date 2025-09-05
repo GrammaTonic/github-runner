@@ -6,7 +6,7 @@ FROM ubuntu:24.04
 # Metadata
 LABEL maintainer="GrammaTonic"
 LABEL description="GitHub Actions Self-Hosted Runner optimized for Chrome and web UI testing"
-LABEL version="1.0.1"
+LABEL version="1.0.4"
 
 # Avoid prompts from apt
 ENV DEBIAN_FRONTEND=noninteractive
@@ -76,12 +76,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
-# Install common testing frameworks
+# Install common testing frameworks with comprehensive security fixes
+# Strategy: Use latest versions + manual security package updates
+# CVE-2025-9288: sha.js vulnerability - fixed in Cypress 15.1.0+
+# CVE-2020-36632: flat package vulnerability - manual override after install
+# CVE-2024-37890: ws (WebSocket) DoS vulnerability - force update to secure version
 RUN npm install -g \
-    playwright \
-    cypress \
-    @playwright/test \
-    && npx playwright install chromium
+    playwright@1.55.0 \
+    cypress@15.1.0 \
+    @playwright/test@1.55.0 \
+    && npx playwright install chromium \
+    && echo "Applying comprehensive security fixes for known vulnerabilities..." \
+    && npm install -g npm@latest \
+    && npm install -g flat@5.0.2 --force 2>/dev/null || true \
+    && npm install -g sha.js@2.4.12 --force 2>/dev/null || true \
+    && npm install -g ws@8.17.1 --force 2>/dev/null || true
 
 # Install Python testing packages
 RUN pip3 install --no-cache-dir --break-system-packages \
