@@ -1,12 +1,12 @@
 # GitHub Actions Self-Hosted Chrome Runner Docker Image
 # Specialized for web UI testing with browser automation tools
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # Metadata
 LABEL maintainer="GrammaTonic"
 LABEL description="GitHub Actions Self-Hosted Runner optimized for Chrome and web UI testing"
-LABEL version="1.0.0"
+LABEL version="1.0.1"
 
 # Avoid prompts from apt
 ENV DEBIAN_FRONTEND=noninteractive
@@ -84,7 +84,7 @@ RUN npm install -g \
     && npx playwright install chromium
 
 # Install Python testing packages
-RUN pip3 install --no-cache-dir \
+RUN pip3 install --no-cache-dir --break-system-packages \
     selenium \
     pytest \
     pytest-selenium \
