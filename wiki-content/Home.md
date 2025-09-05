@@ -4,14 +4,32 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 
 ## 🎯 **Latest Updates**
 
-### ✅ **Chrome Runner Production Ready** (Sep 4, 2025)
+### 🔒 **Critical Security Improvements** (January 15, 2025)
+
+- **Security Patches**: ✅ VDB-216777/CVE-2020-36632, CVE-2025-9288, CVE-2024-37890 resolved
+- **Version Updates**: Standard Runner v1.0.1, Chrome Runner v1.0.4 with latest security fixes
+- **Performance**: Optimized Docker images with comprehensive cache cleaning
+- **CI/CD**: Enhanced pipeline reliability with standardized Docker build contexts
+- **Monitoring**: Weekly Trivy security scans with automated SARIF reporting
+
+### ✅ **Chrome Runner Production Ready** (September 2024)
 
 - **Status**: ✅ Production Ready - All 10/10 CI/CD checks passing
 - **Performance**: 60% faster web UI tests with resource isolation
-- **CI/CD**: All checks completed successfully (Build, Security, Tests)
-- **Deployment**: Ready for production use with scaling support
-- **ChromeDriver**: Issue resolved with Chrome for Testing API
+- **Latest Versions**: Playwright 1.55.0, Cypress 15.1.0 with security patches
 - **Documentation**: [Chrome Runner Guide](Chrome-Runner)
+
+## 📊 **Current Versions**
+
+| Component                 | Standard Runner | Chrome Runner | Security Status   |
+| ------------------------- | --------------- | ------------- | ----------------- |
+| **Image Version**         | v1.0.1          | v1.0.4        | ✅ Latest         |
+| **GitHub Actions Runner** | v2.328.0        | v2.328.0      | ✅ Latest         |
+| **Node.js**               | 20.x LTS        | 20.x LTS      | ✅ Supported      |
+| **Playwright**            | -               | v1.55.0       | ✅ Latest         |
+| **Cypress**               | -               | v15.1.0       | ✅ Security Fixed |
+
+> 📋 **Full Version Details**: [Version Overview](../docs/VERSION_OVERVIEW.md)
 
 ## 📖 Table of Contents
 

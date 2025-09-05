@@ -2,51 +2,158 @@
 mode: agent
 ---
 
-# 📚 Update GitHub Runner Wiki & README with Chrome Runner Production Status
+# 📚 GitHub Runner Documentation Maintenance & Version Tracking
 
-## 🎯 **Task Overview**
+## 🎯 **Current Project Status (January 2025)**
 
-Update the project's documentation to reflect the successful implementation and production readiness of the Chrome Runner feature. All CI/CD checks are now passing (10/10 success), and the Chrome Runner is ready for deployment.
+The GitHub Actions Self-Hosted Runner project has undergone significant security improvements and infrastructure optimization. The documentation needs regular updates to reflect current versions, security patches, and feature improvements.
 
-## 📋 **Specific Requirements**
+## 📋 **Documentation Maintenance Tasks**
 
-### 1. **README.md Updates Required**
+### 1. **Version Overview Documentation**
 
-#### A. Add Chrome Runner Badge
+#### A. Core Components Tracking
 
-- Add production-ready badge in badges section after line 5
-- Badge should indicate "Production Ready" status with Chrome logo
+- **GitHub Actions Runner**: v2.328.0 (latest stable)
+- **Docker Images**: Standard v1.0.1, Chrome v1.0.4
+- **Base OS**: Ubuntu 22.04 LTS with security updates
+- **Node.js**: v20.x LTS with NPM ecosystem
+- **Python**: v3.10+ with pip ecosystem
 
-#### B. Insert Chrome Runner Section
+#### B. Security Patch Status
 
-- Insert comprehensive Chrome Runner section after line 50 (after Installation section)
-- Include performance metrics (60% faster web UI tests)
-- Provide quick start commands
-- Show GitHub Actions workflow example
-- List supported testing frameworks
-- Link to wiki documentation
+- **VDB-216777/CVE-2020-36632**: flat@5.0.2 (prototype pollution fix)
+- **CVE-2025-9288**: sha.js@2.4.12 (Cypress dependency fix)
+- **CVE-2024-37890**: ws@8.17.1 (WebSocket DoS fix)
+- **Trivy Scanning**: Weekly automated security scans
 
-#### C. Update Features List
+#### C. Testing Framework Versions
 
-- Add Chrome Runner as a featured capability around line 12
-- Emphasize browser automation and web UI testing benefits
+- **Playwright**: v1.55.0 (latest stable)
+- **Cypress**: v15.1.0 (security patched)
+- **Selenium**: Latest with webdriver-manager
+- **Chrome**: Stable channel auto-updated
 
-### 2. **Wiki Content Updates Required**
+### 2. **README.md Maintenance Standards**
 
-#### A. Home.md Status Update
+#### A. Version Badge Updates
 
-- Update "Latest Updates" section with current CI/CD success (10/10 checks passing)
-- Change status from "in progress" to "Production Ready"
-- Add deployment readiness confirmation
-- Update date to current (Sep 4, 2025)
+- Maintain current version badges for releases
+- Update security status indicators
+- Reflect latest CI/CD pipeline status
+- Include container registry links
 
-#### B. Chrome-Runner.md Production Status
+#### B. Feature Documentation
 
-- Update status table with all green checkmarks
-- Document ChromeDriver fix resolution
-- Add final workflow run numbers (17475302211 success)
-- Update security scan status to "COMPLETED"
-- Add production deployment examples
+- Highlight recent security improvements
+- Document performance optimizations
+- Showcase Docker image optimizations
+- Emphasize multi-architecture support
+
+#### C. Installation Instructions
+
+- Keep Docker image tags current
+- Update version-specific download links
+- Maintain compatibility information
+- Include security verification steps
+
+### 3. **Wiki Content Management**
+
+#### A. Version Synchronization
+
+- Keep Home.md current with latest versions
+- Update Chrome Runner documentation with security fixes
+- Maintain installation guides with current versions
+- Document troubleshooting for latest issues
+
+#### B. Security Documentation
+
+- Document applied security patches
+- Maintain vulnerability resolution history
+- Update scanning and monitoring information
+- Keep compliance documentation current
+
+#### C. Production Deployment Guides
+
+- Update production-ready deployment instructions
+- Maintain Docker Compose configurations
+- Document scaling and monitoring setup
+- Include health check configurations
+
+## 🔧 **Maintenance Workflow**
+
+### Regular Update Cycle (Monthly)
+
+1. **Version Audit**: Check for new releases of core components
+2. **Security Review**: Monitor for new vulnerabilities and patches
+3. **Documentation Sync**: Update all documentation with current versions
+4. **Link Validation**: Verify all external links and references
+5. **Command Testing**: Validate all provided commands and examples
+
+### Security Update Cycle (As Needed)
+
+1. **Vulnerability Assessment**: Evaluate new security advisories
+2. **Patch Application**: Apply security fixes to Docker images
+3. **Documentation Update**: Document security improvements
+4. **Testing Validation**: Verify fixes don't break functionality
+5. **Communication**: Update status badges and security sections
+
+### Release Update Cycle (Per Release)
+
+1. **Version Bumping**: Update all version references
+2. **Feature Documentation**: Document new capabilities
+3. **Migration Guides**: Provide upgrade instructions when needed
+4. **Compatibility Matrix**: Update supported versions
+5. **Release Notes**: Create comprehensive release documentation
+
+## ✅ **Quality Standards**
+
+### Documentation Quality
+
+- **Accuracy**: All version numbers and commands must be current and tested
+- **Consistency**: Version references must be consistent across all documents
+- **Completeness**: Include all necessary context for successful deployment
+- **Clarity**: Use clear, scannable formatting with proper headings
+
+### Security Documentation
+
+- **Transparency**: Document all known vulnerabilities and their status
+- **Traceability**: Maintain history of security improvements
+- **Verification**: Provide commands to verify security posture
+- **Compliance**: Meet security documentation standards
+
+### User Experience
+
+- **Quick Start**: Users should be able to deploy in under 10 minutes
+- **Troubleshooting**: Common issues should have documented solutions
+- **Examples**: All code examples must be copy-paste ready
+- **Navigation**: Clear cross-references between related documentation
+
+## 📊 **Current State Summary**
+
+### ✅ **Completed (January 2025)**
+
+- **Security Patches**: All critical vulnerabilities addressed
+- **Docker Optimization**: Image sizes reduced with cache cleaning
+- **CI/CD Stability**: Build contexts standardized for reliability
+- **Version Documentation**: Comprehensive version overview created
+- **README Updates**: Current versions and security status reflected
+
+### 🔄 **Ongoing Maintenance**
+
+- **Wiki Synchronization**: Keep wiki content aligned with main documentation
+- **Link Validation**: Regular checking of external references
+- **Command Verification**: Periodic testing of provided examples
+- **Version Monitoring**: Watch for new releases and security advisories
+
+### 🎯 **Success Metrics**
+
+- **Documentation Accuracy**: All version references current within 30 days
+- **User Success Rate**: 95% successful first-time deployments using docs
+- **Security Posture**: All known vulnerabilities addressed within 48 hours
+- **Community Feedback**: Positive feedback on documentation quality
+
+This prompt template ensures consistent, high-quality documentation that accurately reflects the current state of the GitHub Runner project while maintaining security best practices and user experience standards.
 
 #### C. Production-Deployment.md Enhancement
 
