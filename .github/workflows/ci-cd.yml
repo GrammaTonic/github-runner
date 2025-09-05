@@ -193,6 +193,7 @@ jobs:
           context: ./docker
           file: ./docker/Dockerfile
           push: true
+          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -276,6 +277,7 @@ jobs:
           context: ./docker
           file: ./docker/Dockerfile.chrome
           push: true
+          load: true
           tags: ${{ steps.meta-chrome.outputs.tags }}
           labels: ${{ steps.meta-chrome.outputs.labels }}
           cache-from: type=gha,scope=chrome
