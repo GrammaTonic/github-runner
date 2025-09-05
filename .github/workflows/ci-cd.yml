@@ -201,6 +201,7 @@ jobs:
 
       - name: Get primary tag for security scan
         id: get-primary-tag
+        if: success() && steps.build.conclusion == 'success'
         run: |
           # Extract the first tag from the multi-line tags output for security scanning
           TAGS="${{ steps.meta.outputs.tags }}"
@@ -209,6 +210,7 @@ jobs:
           echo "Primary tag for security scan: $PRIMARY_TAG"
 
       - name: Save Docker image as artifact
+        if: success() && steps.build.conclusion == 'success'
         run: |
           # Save the primary image as tar for container startup tests
           PRIMARY_TAG="${{ steps.get-primary-tag.outputs.primary-tag }}"
@@ -217,6 +219,7 @@ jobs:
           ls -la github-runner-latest.tar
 
       - name: Upload Docker image artifact
+        if: success() && steps.build.conclusion == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: docker-image-primary
@@ -281,6 +284,7 @@ jobs:
 
       - name: Get primary Chrome tag for security scan
         id: get-primary-tag-chrome
+        if: success() && steps.build-chrome.conclusion == 'success'
         run: |
           # Extract the first tag from the multi-line tags output for security scanning
           TAGS="${{ steps.meta-chrome.outputs.tags }}"
@@ -289,6 +293,7 @@ jobs:
           echo "Primary Chrome tag for security scan: $PRIMARY_TAG"
 
       - name: Save Chrome Docker image as artifact
+        if: success() && steps.build-chrome.conclusion == 'success'
         run: |
           # Save the Chrome image as tar for container startup tests
           PRIMARY_TAG="${{ steps.get-primary-tag-chrome.outputs.primary-tag }}"
@@ -297,6 +302,7 @@ jobs:
           ls -la github-runner-chrome-latest.tar
 
       - name: Upload Chrome Docker image artifact
+        if: success() && steps.build-chrome.conclusion == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: docker-image-chrome
