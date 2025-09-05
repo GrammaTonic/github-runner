@@ -83,7 +83,8 @@ jobs:
       - name: Build standard runner image for scanning
         if: contains(steps.params.outputs.scan_targets, 'container')
         run: |
-          docker build -t temp-runner:scan -f docker/Dockerfile .
+          # Build from docker directory to get correct context
+          cd docker && docker build -t temp-runner:scan -f Dockerfile .
 
       - name: Container Security Scan - Standard Runner
         if: contains(steps.params.outputs.scan_targets, 'container')
@@ -98,7 +99,8 @@ jobs:
       - name: Build Chrome runner image for scanning
         if: contains(steps.params.outputs.scan_targets, 'chrome')
         run: |
-          docker build -t temp-chrome-runner:scan -f docker/Dockerfile.chrome .
+          # Build from docker directory to get correct context
+          cd docker && docker build -t temp-chrome-runner:scan -f Dockerfile.chrome .
 
       - name: Container Security Scan - Chrome Runner
         if: contains(steps.params.outputs.scan_targets, 'chrome')
