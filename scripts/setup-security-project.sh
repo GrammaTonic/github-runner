@@ -64,11 +64,13 @@ create_project() {
         --body "Track and manage security vulnerabilities found by Trivy scanner" \
         --format json > /tmp/project.json 2>/dev/null; then
         
-        local project_url=$(jq -r '.url' /tmp/project.json)
+        local project_url
+        project_url=$(jq -r '.url' /tmp/project.json)
         log_success "Created project: $project_url"
         
         # Store project number for later use
-        local project_number=$(jq -r '.number' /tmp/project.json)
+        local project_number
+        project_number=$(jq -r '.number' /tmp/project.json)
         echo "$project_number" > .security-project-number
         
         return 0
