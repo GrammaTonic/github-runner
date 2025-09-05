@@ -323,14 +323,20 @@ We welcome contributions! Please see our [Contributing Guide](docs/community/CON
 git clone https://github.com/yourusername/github-runner.git
 cd github-runner
 
-# Create feature branch
+# Switch to develop branch (primary development branch)
+git checkout develop
+git pull origin develop
+
+# Create feature branch from develop
 git checkout -b feature/amazing-feature
 
 # Make changes and test
 make test
 
-# Submit pull request
+# Submit pull request to develop branch
 ```
+
+**Important**: All development work should be done on the `develop` branch. Never work directly on `main`.
 
 ## 📄 License
 

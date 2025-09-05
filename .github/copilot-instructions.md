@@ -64,12 +64,26 @@ This repository is for setting up and managing GitHub Actions self-hosted runner
 
 ## Development Workflows
 
+### Branch Strategy
+
+- **`main`**: Production-ready code only. Protected branch requiring PR approval.
+- **`develop`**: Active development branch. All work starts here.
+- **Feature branches**: Created from `develop` for new features
+- **Hotfix branches**: Created from `develop` for urgent fixes
+
 ### Initial Setup Commands
 
 ```bash
 # Clone and setup development environment
 git clone <repo-url>
 cd github-runner
+
+# Switch to develop branch (primary development branch)
+git checkout develop
+git pull origin develop
+
+# Create feature branch from develop
+git checkout -b feature/your-feature-name
 
 # Build the runner Docker image
 docker build -t github-runner:latest ./docker
@@ -84,6 +98,17 @@ docker-compose up -d
 # Scale runners based on demand
 docker-compose up -d --scale runner=3
 ```
+
+### Development Workflow
+
+1. **Start from develop**: Always create feature branches from `develop`
+2. **Work on features**: Implement features, hotfixes on feature branches
+3. **Test thoroughly**: Ensure changes work and don't break existing functionality
+4. **Create PR to develop**: Submit pull request from feature branch → `develop`
+5. **Code review**: Get approval and merge to `develop`
+6. **Release process**: Periodically merge `develop` → `main` for releases
+
+**IMPORTANT**: Never work directly on `main`. All development work goes through `develop`.
 
 ### Common Operations
 
