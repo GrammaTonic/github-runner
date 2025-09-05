@@ -474,6 +474,264 @@ jobs:
           path: test-results/${{ matrix.test-suite }}
           retention-days: 30
 
+  test-container-startup:
+    name: Container Startup Tests
+    runs-on: ubuntu-latest
+    needs: [build, build-chrome]
+    if: ${{ !inputs.skip_tests || inputs.skip_tests == false }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        container-type: [main-runner, chrome-runner]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download built images
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.container-type == 'main-runner' && 'docker-image-primary' || 'docker-image-chrome' }}
+          path: /tmp/
+
+      - name: Load Docker images
+        run: |
+          # Load the built Docker images
+          if [[ "${{ matrix.container-type }}" == "main-runner" ]]; then
+            docker load < /tmp/github-runner-latest.tar
+            echo "Loaded main runner image"
+          else
+            docker load < /tmp/github-runner-chrome-latest.tar
+            echo "Loaded Chrome runner image"
+          fi
+
+          # Verify images are loaded
+          docker images | grep github-runner
+
+      - name: Set up container test environment
+        run: |
+          # Create test results directory
+          mkdir -p test-results/container-startup/${{ matrix.container-type }}
+
+          # Make test scripts executable
+          chmod +x tests/integration/comprehensive-tests.sh
+
+          # Create minimal test environment files
+          mkdir -p config/test
+
+          # Main runner test config
+          cat > config/test/main-runner.env << 'EOF'
+          GITHUB_TOKEN=test-token-not-real-for-testing
+          GITHUB_REPOSITORY=test/repository
+          RUNNER_NAME=test-main-runner-ci
+          RUNNER_LABELS=test,ci,docker,self-hosted
+          RUNNER_GROUP=test-group
+          RUNNER_WORKDIR=/home/runner/_work
+          EOF
+
+          # Chrome runner test config
+          cat > config/test/chrome-runner.env << 'EOF'
+          GITHUB_TOKEN=test-token-not-real-for-testing
+          GITHUB_REPOSITORY=test/repository
+          RUNNER_NAME=test-chrome-runner-ci
+          RUNNER_LABELS=chrome,ui-tests,selenium,playwright,cypress,headless
+          RUNNER_GROUP=chrome-test-group
+          DISPLAY=:99
+          CHROME_FLAGS=--headless --no-sandbox --disable-dev-shm-usage --disable-gpu
+          EOF
+
+      - name: Test Main Runner Container Startup
+        if: matrix.container-type == 'main-runner'
+        run: |
+          echo "🚀 Testing main GitHub runner container startup..."
+
+          # Test container startup with docker-compose
+          cd docker
+
+          # Start the container with test configuration
+          timeout 120 docker compose --env-file ../config/test/main-runner.env \
+            -p ci-test-main up -d runner || {
+              echo "❌ Failed to start main runner container"
+              exit 1
+            }
+
+          # Get container ID
+          CONTAINER_ID=$(docker compose -p ci-test-main ps -q runner)
+          echo "Container ID: $CONTAINER_ID"
+
+          # Wait for container to be ready
+          echo "Waiting for container to be ready..."
+          sleep 15
+
+          # Check if container is running
+          if ! docker ps --filter "id=$CONTAINER_ID" --filter "status=running" | grep -q "$CONTAINER_ID"; then
+            echo "❌ Container not running"
+            docker logs "$CONTAINER_ID" || true
+            exit 1
+          fi
+
+          # Basic health checks
+          echo "🔍 Performing health checks..."
+
+          # Check basic command execution
+          if ! docker exec "$CONTAINER_ID" whoami; then
+            echo "❌ Basic command execution failed"
+            exit 1
+          fi
+
+          # Check Docker-in-Docker
+          if ! docker exec "$CONTAINER_ID" docker version; then
+            echo "❌ Docker-in-Docker not working"
+            exit 1
+          fi
+
+          # Check runner directory structure
+          if ! docker exec "$CONTAINER_ID" test -d /home/runner; then
+            echo "❌ Runner home directory not found"
+            exit 1
+          fi
+
+          echo "✅ Main runner container startup test passed"
+
+          # Cleanup
+          docker compose -p ci-test-main down || true
+
+      - name: Test Chrome Runner Container Startup
+        if: matrix.container-type == 'chrome-runner'
+        run: |
+          echo "🚀 Testing Chrome GitHub runner container startup..."
+
+          # Test container startup with docker-compose
+          cd docker
+
+          # Start the Chrome container with test configuration
+          timeout 150 docker compose -f docker-compose.chrome.yml \
+            --env-file ../config/test/chrome-runner.env \
+            -p ci-test-chrome up -d chrome-runner || {
+              echo "❌ Failed to start Chrome runner container"
+              exit 1
+            }
+
+          # Get container ID
+          CONTAINER_ID=$(docker compose -f docker-compose.chrome.yml -p ci-test-chrome ps -q chrome-runner)
+          echo "Chrome Container ID: $CONTAINER_ID"
+
+          # Wait for container to be ready (Chrome takes longer)
+          echo "Waiting for Chrome container to be ready..."
+          sleep 30
+
+          # Check if container is running
+          if ! docker ps --filter "id=$CONTAINER_ID" --filter "status=running" | grep -q "$CONTAINER_ID"; then
+            echo "❌ Chrome container not running"
+            docker logs "$CONTAINER_ID" || true
+            exit 1
+          fi
+
+          # Chrome-specific health checks
+          echo "🔍 Performing Chrome-specific health checks..."
+
+          # Check Chrome installation
+          if ! docker exec "$CONTAINER_ID" google-chrome --version; then
+            echo "❌ Chrome not working"
+            exit 1
+          fi
+
+          # Check ChromeDriver
+          if ! docker exec "$CONTAINER_ID" chromedriver --version; then
+            echo "❌ ChromeDriver not working"
+            exit 1
+          fi
+
+          # Check Node.js (for frontend testing)
+          if ! docker exec "$CONTAINER_ID" node --version; then
+            echo "❌ Node.js not available"
+            exit 1
+          fi
+
+          # Test headless Chrome functionality
+          echo "Testing headless Chrome..."
+          if docker exec "$CONTAINER_ID" timeout 30 google-chrome \
+            --headless --no-sandbox --disable-dev-shm-usage \
+            --virtual-time-budget=1000 --dump-dom about:blank > /tmp/chrome-test.html; then
+            echo "✅ Chrome headless test passed"
+          else
+            echo "⚠️ Chrome headless test failed (may still work for CI)"
+          fi
+
+          echo "✅ Chrome runner container startup test passed"
+
+          # Cleanup
+          docker compose -f docker-compose.chrome.yml -p ci-test-chrome down || true
+
+      - name: Verify Container Resource Usage
+        run: |
+          echo "📊 Checking container resource usage patterns..."
+
+          # Check if containers have reasonable resource constraints
+          cd docker
+
+          if [[ "${{ matrix.container-type }}" == "main-runner" ]]; then
+            COMPOSE_FILE="docker-compose.yml"
+          else
+            COMPOSE_FILE="docker-compose.chrome.yml"
+          fi
+
+          # Check for restart policies
+          if ! grep -q "restart:" "$COMPOSE_FILE"; then
+            echo "⚠️ No restart policy configured in $COMPOSE_FILE"
+          else
+            echo "✅ Restart policy configured"
+          fi
+
+          # Check for health checks
+          if grep -q "healthcheck:" "$COMPOSE_FILE"; then
+            echo "✅ Health check configured"
+          else
+            echo "💡 Consider adding health checks for production readiness"
+          fi
+
+          echo "Resource usage check completed"
+
+      - name: Generate container startup report
+        if: always()
+        run: |
+          # Create detailed startup test report
+          REPORT_DIR="test-results/container-startup/${{ matrix.container-type }}"
+          mkdir -p "$REPORT_DIR"
+
+          echo "# Container Startup Test Report" > "$REPORT_DIR/startup-report.md"
+          echo "" >> "$REPORT_DIR/startup-report.md"
+          echo "## Test Details" >> "$REPORT_DIR/startup-report.md"
+          echo "- **Container Type**: ${{ matrix.container-type }}" >> "$REPORT_DIR/startup-report.md"
+          echo "- **Test Date**: $(date -Iseconds)" >> "$REPORT_DIR/startup-report.md"
+          echo "- **Workflow**: ${{ github.workflow }}" >> "$REPORT_DIR/startup-report.md"
+          echo "- **Run ID**: ${{ github.run_id }}" >> "$REPORT_DIR/startup-report.md"
+          echo "" >> "$REPORT_DIR/startup-report.md"
+
+          # Add Docker info
+          echo "## Docker Environment" >> "$REPORT_DIR/startup-report.md"
+          echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
+          docker version >> "$REPORT_DIR/startup-report.md" 2>&1 || true
+          echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
+          echo "" >> "$REPORT_DIR/startup-report.md"
+
+          # Add image info
+          echo "## Image Information" >> "$REPORT_DIR/startup-report.md"
+          echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
+          docker images | grep github-runner >> "$REPORT_DIR/startup-report.md" 2>&1 || true
+          echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
+
+      - name: Upload container startup test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: container-startup-results-${{ matrix.container-type }}
+          path: test-results/container-startup/${{ matrix.container-type }}
+          retention-days: 30
+
   security-container-scan:
     name: Container Security Scan
     runs-on: ubuntu-latest

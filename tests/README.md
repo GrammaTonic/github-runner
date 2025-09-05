@@ -11,13 +11,14 @@ This test suite was created in response to the Docker build failure caused by th
 ```
 tests/
 ├── docker/
-│   └── validate-packages.sh       # Docker package validation
+│   ├── validate-packages.sh           # Docker package validation
+│   └── test-container-startup.sh      # Container startup and health tests
 ├── integration/
-│   └── comprehensive-tests.sh     # Full integration testing
+│   └── comprehensive-tests.sh         # Full integration testing
 ├── unit/
-│   └── package-validation.sh      # Unit tests for package validation
-├── run-all-tests.sh              # Master test runner
-└── README.md                     # This file
+│   └── package-validation.sh          # Unit tests for package validation
+├── run-all-tests.sh                  # Master test runner
+└── README.md                         # This file
 ```
 
 ## 🧪 Test Suites
@@ -49,7 +50,40 @@ tests/
 
 **Prevention:** Prevents Docker build failures due to package availability issues.
 
-### 2. Unit Tests (`unit/package-validation.sh`)
+### 2. Container Startup Tests (`docker/test-container-startup.sh`)
+
+**Purpose:** Tests that all Docker containers can start successfully with provided example configurations.
+
+**Features:**
+
+- ✅ Tests main GitHub runner container startup
+- ✅ Tests Chrome GitHub runner container startup
+- ✅ Verifies container health and basic functionality
+- ✅ Tests Docker-in-Docker capabilities
+- ✅ Chrome-specific health checks (ChromeDriver, headless mode)
+- ✅ Resource configuration validation
+- ✅ Uses realistic test configurations
+- ✅ Comprehensive logging and reporting
+
+**Usage:**
+
+```bash
+# Test all container startups
+./tests/docker/test-container-startup.sh
+
+# Dry-run mode (configuration checks only)
+./tests/docker/test-container-startup.sh --dry-run
+
+# Keep containers running for debugging
+./tests/docker/test-container-startup.sh --no-cleanup
+
+# Custom timeouts
+./tests/docker/test-container-startup.sh --timeout-main 180 --timeout-chrome 240
+```
+
+**Prevention:** Ensures containers can start and function properly with provided examples, preventing runtime issues.
+
+### 3. Unit Tests (`unit/package-validation.sh`)
 
 **Purpose:** Unit tests for detecting obsolete packages, duplicates, and compatibility issues.
 
@@ -73,7 +107,7 @@ tests/
 
 **Prevention:** Catches package issues during development before CI/CD.
 
-### 3. Integration Tests (`integration/comprehensive-tests.sh`)
+### 4. Integration Tests (`integration/comprehensive-tests.sh`)
 
 **Purpose:** Comprehensive integration testing of Docker builds and container functionality.
 
@@ -102,7 +136,7 @@ tests/
 
 **Prevention:** Validates entire system before deployment.
 
-### 4. Master Test Runner (`run-all-tests.sh`)
+### 5. Master Test Runner (`run-all-tests.sh`)
 
 **Purpose:** Executes all test suites and generates comprehensive reports.
 

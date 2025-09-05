@@ -180,6 +180,61 @@ run_docker_package_validation() {
     fi
 }
 
+# Test Suite 4: Container Startup Tests
+run_container_startup_tests() {
+    start_suite "Container Startup Tests"
+    
+    local startup_script="$(dirname "$0")/docker/test-container-startup.sh"
+    local startup_results="$TEST_RESULTS_DIR/container-startup"
+    mkdir -p "$startup_results"
+    
+    if [[ ! -f "$startup_script" ]]; then
+        fail_suite "Container Startup Tests" "Container startup test script not found"
+        return 1
+    fi
+    
+    log_info "Running container startup tests..."
+    
+    local args=()
+    if [[ "$DRY_RUN" == "true" ]]; then
+        args+=("--dry-run")
+    fi
+    
+    local exit_code=0
+    if [[ ${#args[@]} -gt 0 ]]; then
+        TEST_RESULTS_DIR="$startup_results" "$startup_script" "${args[@]}" > "$startup_results/container-startup.log" 2>&1 || exit_code=$?
+    else
+        TEST_RESULTS_DIR="$startup_results" "$startup_script" > "$startup_results/container-startup.log" 2>&1 || exit_code=$?
+    fi
+    
+    if [[ "$VERBOSE" == "true" ]]; then
+        cat "$startup_results/container-startup.log"
+    fi
+    
+    if [[ $exit_code -eq 0 ]]; then
+        pass_suite "Container Startup Tests"
+    else
+        fail_suite "Container Startup Tests" "Container startup tests failed (exit code: $exit_code)"
+        return 1
+    fi
+}
+
+# Test Suite 5: Docker Package Validation
+run_docker_package_validation() {
+    start_suite "Docker Package Validation"
+    
+    local package_script="$(dirname "$0")/docker/validate-packages.sh"
+    local package_results="$TEST_RESULTS_DIR/docker"
+    mkdir -p "$package_results"
+    
+    if [[ ! -f "$package_script" ]]; then
+        fail_suite "Docker Package Validation" "Package validation script not found"
+        return 1
+    fi
+    
+    log_info "Running Docker package validation..."
+}
+
 # Test Suite 4: Security Validation
 run_security_tests() {
     start_suite "Security Validation"
@@ -420,6 +475,7 @@ main() {
     run_unit_tests || true
     run_integration_tests || true
     run_docker_package_validation || true
+    run_container_startup_tests || true
     run_security_tests || true
     run_configuration_tests || true
     

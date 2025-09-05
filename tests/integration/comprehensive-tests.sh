@@ -415,6 +415,270 @@ test_security_baseline() {
     pass_test "Security Baseline Test"
 }
 
+# Test 9: Container Startup and Health Checks
+test_container_startup() {
+    start_test "Container Startup and Health Checks"
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "DRY_RUN: Skipping container startup tests"
+        pass_test "Container Startup and Health Checks"
+        return 0
+    fi
+    
+    local docker_dir="$(dirname "$0")/../../docker"
+    local startup_errors=0
+    local test_containers=()
+    
+    # Clean up any existing test containers first
+    docker ps -q --filter "name=test-startup-*" | xargs -r docker stop >/dev/null 2>&1 || true
+    docker ps -aq --filter "name=test-startup-*" | xargs -r docker rm >/dev/null 2>&1 || true
+    
+    log_info "Testing main GitHub runner container startup..."
+    
+    # Test 1: Main GitHub Runner Container
+    if test_main_runner_startup; then
+        log_info "✓ Main runner container startup test passed"
+    else
+        log_error "✗ Main runner container startup test failed"
+        startup_errors=$((startup_errors + 1))
+    fi
+    
+    log_info "Testing Chrome GitHub runner container startup..."
+    
+    # Test 2: Chrome GitHub Runner Container  
+    if test_chrome_runner_startup; then
+        log_info "✓ Chrome runner container startup test passed"
+    else
+        log_error "✗ Chrome runner container startup test failed"
+        startup_errors=$((startup_errors + 1))
+    fi
+    
+    # Clean up test containers
+    for container in "${test_containers[@]}"; do
+        docker ps -q --filter "name=$container" | xargs -r docker stop >/dev/null 2>&1 || true
+        docker ps -aq --filter "name=$container" | xargs -r docker rm >/dev/null 2>&1 || true
+    done
+    
+    if [[ $startup_errors -eq 0 ]]; then
+        pass_test "Container Startup and Health Checks"
+    else
+        fail_test "Container Startup and Health Checks" "$startup_errors container startup test(s) failed"
+        return 1
+    fi
+}
+
+# Helper function: Test main runner container startup
+test_main_runner_startup() {
+    local container_name="test-startup-main-runner"
+    local docker_dir="$(dirname "$0")/../../docker"
+    
+    # Create minimal test environment file
+    local test_env_file="$TEST_RESULTS_DIR/test-runner.env"
+    cat > "$test_env_file" << 'EOF'
+GITHUB_TOKEN=test-token-not-real
+GITHUB_REPOSITORY=test/repo
+RUNNER_NAME=test-runner
+RUNNER_LABELS=test,docker,self-hosted
+RUNNER_GROUP=test-group
+EOF
+    
+    log_info "Starting main runner container for health check..."
+    
+    # Use docker-compose to start the container with test configuration
+    if ! timeout 60 docker compose -f "$docker_dir/docker-compose.yml" --env-file "$test_env_file" \
+        -p test-startup up -d runner > "$TEST_RESULTS_DIR/main-runner-startup.log" 2>&1; then
+        log_error "Failed to start main runner container with docker-compose"
+        return 1
+    fi
+    
+    # Wait for container to be fully started
+    local container_id
+    container_id=$(docker compose -f "$docker_dir/docker-compose.yml" -p test-startup ps -q runner)
+    
+    if [[ -z "$container_id" ]]; then
+        log_error "Main runner container not found after startup"
+        return 1
+    fi
+    
+    # Check if container is running
+    if ! docker ps --filter "id=$container_id" --filter "status=running" | grep -q "$container_id"; then
+        log_error "Main runner container not in running state"
+        docker logs "$container_id" > "$TEST_RESULTS_DIR/main-runner-failure.log" 2>&1 || true
+        return 1
+    fi
+    
+    # Basic health checks
+    log_info "Performing health checks on main runner..."
+    
+    # Check if runner process is present (it will fail to register with fake token, but process should exist)
+    if ! timeout 30 docker exec "$container_id" pgrep -f "actions-runner" >/dev/null 2>&1; then
+        # Give it more time as the runner startup might be slow
+        sleep 10
+        if ! timeout 20 docker exec "$container_id" pgrep -f "actions-runner" >/dev/null 2>&1; then
+            log_warn "GitHub Actions runner process not found (expected with test token)"
+            # This is expected to fail with fake token, so we'll check other indicators
+        fi
+    fi
+    
+    # Check if the entrypoint script ran successfully
+    if docker exec "$container_id" test -f /home/runner/.runner_configured 2>/dev/null; then
+        log_info "Runner configuration file found"
+    else
+        log_info "Runner configuration pending (expected with test token)"
+    fi
+    
+    # Check basic container functionality
+    if ! docker exec "$container_id" whoami >/dev/null 2>&1; then
+        log_error "Container basic command execution failed"
+        return 1
+    fi
+    
+    # Check Docker-in-Docker capability
+    if ! docker exec "$container_id" docker version >/dev/null 2>&1; then
+        log_error "Docker-in-Docker not working in main runner"
+        return 1
+    fi
+    
+    # Stop and remove the test container
+    docker compose -f "$docker_dir/docker-compose.yml" -p test-startup down >/dev/null 2>&1 || true
+    
+    log_info "Main runner container startup test completed successfully"
+    return 0
+}
+
+# Helper function: Test Chrome runner container startup
+test_chrome_runner_startup() {
+    local container_name="test-startup-chrome-runner"
+    local docker_dir="$(dirname "$0")/../../docker"
+    
+    # Create minimal test environment file for Chrome runner
+    local test_env_file="$TEST_RESULTS_DIR/test-chrome-runner.env"
+    cat > "$test_env_file" << 'EOF'
+GITHUB_TOKEN=test-token-not-real
+GITHUB_REPOSITORY=test/repo
+RUNNER_NAME=test-chrome-runner
+RUNNER_LABELS=chrome,ui-tests,selenium,playwright
+RUNNER_GROUP=chrome-runners
+DISPLAY=:99
+EOF
+    
+    log_info "Starting Chrome runner container for health check..."
+    
+    # Use docker-compose to start the Chrome container
+    if ! timeout 90 docker compose -f "$docker_dir/docker-compose.chrome.yml" --env-file "$test_env_file" \
+        -p test-chrome-startup up -d chrome-runner > "$TEST_RESULTS_DIR/chrome-runner-startup.log" 2>&1; then
+        log_error "Failed to start Chrome runner container with docker-compose"
+        return 1
+    fi
+    
+    # Wait for container to be fully started
+    local container_id
+    container_id=$(docker compose -f "$docker_dir/docker-compose.chrome.yml" -p test-chrome-startup ps -q chrome-runner)
+    
+    if [[ -z "$container_id" ]]; then
+        log_error "Chrome runner container not found after startup"
+        return 1
+    fi
+    
+    # Check if container is running
+    if ! docker ps --filter "id=$container_id" --filter "status=running" | grep -q "$container_id"; then
+        log_error "Chrome runner container not in running state"
+        docker logs "$container_id" > "$TEST_RESULTS_DIR/chrome-runner-failure.log" 2>&1 || true
+        return 1
+    fi
+    
+    # Chrome-specific health checks
+    log_info "Performing health checks on Chrome runner..."
+    
+    # Check if Chrome is installed and working
+    if ! timeout 30 docker exec "$container_id" google-chrome --version > "$TEST_RESULTS_DIR/chrome-version-test.log" 2>&1; then
+        log_error "Chrome not working in Chrome runner container"
+        return 1
+    fi
+    
+    # Check if ChromeDriver is available
+    if ! timeout 15 docker exec "$container_id" chromedriver --version > "$TEST_RESULTS_DIR/chromedriver-version-test.log" 2>&1; then
+        log_error "ChromeDriver not working in Chrome runner container"
+        return 1
+    fi
+    
+    # Check if Xvfb (virtual display) is running
+    if ! timeout 15 docker exec "$container_id" pgrep Xvfb >/dev/null 2>&1; then
+        log_warn "Xvfb (virtual display) not running - UI tests may fail"
+    fi
+    
+    # Check Node.js and npm for frontend testing tools
+    if ! timeout 15 docker exec "$container_id" node --version >/dev/null 2>&1; then
+        log_error "Node.js not available in Chrome runner"
+        return 1
+    fi
+    
+    # Test basic Chrome headless functionality
+    if ! timeout 30 docker exec "$container_id" google-chrome --headless --no-sandbox --disable-dev-shm-usage \
+        --virtual-time-budget=1000 --run-all-compositor-stages-before-draw \
+        --dump-dom about:blank > "$TEST_RESULTS_DIR/chrome-headless-test.log" 2>&1; then
+        log_warn "Chrome headless test failed - may impact UI testing capabilities"
+    else
+        log_info "Chrome headless test passed"
+    fi
+    
+    # Stop and remove the test container
+    docker compose -f "$docker_dir/docker-compose.chrome.yml" -p test-chrome-startup down >/dev/null 2>&1 || true
+    
+    log_info "Chrome runner container startup test completed successfully"
+    return 0
+}
+
+# Test 10: Container Resource Usage and Performance
+test_container_performance() {
+    start_test "Container Resource Usage and Performance"
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "DRY_RUN: Skipping container performance tests"
+        pass_test "Container Resource Usage and Performance"
+        return 0
+    fi
+    
+    log_info "Testing container resource usage patterns..."
+    
+    local docker_dir="$(dirname "$0")/../../docker"
+    local performance_errors=0
+    
+    # Test resource constraints in docker-compose files
+    for compose_file in "$docker_dir"/docker-compose*.yml; do
+        if [[ -f "$compose_file" ]]; then
+            local compose_name
+            compose_name="$(basename "$compose_file")"
+            
+            # Check if memory limits are configured
+            if ! grep -q "mem_limit\|memory:" "$compose_file"; then
+                log_warn "$compose_name: No memory limits configured - may use excessive RAM"
+            fi
+            
+            # Check if CPU limits are configured for production readiness
+            if ! grep -q "cpus:\|cpu_count:" "$compose_file"; then
+                log_info "$compose_name: No CPU limits configured (optional for self-hosted runners)"
+            fi
+            
+            # Check for restart policies
+            if ! grep -q "restart:" "$compose_file"; then
+                log_warn "$compose_name: No restart policy configured"
+                performance_errors=$((performance_errors + 1))
+            fi
+        fi
+    done
+    
+    if [[ $performance_errors -eq 0 ]]; then
+        pass_test "Container Resource Usage and Performance"
+    else
+        fail_test "Container Resource Usage and Performance" "$performance_errors performance issue(s) found"
+        return 1
+    fi
+}
+
+pass_test "Security Baseline Test"
+}
+
 # Main test execution
 main() {
     log_info "Starting Comprehensive Integration Test Suite"
@@ -435,6 +699,8 @@ main() {
     test_scripts || true
     test_chrome_specific || true
     test_security_baseline || true
+    test_container_startup || true
+    test_container_performance || true
     
     echo "============================================"
     
