@@ -91,8 +91,20 @@ jobs:
           file: ./docker/Dockerfile
           push: false
           tags: github-runner:scan
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Verify image exists
+        if: contains(steps.params.outputs.scan_targets, 'container')
+        run: |
+          echo "Checking if image exists..."
+          docker images github-runner:scan
+          if ! docker image inspect github-runner:scan >/dev/null 2>&1; then
+            echo "❌ Image github-runner:scan not found"
+            exit 1
+          fi
+          echo "✅ Image github-runner:scan found"
 
       - name: Run Trivy container scan
         if: contains(steps.params.outputs.scan_targets, 'container')
@@ -102,6 +114,7 @@ jobs:
           format: "sarif"
           output: "trivy-results/container.sarif"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+        continue-on-error: false
 
       - name: Upload container scan to Security tab
         if: contains(steps.params.outputs.scan_targets, 'container')
@@ -129,8 +142,20 @@ jobs:
           file: ./docker/Dockerfile.chrome
           push: false
           tags: github-runner-chrome:scan
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Verify Chrome image exists
+        if: contains(steps.params.outputs.scan_targets, 'chrome')
+        run: |
+          echo "Checking if Chrome image exists..."
+          docker images github-runner-chrome:scan
+          if ! docker image inspect github-runner-chrome:scan >/dev/null 2>&1; then
+            echo "❌ Image github-runner-chrome:scan not found"
+            exit 1
+          fi
+          echo "✅ Image github-runner-chrome:scan found"
 
       - name: Run Trivy Chrome container scan
         if: contains(steps.params.outputs.scan_targets, 'chrome')
@@ -140,6 +165,7 @@ jobs:
           format: "sarif"
           output: "trivy-results/chrome.sarif"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+        continue-on-error: false
 
       - name: Upload Chrome scan to Security tab
         if: contains(steps.params.outputs.scan_targets, 'chrome')
