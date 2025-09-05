@@ -68,13 +68,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set shell options for better error handling
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Install Google Chrome
-RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
-    > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable \
-    && rm -rf /var/lib/apt/lists/*
+# Install Google Chrome (architecture-aware)
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "amd64" ]; then \
+    curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
+    > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && \
+    apt-get install -y google-chrome-stable && \
+    rm -rf /var/lib/apt/lists/*; \
+    else \
+    echo "Google Chrome not available for architecture $ARCH, using Chromium instead" && \
+    apt-get update && \
+    apt-get install -y chromium-browser && \
+    ln -sf /usr/bin/chromium-browser /usr/bin/google-chrome && \
+    rm -rf /var/lib/apt/lists/*; \
+    fi
 
 # Install ChromeDriver using dedicated script
 COPY install-chromedriver.sh /tmp/install-chromedriver.sh

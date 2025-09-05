@@ -44,20 +44,57 @@ extract_packages_from_dockerfile() {
     # Ensure temp file exists even if no packages found
     touch "$temp_file"
     
-    # Extract apt-get install commands and parse package names
+    # Extract apt-get install commands with better multi-line handling
     if grep -q "apt-get install" "$dockerfile"; then
-        grep -A 50 "apt-get install" "$dockerfile" | \
-            grep -v "^#" | \
-            grep -v "apt-get update" | \
-            grep -v "rm -rf" | \
-            sed 's/.*apt-get install[^\\]*\\//' | \
-            sed 's/&&.*//' | \
-            sed 's/\\.*//' | \
-            sed 's/^[[:space:]]*//' | \
-            sed 's/[[:space:]]*$//' | \
-            grep -v "^$" | \
-            grep -v "^--" | \
-            sort | uniq > "$temp_file"
+        # Find RUN commands with apt-get install and extract package names more carefully
+        awk '
+        /^RUN.*apt-get install/ {
+            in_install_block = 1
+            line = $0
+            # Remove RUN and everything up to apt-get install
+            gsub(/^RUN.*apt-get install[^\\]*\\?/, "", line)
+            print line
+            next
+        }
+        in_install_block && /\\$/ {
+            # Continuation line in install block
+            line = $0
+            gsub(/^[[:space:]]*/, "", line)  # Remove leading whitespace
+            gsub(/\\$/, "", line)          # Remove trailing backslash
+            print line
+            next
+        }
+        in_install_block && !/\\$/ {
+            # Last line of install block
+            line = $0
+            gsub(/^[[:space:]]*/, "", line)
+            gsub(/&&.*/, "", line)         # Remove everything after &&
+            print line
+            in_install_block = 0
+            next
+        }
+        ' "$dockerfile" | \
+        # Filter and clean package names
+        grep -v "^#" | \
+        grep -v "rm -rf" | \
+        grep -v "apt-get" | \
+        sed 's/^[[:space:]]*//' | \
+        sed 's/[[:space:]]*$//' | \
+        sed 's/^-.*$//' | \
+        grep -v "^$" | \
+        grep -v "^--" | \
+        grep -v "^&&" | \
+        grep -v ')"' | \
+        grep -v '";' | \
+        grep -v 'case' | \
+        grep -v 'esac' | \
+        grep -v 'RUNNER_ARCH' | \
+        grep -v 'curl' | \
+        grep -v 'wget' | \
+        grep -v 'echo' | \
+        grep -v 'http' | \
+        grep -E '^[a-zA-Z0-9][a-zA-Z0-9\.\-\+]*$' | \
+        sort | uniq > "$temp_file"
     else
         log_warn "No apt-get install commands found in $dockerfile" >&2
     fi
