@@ -157,16 +157,62 @@ test_duplicate_packages() {
         
         # Extract packages and check for duplicates (single-stage builds only)
         local packages_file="$TEST_RESULTS_DIR/packages-$dockerfile_name.txt"
-        grep -A 50 "apt-get install" "$dockerfile" | \
+        
+        # Use improved package extraction logic (same as integration tests)
+        if grep -q "apt-get install" "$dockerfile"; then
+            # Find RUN commands with apt-get install and extract package names more carefully
+            awk '
+            /^RUN.*apt-get install/ {
+                in_install_block = 1
+                line = $0
+                # Remove RUN and everything up to apt-get install
+                gsub(/^RUN.*apt-get install[^\\]*\\?/, "", line)
+                print line
+                next
+            }
+            in_install_block && /\\$/ {
+                # Continuation line in install block
+                line = $0
+                gsub(/^[[:space:]]*/, "", line)  # Remove leading whitespace
+                gsub(/\\$/, "", line)          # Remove trailing backslash
+                print line
+                next
+            }
+            in_install_block && !/\\$/ {
+                # Last line of install block
+                line = $0
+                gsub(/^[[:space:]]*/, "", line)
+                gsub(/&&.*/, "", line)         # Remove everything after &&
+                print line
+                in_install_block = 0
+                next
+            }
+            ' "$dockerfile" | \
+            # Filter and clean package names
             grep -v "^#" | \
-            sed 's/.*apt-get install[^\\]*\\//' | \
-            sed 's/&&.*//' | \
-            sed 's/\\.*//' | \
+            grep -v "rm -rf" | \
+            grep -v "apt-get" | \
             sed 's/^[[:space:]]*//' | \
             sed 's/[[:space:]]*$//' | \
+            sed 's/^-.*$//' | \
             grep -v "^$" | \
             grep -v "^--" | \
+            grep -v "^&&" | \
+            grep -v ')"' | \
+            grep -v '";' | \
+            grep -v 'case' | \
+            grep -v 'esac' | \
+            grep -v 'RUNNER_ARCH' | \
+            grep -v 'curl' | \
+            grep -v 'wget' | \
+            grep -v 'echo' | \
+            grep -v 'http' | \
+            grep -E '^[a-zA-Z0-9][a-zA-Z0-9\.\-\+]*$' | \
             sort > "$packages_file"
+        else
+            # No apt-get install commands found
+            touch "$packages_file"
+        fi
         
         # Find duplicates
         local duplicates
