@@ -665,16 +665,33 @@ jobs:
 
       - name: Load Docker images
         run: |
-          # Load the built Docker images
+          # Load the built Docker images and retag them for testing
           if [[ "${{ matrix.container-type }}" == "main-runner" ]]; then
+            echo "Loading main runner image..."
             docker load < /tmp/github-runner-latest.tar
-            echo "Loaded main runner image"
+            
+            # Get the loaded image tag and retag it for testing
+            LOADED_TAG=$(docker images --format "table {{.Repository}}:{{.Tag}}" | grep "ghcr.io.*github-runner" | grep -v "chrome" | head -1)
+            echo "Loaded image tag: $LOADED_TAG"
+            
+            # Retag for easier testing
+            docker tag "$LOADED_TAG" github-runner:latest
+            echo "Retagged as github-runner:latest"
           else
+            echo "Loading Chrome runner image..."
             docker load < /tmp/github-runner-chrome-latest.tar
-            echo "Loaded Chrome runner image"
+            
+            # Get the loaded Chrome image tag and retag it for testing
+            LOADED_TAG=$(docker images --format "table {{.Repository}}:{{.Tag}}" | grep "ghcr.io.*github-runner.*chrome" | head -1)
+            echo "Loaded Chrome image tag: $LOADED_TAG"
+            
+            # Retag for easier testing
+            docker tag "$LOADED_TAG" github-runner:chrome-latest
+            echo "Retagged as github-runner:chrome-latest"
           fi
 
-          # Verify images are loaded
+          # Verify images are loaded and tagged
+          echo "Available Docker images:"
           docker images | grep github-runner
 
       - name: Set up container test environment
