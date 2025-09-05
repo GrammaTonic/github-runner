@@ -77,6 +77,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     psmisc \
     && rm -rf /var/lib/apt/lists/*
 
+# Set shell with pipefail for safer pipe operations
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Install Node.js from NodeSource repository (replaces obsolete nodejs package)
 RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
     && apt-get install -y nodejs \
