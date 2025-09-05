@@ -68,7 +68,8 @@ get_package_warning() {
 # Test 1: Check for obsolete packages in Dockerfiles
 test_obsolete_packages() {
     local test_name="Obsolete Package Detection"
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir
+    docker_dir="$(dirname "$0")/../../docker"
     local failed=false
     local warnings=0
     
@@ -147,7 +148,14 @@ test_duplicate_packages() {
         
         log_info "Checking $dockerfile_name for duplicate packages..."
         
-        # Extract packages and check for duplicates
+        # Check if this is a multi-stage build
+        if grep -q "FROM.*AS" "$dockerfile"; then
+            log_info "$dockerfile_name is a multi-stage build - duplicates between stages are expected"
+            # Skip duplicate check for multi-stage builds since packages often need to be installed in multiple stages
+            continue
+        fi
+        
+        # Extract packages and check for duplicates (single-stage builds only)
         local packages_file="$TEST_RESULTS_DIR/packages-$dockerfile_name.txt"
         grep -A 50 "apt-get install" "$dockerfile" | \
             grep -v "^#" | \

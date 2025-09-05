@@ -36,23 +36,31 @@ log_error() {
 # Function to extract packages from a Dockerfile
 extract_packages_from_dockerfile() {
     local dockerfile="$1"
-    local temp_file="$TEST_RESULTS_DIR/packages_$(basename "$dockerfile").txt"
+    local temp_file
+    temp_file="$TEST_RESULTS_DIR/packages_$(basename "$dockerfile").txt"
     
-    log_info "Extracting packages from $dockerfile..."
+    log_info "Extracting packages from $dockerfile..." >&2
+    
+    # Ensure temp file exists even if no packages found
+    touch "$temp_file"
     
     # Extract apt-get install commands and parse package names
-    grep -A 50 "apt-get install" "$dockerfile" | \
-        grep -v "^#" | \
-        grep -v "apt-get update" | \
-        grep -v "rm -rf" | \
-        sed 's/.*apt-get install[^\\]*\\//' | \
-        sed 's/&&.*//' | \
-        sed 's/\\.*//' | \
-        sed 's/^[[:space:]]*//' | \
-        sed 's/[[:space:]]*$//' | \
-        grep -v "^$" | \
-        grep -v "^--" | \
-        sort | uniq > "$temp_file"
+    if grep -q "apt-get install" "$dockerfile"; then
+        grep -A 50 "apt-get install" "$dockerfile" | \
+            grep -v "^#" | \
+            grep -v "apt-get update" | \
+            grep -v "rm -rf" | \
+            sed 's/.*apt-get install[^\\]*\\//' | \
+            sed 's/&&.*//' | \
+            sed 's/\\.*//' | \
+            sed 's/^[[:space:]]*//' | \
+            sed 's/[[:space:]]*$//' | \
+            grep -v "^$" | \
+            grep -v "^--" | \
+            sort | uniq > "$temp_file"
+    else
+        log_warn "No apt-get install commands found in $dockerfile" >&2
+    fi
     
     echo "$temp_file"
 }
@@ -61,9 +69,6 @@ extract_packages_from_dockerfile() {
 validate_packages() {
     local package_file="$1"
     local dockerfile_name="$2"
-    local failed_packages=()
-    local obsolete_packages=()
-    local total_packages=0
     
     log_info "Validating packages for $dockerfile_name against Ubuntu $UBUNTU_VERSION..."
     
@@ -227,8 +232,15 @@ main() {
         local package_file
         package_file="$(extract_packages_from_dockerfile "$dockerfile")"
         
+        if [[ ! -f "$package_file" ]]; then
+            log_error "Failed to create package file: $package_file"
+            total_failures=$((total_failures + 1))
+            exit_code=1
+            continue
+        fi
+        
         local package_count
-        package_count="$(wc -l < "$package_file")"
+        package_count="$(wc -l < "$package_file" 2>/dev/null || echo 0)"
         log_info "Found $package_count packages in $dockerfile_name"
         
         # Validate packages

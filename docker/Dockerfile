@@ -11,11 +11,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
-    unzip \
     tar \
-    build-essential \
-    git \
-    jq \
     && rm -rf /var/lib/apt/lists/*
 
 # Download and prepare GitHub Actions runner
@@ -64,9 +60,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git-lfs \
     # Build tools
     build-essential \
-    # Node.js ecosystem
-    nodejs \
-    npm \
     # Python ecosystem
     python3 \
     python3-pip \
@@ -82,6 +75,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Process tools
     htop \
     psmisc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js from NodeSource repository (replaces obsolete nodejs package)
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Install additional tools via pip

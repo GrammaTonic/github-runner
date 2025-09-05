@@ -676,9 +676,6 @@ test_container_performance() {
     fi
 }
 
-pass_test "Security Baseline Test"
-}
-
 # Main test execution
 main() {
     log_info "Starting Comprehensive Integration Test Suite"

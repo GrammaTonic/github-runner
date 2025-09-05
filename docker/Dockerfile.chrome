@@ -21,7 +21,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     gnupg \
     lsb-release \
-    software-properties-common \
     sudo \
     # Build tools
     build-essential \
@@ -59,8 +58,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xvfb \
     # Process management
     procps \
-    # Docker CLI (for Docker-in-Docker if needed)
-    apt-transport-https \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install software-properties-common separately (renamed package handling)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-software-properties \
     && rm -rf /var/lib/apt/lists/*
 
 # Set shell options for better error handling
