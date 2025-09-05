@@ -106,7 +106,10 @@ RUN npm install -g \
     eslint \
     prettier \
     && echo "Applying security fix for flat package vulnerability (VDB-216777)..." \
-    && npm install -g flat@5.0.2 --force 2>/dev/null || true
+    && npm install -g flat@5.0.2 --force 2>/dev/null || true \
+    && echo "Cleaning npm cache and temporary files..." \
+    && npm cache clean --force \
+    && rm -rf /tmp/* /var/tmp/* /root/.npm
 
 # Copy runner from builder stage and set up directories
 COPY --from=builder /actions-runner /home/runner/actions-runner
@@ -120,6 +123,17 @@ RUN chown -R runner:runner /home/runner \
 # Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Final cleanup to minimize image size
+RUN echo "Final cleanup to minimize image size..." \
+    && apt-get autoremove -y \
+    && apt-get autoclean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/* /var/tmp/* \
+    && rm -rf /var/log/* \
+    && rm -rf /root/.cache \
+    && find /usr/share/doc -type f -delete 2>/dev/null || true \
+    && find /usr/share/man -type f -delete 2>/dev/null || true
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
