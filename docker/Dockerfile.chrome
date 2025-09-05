@@ -6,7 +6,7 @@ FROM ubuntu:24.04
 # Metadata
 LABEL maintainer="GrammaTonic"
 LABEL description="GitHub Actions Self-Hosted Runner optimized for Chrome and web UI testing"
-LABEL version="1.0.1"
+LABEL version="1.0.2"
 
 # Avoid prompts from apt
 ENV DEBIAN_FRONTEND=noninteractive
@@ -76,11 +76,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
-# Install common testing frameworks
+# Install common testing frameworks with version pinning for security
+# Cypress 13.15.0+ includes fix for CVE-2020-36632 (flat package vulnerability)
 RUN npm install -g \
-    playwright \
-    cypress \
-    @playwright/test \
+    playwright@1.47.0 \
+    cypress@13.15.0 \
+    @playwright/test@1.47.0 \
     && npx playwright install chromium
 
 # Install Python testing packages
