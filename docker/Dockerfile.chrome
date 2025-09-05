@@ -77,18 +77,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install common testing frameworks with comprehensive security fixes
-# Strategy: Use latest versions + npm security audit fixes
+# Strategy: Use latest versions + manual security package updates
 # CVE-2025-9288: sha.js vulnerability - fixed in Cypress 15.1.0+
 # CVE-2020-36632: flat package vulnerability - manual override after install
+# CVE-2024-37890: ws (WebSocket) DoS vulnerability - force update to secure version
 RUN npm install -g \
     playwright@1.55.0 \
     cypress@15.1.0 \
     @playwright/test@1.55.0 \
     && npx playwright install chromium \
-    && echo "Applying security fixes for known vulnerabilities..." \
+    && echo "Applying comprehensive security fixes for known vulnerabilities..." \
     && npm install -g npm@latest \
     && npm install -g flat@5.0.2 --force 2>/dev/null || true \
-    && npm install -g sha.js@2.4.12 --force 2>/dev/null || true
+    && npm install -g sha.js@2.4.12 --force 2>/dev/null || true \
+    && npm install -g ws@8.17.1 --force 2>/dev/null || true
 
 # Install Python testing packages
 RUN pip3 install --no-cache-dir --break-system-packages \
