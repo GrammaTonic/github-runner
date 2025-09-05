@@ -116,7 +116,7 @@ RUN chown -R runner:runner /home/runner \
     && usermod -aG docker runner
 
 # Copy entrypoint script
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Health check

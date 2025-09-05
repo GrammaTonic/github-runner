@@ -123,7 +123,7 @@ ENV CHROME_BIN=/usr/bin/google-chrome-stable
 ENV DISPLAY=:99
 
 # Copy entrypoint script
-COPY docker/entrypoint-chrome.sh /entrypoint.sh
+COPY entrypoint-chrome.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Set up working directory and user
