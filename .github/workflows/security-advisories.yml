@@ -87,7 +87,7 @@ jobs:
         if: contains(steps.params.outputs.scan_targets, 'container')
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./docker
           file: ./docker/Dockerfile
           push: false
           tags: github-runner:scan
@@ -138,7 +138,7 @@ jobs:
         if: contains(steps.params.outputs.scan_targets, 'chrome')
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./docker
           file: ./docker/Dockerfile.chrome
           push: false
           tags: github-runner-chrome:scan
