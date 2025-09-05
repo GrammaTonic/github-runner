@@ -104,7 +104,9 @@ RUN npm install -g \
     @actions/github \
     typescript \
     eslint \
-    prettier
+    prettier \
+    && echo "Applying security fix for flat package vulnerability (VDB-216777)..." \
+    && npm install -g flat@5.0.2 --force 2>/dev/null || true
 
 # Copy runner from builder stage and set up directories
 COPY --from=builder /actions-runner /home/runner/actions-runner
