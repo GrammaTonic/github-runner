@@ -67,7 +67,8 @@ RUN chmod +x /tmp/install-chromedriver.sh \
 
 # Install Node.js (for npm-based testing tools)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Python (for Selenium testing)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -90,7 +91,10 @@ RUN npm install -g \
     && npm install -g npm@latest \
     && npm install -g flat@5.0.2 --force 2>/dev/null || true \
     && npm install -g sha.js@2.4.12 --force 2>/dev/null || true \
-    && npm install -g ws@8.17.1 --force 2>/dev/null || true
+    && npm install -g ws@8.17.1 --force 2>/dev/null || true \
+    && echo "Cleaning npm cache and temporary files..." \
+    && npm cache clean --force \
+    && rm -rf /tmp/* /var/tmp/* /root/.npm /home/*/.npm 2>/dev/null || true
 
 # Install Python testing packages
 RUN pip3 install --no-cache-dir --break-system-packages \
@@ -103,6 +107,17 @@ RUN pip3 install --no-cache-dir --break-system-packages \
 RUN useradd -m -s /bin/bash runner \
     && usermod -aG sudo runner \
     && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Final cleanup to minimize image size (before switching to runner user)
+RUN echo "Final cleanup to minimize image size..." \
+    && apt-get autoremove -y \
+    && apt-get autoclean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/* /var/tmp/* \
+    && rm -rf /var/log/* \
+    && rm -rf /root/.cache \
+    && find /usr/share/doc -type f -delete 2>/dev/null || true \
+    && find /usr/share/man -type f -delete 2>/dev/null || true
 
 # Download and install GitHub Actions runner
 ARG RUNNER_VERSION="2.328.0"

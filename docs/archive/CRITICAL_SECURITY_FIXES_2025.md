@@ -15,14 +15,15 @@ This document details the resolution of three critical/high security vulnerabili
 - **Description**: Improper Input Validation vulnerability allows Input Data Manipulation
 - **Impact**: Hash rewind and passing on crafted data
 
-### 2. CVE-2020-36632 - flat Prototype Pollution Vulnerability
+### 2. CVE-2020-36632 / VDB-216777 - flat Prototype Pollution Vulnerability
 
 - **Package**: `flat`
 - **Vulnerable Version**: 4.1.1 (bundled with Cypress 15.1.0)
-- **Fixed Version**: 5.0.1+
+- **Fixed Version**: 5.0.1+ (applied 5.0.2)
 - **Severity**: CRITICAL
 - **Description**: Prototype pollution in unflatten function
 - **Impact**: Object prototype manipulation leading to security bypass
+- **Patch**: 20ef0ef55dfa028caddaedbcb33efbdb04d18e13
 
 ### 3. CVE-2024-37890 - ws WebSocket DoS Vulnerability
 

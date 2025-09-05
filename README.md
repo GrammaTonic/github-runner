@@ -4,20 +4,54 @@
 [![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2Fgrammatonic%2Fgithub--runner-blue)](https://ghcr.io/grammatonic/github-runner)
 [![CI/CD Pipeline](https://github.com/GrammaTonic/github-runner/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/GrammaTonic/github-runner/actions/workflows/ci-cd.yml)
 [![Chrome Runner](https://img.shields.io/badge/Chrome%20Runner-Production%20Ready-success?style=flat-square&logo=google-chrome)](https://github.com/GrammaTonic/github-runner/wiki/Chrome-Runner)
+[![Security](https://img.shields.io/badge/Security-Trivy%20Scanned-success?style=flat-square&logo=security)](https://github.com/GrammaTonic/github-runner/actions/workflows/security-advisories.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A comprehensive, production-ready GitHub Actions self-hosted runner solution with monitoring, scaling, and security features.
 
+## 📊 Current Versions
+
+| Component                 | Standard Runner  | Chrome Runner    | Status            |
+| ------------------------- | ---------------- | ---------------- | ----------------- |
+| **Image Version**         | v1.0.1           | v1.0.4           | ✅ Latest         |
+| **GitHub Actions Runner** | v2.328.0         | v2.328.0         | ✅ Latest         |
+| **Base OS**               | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS | ✅ Supported      |
+| **Node.js**               | 20.x             | 20.x             | ✅ Latest LTS     |
+| **Python**                | 3.10+            | 3.10+            | ✅ Latest         |
+| **Playwright**            | -                | v1.55.0          | ✅ Latest         |
+| **Cypress**               | -                | v15.1.0          | ✅ Security Fixed |
+| **Chrome**                | -                | Stable           | ✅ Latest         |
+
+> 📋 For detailed version information, see [Version Overview](docs/VERSION_OVERVIEW.md)
+
+## 🔒 Security Status
+
+- ✅ **VDB-216777/CVE-2020-36632**: Flat package vulnerability patched (`flat@5.0.2`)
+- ✅ **CVE-2025-9288**: Cypress SHA.js vulnerability patched (`sha.js@2.4.12`)
+- ✅ **CVE-2024-37890**: WebSocket DoS vulnerability patched (`ws@8.17.1`)
+- ✅ **Trivy Security Scanning**: Automated weekly vulnerability scans
+- ✅ **Container Hardening**: Non-root execution, minimal attack surface
+
 ## 🚀 Features
 
-- **Containerized Runners**: Docker-based runners with multi-platform support
+- **Containerized Runners**: Docker-based runners with multi-platform support (amd64/arm64)
 - **Chrome Runner**: Specialized environment for web UI testing and browser automation
-- **Auto-scaling**: Dynamic scaling based on workload demands
-- **Monitoring**: Prometheus metrics and Grafana dashboards
-- **Security**: Vulnerability scanning, secret management, and security policies
-- **CI/CD Integration**: Automated building, testing, and deployment
-- **High Availability**: Health checks, automatic restarts, and failover
+- **Auto-scaling**: Dynamic scaling based on workload demands using Docker Compose
+- **Monitoring**: Prometheus metrics and Grafana dashboards for performance tracking
+- **Security**: Comprehensive vulnerability scanning, security patches, and container hardening
+- **CI/CD Integration**: Automated building, testing, and deployment with GitHub Actions
+- **High Availability**: Health checks, automatic restarts, and failover mechanisms
 - **Multi-Environment**: Support for dev, staging, and production environments
+- **Cache Optimization**: Persistent volume caching for build artifacts and dependencies
+- **Security Scanning**: Weekly Trivy scans with automated SARIF reporting
+
+### 🆕 Recent Improvements (January 2025)
+
+- ✅ Applied critical security patches for prototype pollution and DoS vulnerabilities
+- ✅ Optimized Docker image sizes with comprehensive cache cleaning
+- ✅ Enhanced Chrome Runner with latest Playwright (1.55.0) and Cypress (15.1.0)
+- ✅ Standardized Docker build contexts for consistent CI/CD pipeline execution
+- ✅ Implemented automated security advisory workflow with Trivy scanning
 
 ## 📦 Installation
 
@@ -48,11 +82,15 @@ cd github-runner-1.0.1
 Pre-built Docker images are available for each release:
 
 ```bash
-# Latest release (recommended)
+# Standard Runner (latest)
 docker pull ghcr.io/grammatonic/github-runner:v1.0.1
 
-# Specific version
-docker pull ghcr.io/grammatonic/github-runner:v1.0.0
+# Chrome Runner (latest)
+docker pull ghcr.io/grammatonic/github-runner-chrome:v1.0.4
+
+# Development versions
+docker pull ghcr.io/grammatonic/github-runner:develop
+docker pull ghcr.io/grammatonic/github-runner-chrome:develop
 
 # Semantic versioning
 docker pull ghcr.io/grammatonic/github-runner:1.0.1
@@ -340,6 +378,7 @@ This project includes comprehensive security scanning and monitoring:
 ## 🆘 Support
 
 - 📖 [Documentation](docs/)
+- 📊 [Version Overview](docs/VERSION_OVERVIEW.md) - Comprehensive version tracking and security status
 - ⚙️ [GitHub Actions Workflows](.github/WORKFLOWS.md)
 - 🐛 [Issue Tracker](https://github.com/GrammaTonic/github-runner/issues)
 - 💬 [Discussions](https://github.com/GrammaTonic/github-runner/discussions)

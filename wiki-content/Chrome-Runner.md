@@ -95,17 +95,26 @@ jobs:
 
 #### **Testing Frameworks**
 
-- ✅ **Playwright** - Microsoft's modern browser automation
-- ✅ **Cypress** - JavaScript end-to-end testing framework
-- ✅ **Selenium** - Industry standard web automation
-- ✅ **Node.js 20** - For npm-based testing tools
+- ✅ **Playwright v1.55.0** - Microsoft's modern browser automation (latest stable)
+- ✅ **Cypress v15.1.0** - JavaScript end-to-end testing (security patched)
+- ✅ **Selenium** - Industry standard web automation with webdriver-manager
+- ✅ **Node.js 20** - For npm-based testing tools (LTS version)
 - ✅ **Python 3** - For Python-based testing frameworks
+
+#### **Security Patches Applied** 🔒
+
+- ✅ **VDB-216777/CVE-2020-36632**: flat@5.0.2 (prototype pollution fix)
+- ✅ **CVE-2025-9288**: sha.js@2.4.12 (Cypress dependency security fix)
+- ✅ **CVE-2024-37890**: ws@8.17.1 (WebSocket DoS vulnerability fix)
+- ✅ **Container Security**: Weekly Trivy scans with automated SARIF reporting
 
 #### **GitHub Actions Runner**
 
-- ✅ **Version**: 2.328.0 (Latest)
+- ✅ **Version**: 2.328.0 (Latest stable)
+- ✅ **Image Version**: v1.0.4 (Chrome Runner)
 - ✅ **Multi-architecture**: AMD64 and ARM64
 - ✅ **Auto-registration**: Automatic GitHub registration and cleanup
+- ✅ **Security**: Container hardening with non-root execution
 
 ### **Resource Configuration**
 
