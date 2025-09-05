@@ -2,7 +2,7 @@
 # Multi-stage build for optimized final image
 
 # Build stage - Install dependencies and build tools
-FROM ubuntu:22.04 AS builder
+FROM ubuntu:24.04 AS builder
 
 # Avoid prompts from apt
 ENV DEBIAN_FRONTEND=noninteractive
@@ -35,13 +35,13 @@ RUN case "${TARGETPLATFORM}" in \
     && tar xzf "actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
     && rm "actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz"
 
-# Production stage - Minimal runtime image
-FROM ubuntu:22.04
+# Production stage - Minimal runtime image  
+FROM ubuntu:24.04
 
 # Metadata
 LABEL maintainer="GrammaTonic"
 LABEL description="GitHub Actions Self-Hosted Runner with Docker support"
-LABEL version="1.0.0"
+LABEL version="1.0.1"
 
 # Avoid prompts from apt
 ENV DEBIAN_FRONTEND=noninteractive
@@ -90,7 +90,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # for specific cloud providers or using multi-stage builds to reduce the final image size.
 # For minimal installations, remove unused cloud CLIs.
 # hadolint ignore=DL3013
-RUN python3 -m pip install --no-cache-dir \
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
     pyyaml \
     requests \
     boto3 \

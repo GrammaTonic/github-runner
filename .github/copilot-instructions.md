@@ -4,6 +4,31 @@
 
 This repository is for setting up and managing GitHub Actions self-hosted runners using Docker containers for a single repository. The project focuses on automating containerized runner deployment, configuration, and lifecycle management with Docker and Docker Compose.
 
+## 🚨 CRITICAL FILE ORGANIZATION RULES
+
+### Documentation Structure - NEVER CREATE .MD FILES IN ROOT
+
+- **ALL documentation MUST go in `/docs/` subdirectories** - NEVER create .md files in root directory
+- **Community files location**: `/docs/community/` (CODE_OF_CONDUCT.md, CONTRIBUTING.md)
+- **Security policy location**: `/.github/SECURITY.md` (for GitHub recognition)
+- **Feature documentation**: `/docs/features/` (feature specs, implementation docs)
+- **Release notes**: `/docs/releases/` (changelogs, release documentation)
+- **Archive old files**: `/docs/archive/` (deprecated or backup files)
+- **GitHub templates ONLY**: `.github/` directory (pull_request_template.md, issue templates)
+
+### Root Directory Rules - KEEP CLEAN
+
+- **Only essential files allowed in root**: README.md, LICENSE, package files, configuration files
+- **No documentation in root**: Always use `/docs/` subdirectories with proper categorization
+- **No feature specs in root**: Use `/docs/features/` directory
+- **No community files in root**: Use `/docs/community/` directory
+
+### Validation
+
+- Run `scripts/check-docs-structure.sh` to validate file organization
+- Use `--fix` flag to automatically organize misplaced files
+- This script should be run before any commits to ensure compliance
+
 ## Architecture & Key Components
 
 ### Core Components (to be implemented)
