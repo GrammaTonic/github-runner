@@ -22,7 +22,6 @@ jobs:
       fail-fast: false
       matrix:
         language: ["javascript"]
-        # Learn more about CodeQL language support at https://git.io/codeql-language-support
 
     steps:
       - name: Checkout repository
@@ -32,12 +31,10 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          # Add custom queries if needed
-          # queries: security-extended,security-and-quality
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
-        # For JavaScript/TypeScript, autobuild will run npm/yarn if package.json is found
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3

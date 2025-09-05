@@ -1,0 +1,30 @@
+# CodeQL configuration for github-runner repository
+# This configuration enables code scanning for security vulnerabilities
+
+name: "Default"
+
+# Disable the default setup to use our custom workflow
+disable-default-setup: true
+
+# Language-specific settings
+languages:
+  - javascript
+
+# Path filters
+paths:
+  - "docker/**"
+  - "scripts/**"
+  - ".github/workflows/**"
+
+# Ignore paths that don't need scanning
+paths-ignore:
+  - "docs/**"
+  - "wiki-content/**"
+  - "wiki-repo/**"
+  - "emergency-backups/**"
+  - "cache/**"
+  - "logs/**"
+
+# Query suites to run
+queries:
+  - uses: security-and-quality
