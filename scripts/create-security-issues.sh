@@ -267,7 +267,7 @@ main() {
         log_info "DEBUG: About to process filesystem scan"
         process_trivy_json "$TRIVY_RESULTS_DIR/trivy-results.json" "Filesystem scan"
         log_info "DEBUG: Finished processing filesystem scan"
-        ((processed_files++))
+        processed_files=$((processed_files + 1))
     fi
     
     log_info "DEBUG: Checking for container scan results"
@@ -277,7 +277,7 @@ main() {
         log_info "DEBUG: About to process container scan"
         process_trivy_json "$TRIVY_RESULTS_DIR/trivy-container-results.json" "Standard Runner Container"
         log_info "DEBUG: Finished processing container scan"
-        ((processed_files++))
+        processed_files=$((processed_files + 1))
     fi
     
     log_info "DEBUG: Checking for Chrome container scan results"
@@ -287,7 +287,7 @@ main() {
         log_info "DEBUG: About to process Chrome container scan"
         process_trivy_json "$TRIVY_RESULTS_DIR/trivy-chrome-results.json" "Chrome Runner Container"
         log_info "DEBUG: Finished processing Chrome container scan"
-        ((processed_files++))
+        processed_files=$((processed_files + 1))
     fi
     
     # Check for any JSON files in the directory
