@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg \
     lsb-release \
     software-properties-common \
+    sudo \
     # Build tools
     build-essential \
     git \
