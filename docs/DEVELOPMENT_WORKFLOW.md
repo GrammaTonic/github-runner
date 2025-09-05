@@ -7,13 +7,15 @@ This document outlines the branch strategy and development workflow for the GitH
 ### Primary Branches
 
 #### `main` Branch
+
 - **Purpose**: Production-ready code only
 - **Protection**: Fully protected with branch protection rules
 - **Access**: No direct pushes allowed - only through approved PRs from `develop`
 - **Deployment**: Automatically deploys to production environments
 - **Stability**: Should always be stable and deployable
 
-#### `develop` Branch  
+#### `develop` Branch
+
 - **Purpose**: Active development branch where all work happens
 - **Access**: All feature branches, hotfixes, and improvements merge here first
 - **Testing**: CI/CD runs full test suite on all commits
@@ -23,6 +25,7 @@ This document outlines the branch strategy and development workflow for the GitH
 ### Supporting Branches
 
 #### Feature Branches
+
 - **Naming**: `feature/feature-name` or `feature/issue-number-description`
 - **Source**: Created from `develop`
 - **Target**: Merged back to `develop` via PR
@@ -30,6 +33,7 @@ This document outlines the branch strategy and development workflow for the GitH
 - **Purpose**: Develop new features, enhancements, or improvements
 
 #### Hotfix Branches
+
 - **Naming**: `hotfix/issue-description` or `hotfix/issue-number`
 - **Source**: Created from `develop` (not `main`)
 - **Target**: Merged to `develop` via PR, then `develop` → `main` for urgent release
@@ -85,6 +89,7 @@ git push origin feature/your-feature-name
 ## 🛡️ Branch Protection Rules
 
 ### Main Branch Protection
+
 - ✅ Require pull request reviews (1 approval minimum)
 - ✅ Dismiss stale reviews when new commits are pushed
 - ✅ Enforce for administrators
@@ -93,6 +98,7 @@ git push origin feature/your-feature-name
 - ✅ No direct pushes allowed
 
 ### Develop Branch (Recommended)
+
 - ✅ Require pull request reviews
 - ✅ Require status checks to pass
 - ✅ Allow force pushes with lease (for maintainers)
@@ -184,6 +190,7 @@ git push origin v1.2.0
 ## 🔍 Monitoring and Maintenance
 
 ### Branch Health
+
 - Monitor `develop` branch for:
   - CI/CD pipeline success
   - Code quality metrics
@@ -191,6 +198,7 @@ git push origin v1.2.0
   - Test coverage
 
 ### Release Readiness
+
 - `develop` should always be in a releasable state
 - Regular cleanup of stale branches
 - Periodic security updates and dependency management
@@ -198,6 +206,7 @@ git push origin v1.2.0
 ## 📞 Support
 
 For questions about the development workflow:
+
 - Check the [Contributing Guide](../community/CONTRIBUTING.md)
 - Open a [Discussion](https://github.com/GrammaTonic/github-runner/discussions)
 - Contact maintainers through GitHub issues
