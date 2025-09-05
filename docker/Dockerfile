@@ -90,7 +90,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # for specific cloud providers or using multi-stage builds to reduce the final image size.
 # For minimal installations, remove unused cloud CLIs.
 # hadolint ignore=DL3013
-RUN python3 -m pip install --no-cache-dir \
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
     pyyaml \
     requests \
     boto3 \
