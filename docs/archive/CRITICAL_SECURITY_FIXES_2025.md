@@ -1,8 +1,8 @@
-# Critical Security Fixes: CVE-2025-9288 + CVE-2020-36632
+# Critical Security Fixes: CVE-2025-9288 + CVE-2020-36632 + CVE-2024-37890
 
 ## Overview
 
-This document details the resolution of two critical security vulnerabilities in the Chrome runner Docker image testing framework dependencies.
+This document details the resolution of three critical/high security vulnerabilities in the Chrome runner Docker image testing framework dependencies.
 
 ## Security Issues Addressed
 
@@ -24,20 +24,31 @@ This document details the resolution of two critical security vulnerabilities in
 - **Description**: Prototype pollution in unflatten function
 - **Impact**: Object prototype manipulation leading to security bypass
 
+### 3. CVE-2024-37890 - ws WebSocket DoS Vulnerability
+
+- **Package**: `ws` (WebSocket library)
+- **Vulnerable Version**: 8.11.0 (bundled with Cypress)
+- **Fixed Version**: 8.17.1+
+- **Severity**: HIGH
+- **Description**: Denial of Service when handling requests with many HTTP headers
+- **Impact**: Server crash via excessive headers, potential DoS attacks
+
 ## Solution Strategy
 
 ### Multi-Layered Security Approach
 
-Since both vulnerabilities exist in different Cypress versions:
+Since multiple vulnerabilities exist in different Cypress versions and dependencies:
 
 - CVE-2025-9288 exists in Cypress 14.5.4 (sha.js 2.4.11)
 - CVE-2020-36632 exists in Cypress 15.1.0 (flat 4.1.1)
+- CVE-2024-37890 exists in bundled ws 8.11.0 (WebSocket library)
 
 We implemented a comprehensive fix:
 
 1. **Use Latest Cypress**: Install Cypress 15.1.0 to get sha.js security fixes
-2. **Manual Dependency Updates**: Force install secure versions of vulnerable packages
+2. **Manual Dependency Updates**: Force install secure versions of all vulnerable packages
 3. **Layered Protection**: Multiple security update strategies for maximum coverage
+4. **WebSocket Security**: Update ws library to prevent DoS attacks
 
 ## Implementation Details
 
@@ -70,6 +81,7 @@ RUN npm install -g \
 3. **Force-installed Security Packages**:
    - `flat@5.0.2` (fixes CVE-2020-36632)
    - `sha.js@2.4.12` (fixes CVE-2025-9288)
+   - `ws@8.17.1` (fixes CVE-2024-37890)
 4. **Docker Image Version**: 1.0.3 → 1.0.4
 
 ## Verification Steps
