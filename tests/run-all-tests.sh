@@ -108,6 +108,7 @@ run_integration_tests() {
     
     local integration_script="$(dirname "$0")/integration/comprehensive-tests.sh"
     local integration_results="$TEST_RESULTS_DIR/integration"
+    mkdir -p "$integration_results"
     
     if [[ ! -f "$integration_script" ]]; then
         fail_suite "Integration Tests" "Integration test script not found"
@@ -146,6 +147,7 @@ run_docker_package_validation() {
     
     local package_script="$(dirname "$0")/docker/validate-packages.sh"
     local package_results="$TEST_RESULTS_DIR/docker"
+    mkdir -p "$package_results"
     
     if [[ ! -f "$package_script" ]]; then
         fail_suite "Docker Package Validation" "Package validation script not found"
