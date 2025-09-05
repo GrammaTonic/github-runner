@@ -208,6 +208,21 @@ jobs:
           echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
           echo "Primary tag for security scan: $PRIMARY_TAG"
 
+      - name: Save Docker image as artifact
+        run: |
+          # Save the primary image as tar for container startup tests
+          PRIMARY_TAG="${{ steps.get-primary-tag.outputs.primary-tag }}"
+          echo "Saving Docker image: $PRIMARY_TAG"
+          docker save "$PRIMARY_TAG" -o github-runner-latest.tar
+          ls -la github-runner-latest.tar
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-primary
+          path: github-runner-latest.tar
+          retention-days: 1
+
   build-chrome:
     name: Build Chrome Runner Image
     runs-on: ubuntu-latest
@@ -272,6 +287,21 @@ jobs:
           PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
           echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
           echo "Primary Chrome tag for security scan: $PRIMARY_TAG"
+
+      - name: Save Chrome Docker image as artifact
+        run: |
+          # Save the Chrome image as tar for container startup tests
+          PRIMARY_TAG="${{ steps.get-primary-tag-chrome.outputs.primary-tag }}"
+          echo "Saving Chrome Docker image: $PRIMARY_TAG"
+          docker save "$PRIMARY_TAG" -o github-runner-chrome-latest.tar
+          ls -la github-runner-chrome-latest.tar
+
+      - name: Upload Chrome Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-chrome
+          path: github-runner-chrome-latest.tar
+          retention-days: 1
 
   # Comprehensive Testing Suite
   test-package-validation:
