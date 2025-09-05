@@ -1,0 +1,81 @@
+name: Question or Support
+description: Ask a question or get help with setup and usage
+title: "[Question]: "
+labels: ["question", "needs-triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reaching out! Please provide details about your question or what you need help with.
+
+  - type: dropdown
+    id: question-category
+    attributes:
+      label: Question Category
+      description: What category does your question fall into?
+      options:
+        - Installation and Setup
+        - Docker Configuration
+        - Chrome Runner Usage
+        - CI/CD Integration
+        - Performance and Scaling
+        - Troubleshooting
+        - Best Practices
+        - Security
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What do you need help with?
+      placeholder: Please describe your question or what you're trying to achieve...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and Background
+      description: Provide context about your setup and what you've tried
+      placeholder: |
+        - What are you trying to accomplish?
+        - What setup are you using?
+        - What have you already tried?
+        - Any relevant configuration details?
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Details
+      description: Describe your environment (optional but helpful)
+      placeholder: |
+        - Operating System:
+        - Docker version:
+        - Runner type:
+        - Repository type:
+      render: markdown
+
+  - type: textarea
+    id: research
+    attributes:
+      label: Research Done
+      description: What documentation or resources have you already checked?
+      placeholder: |
+        - [ ] README.md
+        - [ ] Documentation in docs/
+        - [ ] Wiki pages
+        - [ ] Existing issues
+        - [ ] Other resources
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
