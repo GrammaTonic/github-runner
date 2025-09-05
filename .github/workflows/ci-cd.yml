@@ -197,7 +197,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          no-cache: true
+          no-cache: ${{ inputs.force_rebuild || false }}
 
       - name: Get primary tag for security scan
         id: get-primary-tag
@@ -277,7 +277,7 @@ jobs:
           labels: ${{ steps.meta-chrome.outputs.labels }}
           cache-from: type=gha,scope=chrome
           cache-to: type=gha,mode=max,scope=chrome
-          no-cache: true
+          no-cache: ${{ inputs.force_rebuild || false }}
 
       - name: Get primary Chrome tag for security scan
         id: get-primary-tag-chrome
