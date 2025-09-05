@@ -77,7 +77,7 @@ fail_suite() {
 run_unit_tests() {
     start_suite "Unit Tests"
     
-    local unit_script="$(dirname "$0")/unit/package-validation.sh"
+    local unit_script; unit_script="$(dirname "$0")/unit/package-validation.sh"
     local unit_results="$TEST_RESULTS_DIR/unit"
     
     if [[ ! -f "$unit_script" ]]; then
@@ -106,7 +106,7 @@ run_unit_tests() {
 run_integration_tests() {
     start_suite "Integration Tests"
     
-    local integration_script="$(dirname "$0")/integration/comprehensive-tests.sh"
+    local integration_script; integration_script="$(dirname "$0")/integration/comprehensive-tests.sh"
     local integration_results="$TEST_RESULTS_DIR/integration"
     mkdir -p "$integration_results"
     
@@ -145,7 +145,7 @@ run_integration_tests() {
 run_docker_package_validation() {
     start_suite "Docker Package Validation"
     
-    local package_script="$(dirname "$0")/docker/validate-packages.sh"
+    local package_script; package_script="$(dirname "$0")/docker/validate-packages.sh"
     local package_results="$TEST_RESULTS_DIR/docker"
     mkdir -p "$package_results"
     
@@ -184,7 +184,7 @@ run_docker_package_validation() {
 run_container_startup_tests() {
     start_suite "Container Startup Tests"
     
-    local startup_script="$(dirname "$0")/docker/test-container-startup.sh"
+    local startup_script; startup_script="$(dirname "$0")/docker/test-container-startup.sh"
     local startup_results="$TEST_RESULTS_DIR/container-startup"
     mkdir -p "$startup_results"
     
@@ -223,7 +223,7 @@ run_container_startup_tests() {
 run_docker_package_validation() {
     start_suite "Docker Package Validation"
     
-    local package_script="$(dirname "$0")/docker/validate-packages.sh"
+    local package_script; package_script="$(dirname "$0")/docker/validate-packages.sh"
     local package_results="$TEST_RESULTS_DIR/docker"
     mkdir -p "$package_results"
     
@@ -264,7 +264,7 @@ run_security_tests() {
     
     # Test 2: Check Docker security practices
     log_info "Checking Docker security practices..."
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir; docker_dir="$(dirname "$0")/../../docker"
     local security_issues=0
     
     for dockerfile in "$docker_dir"/Dockerfile*; do
@@ -313,8 +313,8 @@ run_configuration_tests() {
     
     log_info "Running configuration validation..."
     
-    local config_dir="$(dirname "$0")/../../config"
-    local scripts_dir="$(dirname "$0")/../../scripts"
+    local config_dir; config_dir="$(dirname "$0")/../../config"
+    local scripts_dir; scripts_dir="$(dirname "$0")/../../scripts"
     local config_errors=0
     
     # Test configuration files

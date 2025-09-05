@@ -136,7 +136,7 @@ test_obsolete_packages() {
 # Test 2: Check for duplicate packages
 test_duplicate_packages() {
     local test_name="Duplicate Package Detection"
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir; docker_dir="$(dirname "$0")/../../docker"
     local failed=false
     
     log_info "Starting $test_name..."
@@ -213,7 +213,7 @@ get_version_issue() {
 # Test 3: Check for Ubuntu version compatibility
 test_ubuntu_compatibility() {
     local test_name="Ubuntu Version Compatibility"
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir; docker_dir="$(dirname "$0")/../../docker"
     local failed=false
     
     log_info "Starting $test_name..."
@@ -285,7 +285,7 @@ get_dependency_suggestion() {
 # Test 4: Package dependency validation
 test_package_dependencies() {
     local test_name="Package Dependency Validation"
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir; docker_dir="$(dirname "$0")/../../docker"
     local warnings=0
     
     log_info "Starting $test_name..."

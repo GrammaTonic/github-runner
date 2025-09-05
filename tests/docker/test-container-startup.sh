@@ -139,7 +139,7 @@ test_main_runner_startup() {
         return 0
     fi
     
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir; docker_dir="$(dirname "$0")/../../docker"
     local config_file="$TEST_RESULTS_DIR/config/main-runner.env"
     
     cd "$docker_dir" || {
@@ -220,7 +220,7 @@ test_chrome_runner_startup() {
         return 0
     fi
     
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir; docker_dir="$(dirname "$0")/../../docker"
     local config_file="$TEST_RESULTS_DIR/config/chrome-runner.env"
     
     cd "$docker_dir" || {
@@ -307,7 +307,7 @@ test_chrome_runner_startup() {
 test_container_resources() {
     start_test "Container Resource Configuration"
     
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir; docker_dir="$(dirname "$0")/../../docker"
     local resource_issues=0
     
     # Check main runner docker-compose configuration

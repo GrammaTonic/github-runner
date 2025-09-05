@@ -92,7 +92,8 @@ trap cleanup EXIT
 test_docker_package_validation() {
     start_test "Docker Package Validation"
     
-    local script_path="$(dirname "$0")/validate-packages.sh"
+    local script_path
+    script_path="$(dirname "$0")/validate-packages.sh"
     
     if [[ ! -f "$script_path" ]]; then
         fail_test "Docker Package Validation" "Package validation script not found"
@@ -117,7 +118,8 @@ test_docker_package_validation() {
 test_dockerfile_syntax() {
     start_test "Dockerfile Syntax Validation"
     
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir
+    docker_dir="$(dirname "$0")/../../docker"
     local syntax_errors=0
     
     # Find all Dockerfiles
@@ -162,7 +164,8 @@ test_docker_build_core() {
     fi
     
     local build_log="$TEST_RESULTS_DIR/build-core.log"
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir
+    docker_dir="$(dirname "$0")/../../docker"
     
     # Build core runner image
     if timeout "$TIMEOUT" docker build -t test-github-runner:core -f "$docker_dir/Dockerfile" "$docker_dir" > "$build_log" 2>&1; then
@@ -190,7 +193,8 @@ test_docker_build_chrome() {
     fi
     
     local build_log="$TEST_RESULTS_DIR/build-chrome.log"
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir
+    docker_dir="$(dirname "$0")/../../docker"
     
     # Build Chrome runner image
     if timeout "$TIMEOUT" docker build -t test-github-runner:chrome -f "$docker_dir/Dockerfile.chrome" "$docker_dir" > "$build_log" 2>&1; then
@@ -213,7 +217,8 @@ test_docker_build_chrome() {
 test_docker_compose() {
     start_test "Docker Compose Validation"
     
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir
+    docker_dir="$(dirname "$0")/../../docker"
     local compose_errors=0
     
     # Test all docker-compose files
@@ -243,7 +248,8 @@ test_docker_compose() {
 test_configuration_files() {
     start_test "Configuration File Validation"
     
-    local config_dir="$(dirname "$0")/../../config"
+    local config_dir
+    config_dir="$(dirname "$0")/../../config"
     local config_errors=0
     
     # Required variables for runner configuration
@@ -284,7 +290,8 @@ test_configuration_files() {
 test_scripts() {
     start_test "Script Validation"
     
-    local scripts_dir="$(dirname "$0")/../../scripts"
+    local scripts_dir
+    scripts_dir="$(dirname "$0")/../../scripts"
     local script_errors=0
     
     # Test all shell scripts
@@ -331,7 +338,8 @@ test_scripts() {
 test_chrome_specific() {
     start_test "Chrome Specific Tests"
     
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir
+    docker_dir="$(dirname "$0")/../../docker"
     local chrome_errors=0
     
     # Test Chrome entrypoint script
@@ -378,8 +386,6 @@ test_chrome_specific() {
 test_security_baseline() {
     start_test "Security Baseline Test"
     
-    local security_errors=0
-    
     # Check for secrets in files
     local sensitive_patterns=("password" "secret" "token" "key" "auth")
     
@@ -397,7 +403,8 @@ test_security_baseline() {
     done
     
     # Check for insecure Docker practices
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir
+    docker_dir="$(dirname "$0")/../../docker"
     for dockerfile in "$docker_dir"/Dockerfile*; do
         if [[ -f "$dockerfile" ]]; then
             # Check for running as root
@@ -425,7 +432,8 @@ test_container_startup() {
         return 0
     fi
     
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir
+    docker_dir="$(dirname "$0")/../../docker"
     local startup_errors=0
     local test_containers=()
     
@@ -469,8 +477,8 @@ test_container_startup() {
 
 # Helper function: Test main runner container startup
 test_main_runner_startup() {
-    local container_name="test-startup-main-runner"
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir
+    docker_dir="$(dirname "$0")/../../docker"
     
     # Create minimal test environment file
     local test_env_file="$TEST_RESULTS_DIR/test-runner.env"
@@ -548,8 +556,8 @@ EOF
 
 # Helper function: Test Chrome runner container startup
 test_chrome_runner_startup() {
-    local container_name="test-startup-chrome-runner"
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir
+    docker_dir="$(dirname "$0")/../../docker"
     
     # Create minimal test environment file for Chrome runner
     local test_env_file="$TEST_RESULTS_DIR/test-chrome-runner.env"
@@ -641,7 +649,8 @@ test_container_performance() {
     
     log_info "Testing container resource usage patterns..."
     
-    local docker_dir="$(dirname "$0")/../../docker"
+    local docker_dir
+    docker_dir="$(dirname "$0")/../../docker"
     local performance_errors=0
     
     # Test resource constraints in docker-compose files
