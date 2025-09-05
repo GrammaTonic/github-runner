@@ -122,7 +122,11 @@ run_integration_tests() {
     fi
     
     local exit_code=0
-    TEST_RESULTS_DIR="$integration_results" "$integration_script" "${args[@]}" > "$integration_results/integration-tests.log" 2>&1 || exit_code=$?
+    if [[ ${#args[@]} -gt 0 ]]; then
+        TEST_RESULTS_DIR="$integration_results" "$integration_script" "${args[@]}" > "$integration_results/integration-tests.log" 2>&1 || exit_code=$?
+    else
+        TEST_RESULTS_DIR="$integration_results" "$integration_script" > "$integration_results/integration-tests.log" 2>&1 || exit_code=$?
+    fi
     
     if [[ "$VERBOSE" == "true" ]]; then
         cat "$integration_results/integration-tests.log"
@@ -156,7 +160,11 @@ run_docker_package_validation() {
     fi
     
     local exit_code=0
-    TEST_RESULTS_DIR="$package_results" "$package_script" "${args[@]}" > "$package_results/package-validation.log" 2>&1 || exit_code=$?
+    if [[ ${#args[@]} -gt 0 ]]; then
+        TEST_RESULTS_DIR="$package_results" "$package_script" "${args[@]}" > "$package_results/package-validation.log" 2>&1 || exit_code=$?
+    else
+        TEST_RESULTS_DIR="$package_results" "$package_script" > "$package_results/package-validation.log" 2>&1 || exit_code=$?
+    fi
     
     if [[ "$VERBOSE" == "true" ]]; then
         cat "$package_results/package-validation.log"
