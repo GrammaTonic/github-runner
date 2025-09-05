@@ -33,16 +33,41 @@ log_error() {
 setup_chrome() {
     log_info "Setting up Chrome for CI/CD environment..."
     
-    # Start Xvfb for headless display
-    if ! pgrep -x "Xvfb" > /dev/null; then
-        log_info "Starting virtual display (Xvfb)..."
-        Xvfb :99 -screen 0 1920x1080x24 &
-        export DISPLAY=:99
-        sleep 2
+    # Start Xvfb for headless display (with cleanup if needed)
+    DISPLAY_NUM=99
+    export DISPLAY=:$DISPLAY_NUM
+    
+    # Create X11 directory if it doesn't exist (with proper permissions)
+    sudo mkdir -p /tmp/.X11-unix
+    sudo chmod 1777 /tmp/.X11-unix
+    
+    # Clean up any stale display lock files
+    if [ -f "/tmp/.X${DISPLAY_NUM}-lock" ]; then
+        log_info "Removing stale X11 lock file..."
+        sudo rm -f "/tmp/.X${DISPLAY_NUM}-lock"
+    fi
+    
+    # Kill any existing Xvfb on our display
+    if pgrep -f "Xvfb :${DISPLAY_NUM}" > /dev/null; then
+        log_info "Stopping existing Xvfb instance..."
+        sudo pkill -f "Xvfb :${DISPLAY_NUM}" || true
+        sleep 1
+    fi
+    
+    # Start Xvfb
+    log_info "Starting virtual display (Xvfb)..."
+    Xvfb :${DISPLAY_NUM} -screen 0 1920x1080x24 -nolisten tcp -dpi 96 +extension GLX +render -noreset &
+    XVFB_PID=$!
+    sleep 3
+    
+    # Verify Xvfb started successfully
+    if ! pgrep -f "Xvfb :${DISPLAY_NUM}" > /dev/null; then
+        log_error "Failed to start Xvfb"
+        exit 1
     fi
     
     # Set Chrome flags for optimal CI/CD performance
-    export CHROME_FLAGS="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --remote-debugging-port=9222"
+    export CHROME_FLAGS="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --remote-debugging-port=9222 --disable-extensions --disable-plugins --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding"
     export CHROMIUM_FLAGS="$CHROME_FLAGS"
     
     # Playwright specific settings
@@ -70,9 +95,9 @@ validate_chrome() {
         exit 1
     fi
     
-    # Test Chrome can start
-    if google-chrome-stable --version > /dev/null 2>&1; then
-        log_success "Chrome validation successful: $(google-chrome-stable --version)"
+    # Test Chrome can start with proper headless flags
+    if google-chrome-stable --headless --no-sandbox --disable-dev-shm-usage --disable-gpu --version > /dev/null 2>&1; then
+        log_success "Chrome validation successful: $(google-chrome-stable --version 2>/dev/null | head -1)"
     else
         log_error "Chrome failed to start"
         exit 1
@@ -172,10 +197,16 @@ cleanup() {
     log_info "Received shutdown signal, cleaning up..."
     
     # Stop Xvfb if running
-    if pgrep -x "Xvfb" > /dev/null; then
+    if [ -n "$XVFB_PID" ] && kill -0 "$XVFB_PID" 2>/dev/null; then
+        log_info "Stopping virtual display (PID: $XVFB_PID)..."
+        kill "$XVFB_PID" || true
+    elif pgrep -f "Xvfb :${DISPLAY_NUM:-99}" > /dev/null; then
         log_info "Stopping virtual display..."
-        pkill Xvfb
+        sudo pkill -f "Xvfb :${DISPLAY_NUM:-99}" || true
     fi
+    
+    # Clean up display lock files
+    sudo rm -f "/tmp/.X${DISPLAY_NUM:-99}-lock" 2>/dev/null || true
     
     # Remove runner registration
     log_info "Removing runner registration..."
