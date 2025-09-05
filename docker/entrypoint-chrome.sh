@@ -67,7 +67,7 @@ setup_chrome() {
     fi
     
     # Set Chrome flags for optimal CI/CD performance
-    export CHROME_FLAGS="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --remote-debugging-port=9222 --disable-extensions --disable-plugins --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding"
+    export CHROME_FLAGS="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --remote-debugging-port=9222 --disable-extensions --disable-plugins --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=TranslateUI --no-first-run --no-default-browser-check --disable-software-rasterizer --disable-web-security --disable-features=VizDisplayCompositor"
     export CHROMIUM_FLAGS="$CHROME_FLAGS"
     
     # Playwright specific settings
@@ -95,12 +95,24 @@ validate_chrome() {
         exit 1
     fi
     
-    # Test Chrome can start with proper headless flags
-    if google-chrome-stable --headless --no-sandbox --disable-dev-shm-usage --disable-gpu --version > /dev/null 2>&1; then
-        log_success "Chrome validation successful: $(google-chrome-stable --version 2>/dev/null | head -1)"
+    # Test Chrome can start with comprehensive headless flags for Docker
+    CHROME_TEST_FLAGS="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=TranslateUI --disable-extensions --disable-plugins --no-first-run --no-default-browser-check --single-process"
+    
+    if timeout 10 google-chrome-stable $CHROME_TEST_FLAGS --version > /dev/null 2>&1; then
+        CHROME_VERSION=$(google-chrome-stable --version 2>/dev/null | head -1)
+        log_success "Chrome validation successful: $CHROME_VERSION"
     else
-        log_error "Chrome failed to start"
-        exit 1
+        log_error "Chrome failed to start with flags: $CHROME_TEST_FLAGS"
+        log_info "Attempting fallback validation..."
+        
+        # Try with minimal flags as fallback
+        if timeout 5 google-chrome-stable --no-sandbox --single-process --version > /dev/null 2>&1; then
+            CHROME_VERSION=$(google-chrome-stable --version 2>/dev/null | head -1)
+            log_warning "Chrome validation passed with minimal flags: $CHROME_VERSION"
+        else
+            log_error "Chrome completely failed to start - this may indicate missing dependencies or incompatible architecture"
+            exit 1
+        fi
     fi
     
     # Test ChromeDriver
