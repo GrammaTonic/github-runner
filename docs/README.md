@@ -25,7 +25,7 @@ docs/
 
 - [Code of Conduct](community/CODE_OF_CONDUCT.md) - Community behavior guidelines
 - [Contributing Guidelines](community/CONTRIBUTING.md) - How to contribute to the project
-- [Security Policy](community/SECURITY.md) - Security vulnerability reporting
+- [Security Policy](../.github/SECURITY.md) - Security vulnerability reporting
 
 ### Features
 

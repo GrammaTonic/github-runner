@@ -54,8 +54,11 @@ check_root_markdown() {
             
             # Suggest proper location
             case "$file" in
-                *"CODE_OF_CONDUCT"*|*"CONTRIBUTING"*|*"SECURITY"*)
+                *"CODE_OF_CONDUCT"*|*"CONTRIBUTING"*)
                     echo "     → Should be in: docs/community/$file"
+                    ;;
+                *"SECURITY"*)
+                    echo "     → Should be in: .github/$file (for GitHub recognition)"
                     ;;
                 *"RELEASE"*|*"CHANGELOG"*|*"NOTES"*)
                     echo "     → Should be in: docs/releases/$file"
@@ -136,9 +139,13 @@ auto_fix() {
                 "README.md"|"README.md.backup")
                     # Keep in root
                     ;;
-                *"CODE_OF_CONDUCT"*|*"CONTRIBUTING"*|*"SECURITY"*)
+                *"CODE_OF_CONDUCT"*|*"CONTRIBUTING"*)
                     mv "$file" "docs/community/"
                     echo "  📁 Moved $file → docs/community/"
+                    ;;
+                *"SECURITY"*)
+                    mv "$file" ".github/"
+                    echo "  📁 Moved $file → .github/"
                     ;;
                 *"RELEASE"*|*"CHANGELOG"*|*"NOTES"*)
                     mv "$file" "docs/releases/"

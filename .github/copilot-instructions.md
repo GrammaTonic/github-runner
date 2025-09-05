@@ -9,7 +9,8 @@ This repository is for setting up and managing GitHub Actions self-hosted runner
 ### Documentation Structure - NEVER CREATE .MD FILES IN ROOT
 
 - **ALL documentation MUST go in `/docs/` subdirectories** - NEVER create .md files in root directory
-- **Community files location**: `/docs/community/` (CODE_OF_CONDUCT.md, CONTRIBUTING.md, SECURITY.md)
+- **Community files location**: `/docs/community/` (CODE_OF_CONDUCT.md, CONTRIBUTING.md)
+- **Security policy location**: `/.github/SECURITY.md` (for GitHub recognition)
 - **Feature documentation**: `/docs/features/` (feature specs, implementation docs)
 - **Release notes**: `/docs/releases/` (changelogs, release documentation)
 - **Archive old files**: `/docs/archive/` (deprecated or backup files)
