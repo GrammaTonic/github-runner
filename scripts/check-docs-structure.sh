@@ -28,22 +28,24 @@ check_root_markdown() {
     local found_violations=()
     
     # Find all .md files in root
-    for file in *.md 2>/dev/null; do
-        [[ -f "$file" ]] || continue
-        
-        # Check if file is in allowed list
-        local is_allowed=false
-        for allowed in "${allowed_files[@]}"; do
-            if [[ "$file" == "$allowed" ]]; then
-                is_allowed=true
-                break
+    if ls *.md >/dev/null 2>&1; then
+        for file in *.md; do
+            [[ -f "$file" ]] || continue
+            
+            # Check if file is in allowed list
+            local is_allowed=false
+            for allowed in "${allowed_files[@]}"; do
+                if [[ "$file" == "$allowed" ]]; then
+                    is_allowed=true
+                    break
+                fi
+            done
+            
+            if [[ "$is_allowed" == false ]]; then
+                found_violations+=("$file")
             fi
         done
-        
-        if [[ "$is_allowed" == false ]]; then
-            found_violations+=("$file")
-        fi
-    done
+    fi
     
     if [[ ${#found_violations[@]} -gt 0 ]]; then
         log_error "Found markdown files in root directory that should be in /docs/:"
@@ -126,35 +128,37 @@ auto_fix() {
     mkdir -p docs/community docs/features docs/releases docs/archive
     
     # Move files to correct locations
-    for file in *.md; do
-        [[ -f "$file" ]] || continue
-        
-        case "$file" in
-            "README.md"|"README.md.backup")
-                # Keep in root
-                ;;
-            *"CODE_OF_CONDUCT"*|*"CONTRIBUTING"*|*"SECURITY"*)
-                mv "$file" "docs/community/"
-                echo "  📁 Moved $file → docs/community/"
-                ;;
-            *"RELEASE"*|*"CHANGELOG"*|*"NOTES"*)
-                mv "$file" "docs/releases/"
-                echo "  📁 Moved $file → docs/releases/"
-                ;;
-            *"FEATURE"*|*"CHROME"*)
-                mv "$file" "docs/features/"
-                echo "  📁 Moved $file → docs/features/"
-                ;;
-            *"corrupted"*|*"backup"*|*"old"*)
-                mv "$file" "docs/archive/"
-                echo "  📁 Moved $file → docs/archive/"
-                ;;
-            *)
-                mv "$file" "docs/"
-                echo "  📁 Moved $file → docs/"
-                ;;
-        esac
-    done
+    if ls *.md >/dev/null 2>&1; then
+        for file in *.md; do
+            [[ -f "$file" ]] || continue
+            
+            case "$file" in
+                "README.md"|"README.md.backup")
+                    # Keep in root
+                    ;;
+                *"CODE_OF_CONDUCT"*|*"CONTRIBUTING"*|*"SECURITY"*)
+                    mv "$file" "docs/community/"
+                    echo "  📁 Moved $file → docs/community/"
+                    ;;
+                *"RELEASE"*|*"CHANGELOG"*|*"NOTES"*)
+                    mv "$file" "docs/releases/"
+                    echo "  📁 Moved $file → docs/releases/"
+                    ;;
+                *"FEATURE"*|*"CHROME"*)
+                    mv "$file" "docs/features/"
+                    echo "  📁 Moved $file → docs/features/"
+                    ;;
+                *"corrupted"*|*"backup"*|*"old"*)
+                    mv "$file" "docs/archive/"
+                    echo "  📁 Moved $file → docs/archive/"
+                    ;;
+                *)
+                    mv "$file" "docs/"
+                    echo "  📁 Moved $file → docs/"
+                    ;;
+            esac
+        done
+    fi
     
     log_success "Auto-fix completed!"
 }
