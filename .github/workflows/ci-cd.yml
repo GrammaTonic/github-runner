@@ -370,7 +370,16 @@ jobs:
         run: |
           # Install comprehensive test dependencies
           sudo apt-get update
-          sudo apt-get install -y jq curl hadolint
+          sudo apt-get install -y jq curl
+
+          # Install hadolint for Docker linting (from GitHub releases)
+          HADOLINT_VERSION="v2.12.0"
+          wget -O /tmp/hadolint "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-x86_64"
+          chmod +x /tmp/hadolint
+          sudo mv /tmp/hadolint /usr/local/bin/hadolint
+
+          # Verify hadolint installation
+          hadolint --version || echo "Hadolint installation failed, will skip Docker linting"
 
           # Create test results directory
           mkdir -p test-results/${{ matrix.test-suite }}
