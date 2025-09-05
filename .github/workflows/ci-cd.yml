@@ -776,7 +776,15 @@ jobs:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     needs:
-      [build, build-chrome, test, security-container-scan, security-chrome-scan]
+      [
+        build,
+        build-chrome,
+        test-package-validation,
+        test-comprehensive,
+        test-container-startup,
+        security-container-scan,
+        security-chrome-scan,
+      ]
     if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
     environment:
       name: staging
@@ -845,7 +853,9 @@ jobs:
       [
         build,
         build-chrome,
-        test,
+        test-package-validation,
+        test-comprehensive,
+        test-container-startup,
         security-container-scan,
         security-chrome-scan,
         deploy-staging,
@@ -922,8 +932,8 @@ jobs:
   cleanup:
     name: Cleanup Resources
     runs-on: ubuntu-latest
-    needs: [deploy-staging, deploy-production]
-    if: always()
+    needs: [deploy-production]
+    if: always() && (needs.deploy-production.result == 'success' || needs.deploy-production.result == 'failure')
     permissions:
       contents: read
       packages: write
@@ -952,7 +962,6 @@ jobs:
           - **Timestamp**: $(date -u)
 
           ## Deployments
-          - Staging: ${{ needs.deploy-staging.result }}
           - Production: ${{ needs.deploy-production.result }}
 
           ## Image Details
