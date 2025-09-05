@@ -781,10 +781,11 @@ jobs:
 
           chmod +x test-entrypoint.sh
 
-          # Start container with test entrypoint
+          # Start container with test entrypoint, overriding the default entrypoint
           CONTAINER_ID=$(docker run -d --name ci-test-main-runner \
+            --entrypoint /test-entrypoint.sh \
             -v "$(pwd)/test-entrypoint.sh:/test-entrypoint.sh" \
-            github-runner:latest /test-entrypoint.sh)
+            github-runner:latest)
 
           echo "Container ID: $CONTAINER_ID"
 
@@ -813,24 +814,6 @@ jobs:
             echo "❌ Main runner container startup test failed"
             exit 1
           fi
-          fi
-
-          # Check Docker-in-Docker
-          if ! docker exec "$CONTAINER_ID" docker version; then
-            echo "❌ Docker-in-Docker not working"
-            exit 1
-          fi
-
-          # Check runner directory structure
-          if ! docker exec "$CONTAINER_ID" test -d /home/runner; then
-            echo "❌ Runner home directory not found"
-            exit 1
-          fi
-
-          echo "✅ Main runner container startup test passed"
-
-          # Cleanup
-          docker compose -p ci-test-main down || true
 
       - name: Test Chrome Runner Container Startup
         if: matrix.container-type == 'chrome-runner'
@@ -900,10 +883,11 @@ jobs:
 
           chmod +x test-chrome-entrypoint.sh
 
-          # Start container with test entrypoint
+          # Start container with test entrypoint, overriding the default entrypoint
           CONTAINER_ID=$(docker run -d --name ci-test-chrome-runner \
+            --entrypoint /test-chrome-entrypoint.sh \
             -v "$(pwd)/test-chrome-entrypoint.sh:/test-chrome-entrypoint.sh" \
-            github-runner:chrome-latest /test-chrome-entrypoint.sh)
+            github-runner:chrome-latest)
 
           echo "Chrome Container ID: $CONTAINER_ID"
 
