@@ -136,6 +136,7 @@ jobs:
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
+          category: "filesystem-scan"
 
       - name: Check for secrets in repository
         uses: trufflesecurity/trufflehog@main
@@ -987,6 +988,7 @@ jobs:
         if: always()
         with:
           sarif_file: "trivy-container-results.sarif"
+          category: "container-scan"
 
   security-chrome-scan:
     name: Chrome Container Security Scan
@@ -1013,6 +1015,7 @@ jobs:
         if: always()
         with:
           sarif_file: "trivy-chrome-results.sarif"
+          category: "chrome-container-scan"
 
   deploy-staging:
     name: Deploy to Staging

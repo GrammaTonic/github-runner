@@ -186,6 +186,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: "release-security-scan.sarif"
+          category: "container-scan"
 
       - name: Check for critical vulnerabilities
         run: |
