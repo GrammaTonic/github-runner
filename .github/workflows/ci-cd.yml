@@ -83,9 +83,12 @@ jobs:
 
       - name: Validate Docker Compose files
         run: |
-          # Validate docker-compose.yml syntax
-          if [[ -f "docker/docker-compose.yml" ]]; then
-            docker compose -f docker/docker-compose.yml config --quiet
+          # Validate separate compose files syntax
+          if [[ -f "docker/docker-compose.production.yml" ]]; then
+            docker compose -f docker/docker-compose.production.yml config --quiet
+          fi
+          if [[ -f "docker/docker-compose.chrome.yml" ]]; then
+            docker compose -f docker/docker-compose.chrome.yml config --quiet
           fi
 
       - name: Validate shell scripts
@@ -913,8 +916,10 @@ jobs:
           cd docker
 
           if [[ "${{ matrix.container-type }}" == "main-runner" ]]; then
-            COMPOSE_FILE="docker-compose.yml"
+            COMPOSE_FILE="docker-compose.production.yml"
           else
+            COMPOSE_FILE="docker-compose.chrome.yml"
+          fi
             COMPOSE_FILE="docker-compose.chrome.yml"
           fi
 

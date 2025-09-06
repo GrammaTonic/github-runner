@@ -311,15 +311,15 @@ test_container_resources() {
     local resource_issues=0
     
     # Check main runner docker-compose configuration
-    if [[ -f "$docker_dir/docker-compose.yml" ]]; then
+    if [[ -f "$docker_dir/docker-compose.production.yml" ]]; then
         log_info "Checking main runner resource configuration..."
         
-        if ! grep -q "restart:" "$docker_dir/docker-compose.yml"; then
-            log_warn "No restart policy in docker-compose.yml"
+        if ! grep -q "restart:" "$docker_dir/docker-compose.production.yml"; then
+            log_warn "No restart policy in docker-compose.production.yml"
             resource_issues=$((resource_issues + 1))
         fi
         
-        if ! grep -q "mem_limit\|memory:" "$docker_dir/docker-compose.yml"; then
+        if ! grep -q "mem_limit\|memory:" "$docker_dir/docker-compose.production.yml"; then
             log_info "No memory limits configured (optional for self-hosted)"
         fi
     fi
@@ -375,8 +375,8 @@ Generated: $(date -Iseconds)
 
 ### Main GitHub Runner
 - **Image**: ghcr.io/grammatonic/github-runner:latest
-- **Docker Compose**: docker-compose.yml
-- **Test Config**: config/main-runner.env
+- **Docker Compose**: docker-compose.production.yml
+- **Test Config**: config/runner.env
 
 ### Chrome GitHub Runner  
 - **Image**: ghcr.io/grammatonic/github-runner:chrome-latest

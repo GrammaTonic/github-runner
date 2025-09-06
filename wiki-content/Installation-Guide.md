@@ -76,12 +76,18 @@ RUNNER_GROUP=default
 
 ### 4. Deploy Runners
 
-```bash
-# Start basic runner
-docker compose -f docker/docker-compose.yml up -d
+Choose your runner type:
 
-# Start with monitoring (recommended)
-docker compose -f docker/docker-compose.yml --profile monitoring up -d
+```bash
+# Deploy standard runners (most common)
+docker compose -f docker/docker-compose.production.yml up -d
+
+# Deploy Chrome runners for UI testing
+docker compose -f docker/docker-compose.chrome.yml up -d
+
+# Deploy both types (advanced)
+docker compose -f docker/docker-compose.production.yml up -d
+docker compose -f docker/docker-compose.chrome.yml up -d
 ```
 
 ### 5. Verify Installation
@@ -102,31 +108,32 @@ docker compose logs runner
 # Build custom image
 docker build -t my-github-runner ./docker
 
-# Update docker-compose.yml to use custom image
-# image: my-github-runner:latest
+# Update compose files to use custom image
+# In docker-compose.production.yml: image: my-github-runner:latest
 ```
 
 ### Multiple Runners
 
 ```bash
-# Scale to 3 runners
-docker compose -f docker/docker-compose.yml up -d --scale runner=3
+# Scale standard runners
+docker compose -f docker/docker-compose.production.yml up -d --scale github-runner=3
+
+# Scale Chrome runners
+docker compose -f docker/docker-compose.chrome.yml up -d --scale github-runner-chrome=2
 ```
 
 ### Production Setup
 
 ```bash
 # Create production environment file
-cp config/runner.env config/production.env
+cp config/runner.env.example config/production.env
 
 # Configure for production
 DOCKER_BUILDKIT=1
 COMPOSE_PROJECT_NAME=github-runner-prod
-RUNNER_MEMORY_LIMIT=4g
-RUNNER_CPU_LIMIT=2.0
 
 # Deploy with production settings
-docker compose -f docker/docker-compose.yml --env-file config/production.env up -d
+docker compose -f docker/docker-compose.production.yml --env-file config/production.env up -d
 ```
 
 ## 🛠️ Configuration Options

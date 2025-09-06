@@ -489,16 +489,16 @@ EOF
     
     log_info "Starting main runner container for health check..."
     
-    # Use docker-compose to start the container with test configuration
-    if ! timeout 60 docker compose -f "$docker_dir/docker-compose.yml" --env-file "$test_env_file" \
-        -p test-startup up -d runner > "$TEST_RESULTS_DIR/main-runner-startup.log" 2>&1; then
+    # Use docker-compose production file to start the container with test configuration
+    if ! timeout 60 docker compose -f "$docker_dir/docker-compose.production.yml" --env-file "$test_env_file" \
+        -p test-startup up -d github-runner > "$TEST_RESULTS_DIR/main-runner-startup.log" 2>&1; then
         log_error "Failed to start main runner container with docker-compose"
         return 1
     fi
     
     # Wait for container to be fully started
     local container_id
-    container_id=$(docker compose -f "$docker_dir/docker-compose.yml" -p test-startup ps -q runner)
+    container_id=$(docker compose -f "$docker_dir/docker-compose.production.yml" -p test-startup ps -q github-runner)
     
     if [[ -z "$container_id" ]]; then
         log_error "Main runner container not found after startup"
@@ -545,7 +545,7 @@ EOF
     fi
     
     # Stop and remove the test container
-    docker compose -f "$docker_dir/docker-compose.yml" -p test-startup down >/dev/null 2>&1 || true
+    docker compose -f "$docker_dir/docker-compose.production.yml" -p test-startup down >/dev/null 2>&1 || true
     
     log_info "Main runner container startup test completed successfully"
     return 0

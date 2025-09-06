@@ -161,20 +161,19 @@ git push origin develop
 
 ### Emergency Branch Protection Bypass
 
-For critical production incidents only:
+For critical production incidents, you can temporarily disable branch protection via GitHub's web interface:
 
 ```bash
-# Bypass protection (logs all actions)
-./scripts/emergency-bypass.sh "Critical security patch for CVE-2024-XXXX"
-
-# Make emergency fix directly to main
+# 1. Go to GitHub repository settings
+# 2. Navigate to Branches → main → Edit
+# 3. Temporarily disable "Restrict pushes that create files"
+# 4. Make emergency fix directly to main
 git checkout main
 git add .
 git commit -m "emergency: critical security patch"
 git push origin main
 
-# Restore protection immediately
-./scripts/restore-branch-protection.sh
+# 5. Re-enable branch protection in GitHub settings immediately
 ```
 
 ### Rollback Procedures

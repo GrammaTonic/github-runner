@@ -36,12 +36,17 @@ GITHUB_REPOSITORY=your-username/your-repository
 
 ### Step 3: Deploy Runner (2 minutes)
 
+Choose your runner type:
+
 ```bash
-# Start the runner
-docker compose -f docker/docker-compose.yml up -d
+# Standard runner (most common)
+docker compose -f docker/docker-compose.production.yml up -d
+
+# Chrome runner (for UI testing)
+docker compose -f docker/docker-compose.chrome.yml up -d
 
 # Check status
-docker compose logs runner
+docker compose -f docker/docker-compose.production.yml logs github-runner
 ```
 
 ### Step 4: Verify in GitHub (30 seconds)

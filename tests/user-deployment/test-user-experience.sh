@@ -66,98 +66,136 @@ fail_test() {
     echo "$(date -Iseconds): FAIL $test_name - $reason" >> "$TEST_RESULTS_DIR/user-deployment.log"
 }
 
-# Test 1: Production Docker Compose exists and is valid
+# Test 1: Production Docker Compose files exist and are valid
 test_production_compose() {
     start_test "Production Docker Compose Validation"
     
-    local compose_file="$PROJECT_ROOT/docker/docker-compose.production.yml"
+    local production_compose="$PROJECT_ROOT/docker/docker-compose.production.yml"
+    local chrome_compose="$PROJECT_ROOT/docker/docker-compose.chrome.yml"
     
-    if [[ ! -f "$compose_file" ]]; then
+    # Test production compose file
+    if [[ ! -f "$production_compose" ]]; then
         fail_test "Production Docker Compose Validation" "docker-compose.production.yml not found"
         return 1
     fi
     
-    # Test compose file syntax
-    if ! docker compose -f "$compose_file" config >/dev/null 2>&1; then
-        fail_test "Production Docker Compose Validation" "Invalid Docker Compose syntax"
+    # Test Chrome compose file
+    if [[ ! -f "$chrome_compose" ]]; then
+        fail_test "Production Docker Compose Validation" "docker-compose.chrome.yml not found"
         return 1
     fi
     
-    # Check required services
-    local services
-    services=$(docker compose -f "$compose_file" config --services)
-    
-    if ! echo "$services" | grep -q "github-runner"; then
-        fail_test "Production Docker Compose Validation" "Missing github-runner service"
+    # Test production compose file syntax
+    if ! docker compose -f "$production_compose" config >/dev/null 2>&1; then
+        fail_test "Production Docker Compose Validation" "Invalid production Docker Compose syntax"
         return 1
     fi
     
-    if ! echo "$services" | grep -q "github-runner-chrome"; then
-        fail_test "Production Docker Compose Validation" "Missing github-runner-chrome service"
+    # Test Chrome compose file syntax
+    if ! docker compose -f "$chrome_compose" config >/dev/null 2>&1; then
+        fail_test "Production Docker Compose Validation" "Invalid Chrome Docker Compose syntax"
         return 1
     fi
     
-    # Check required environment variables are referenced
-    if ! grep -q "GITHUB_TOKEN" "$compose_file"; then
-        fail_test "Production Docker Compose Validation" "Missing GITHUB_TOKEN environment variable"
+    # Check production compose services
+    local production_services
+    production_services=$(docker compose -f "$production_compose" config --services)
+    
+    if ! echo "$production_services" | grep -q "github-runner"; then
+        fail_test "Production Docker Compose Validation" "Missing github-runner service in production compose"
         return 1
     fi
     
-    if ! grep -q "GITHUB_REPOSITORY" "$compose_file"; then
-        fail_test "Production Docker Compose Validation" "Missing GITHUB_REPOSITORY environment variable"
+    # Check Chrome compose services
+    local chrome_services
+    chrome_services=$(docker compose -f "$chrome_compose" config --services)
+    
+    if ! echo "$chrome_services" | grep -q "github-runner-chrome"; then
+        fail_test "Production Docker Compose Validation" "Missing github-runner-chrome service in Chrome compose"
         return 1
     fi
     
-    # Check health checks are configured
-    if ! grep -q "healthcheck:" "$compose_file"; then
-        fail_test "Production Docker Compose Validation" "Missing health checks"
-        return 1
-    fi
-    
-    # Check volume configuration for Docker socket
-    if ! grep -q "/var/run/docker.sock:/var/run/docker.sock" "$compose_file"; then
-        fail_test "Production Docker Compose Validation" "Missing Docker socket volume mount"
-        return 1
-    fi
-    
-    pass_test "Production Docker Compose Validation"
-}
-
-# Test 2: Environment template exists and is complete
-test_environment_template() {
-    start_test "Environment Template Validation"
-    
-    local env_template="$PROJECT_ROOT/config/runner.env.example"
-    
-    if [[ ! -f "$env_template" ]]; then
-        fail_test "Environment Template Validation" "runner.env.example not found"
-        return 1
-    fi
-    
-    # Check required variables are present
-    local required_vars=("GITHUB_TOKEN" "GITHUB_REPOSITORY" "RUNNER_NAME" "RUNNER_LABELS")
-    
-    for var in "${required_vars[@]}"; do
-        if ! grep -q "^$var=" "$env_template" && ! grep -q "^#.*$var=" "$env_template"; then
-            fail_test "Environment Template Validation" "Missing variable: $var"
+    # Check required environment variables are referenced in both files
+    for compose_file in "$production_compose" "$chrome_compose"; do
+        if ! grep -q "GITHUB_TOKEN" "$compose_file"; then
+            fail_test "Production Docker Compose Validation" "Missing GITHUB_TOKEN in $(basename "$compose_file")"
+            return 1
+        fi
+        
+        if ! grep -q "GITHUB_REPOSITORY" "$compose_file"; then
+            fail_test "Production Docker Compose Validation" "Missing GITHUB_REPOSITORY in $(basename "$compose_file")"
+            return 1
+        fi
+        
+        # Check health checks are configured
+        if ! grep -q "healthcheck:" "$compose_file"; then
+            fail_test "Production Docker Compose Validation" "Missing health checks in $(basename "$compose_file")"
+            return 1
+        fi
+        
+        # Check volume configuration for Docker socket
+        if ! grep -q "/var/run/docker.sock:/var/run/docker.sock" "$compose_file"; then
+            fail_test "Production Docker Compose Validation" "Missing Docker socket volume mount in $(basename "$compose_file")"
             return 1
         fi
     done
     
-    # Check for helpful comments and examples
-    if ! grep -q "Create one at:" "$env_template"; then
-        fail_test "Environment Template Validation" "Missing helpful comments for token creation"
+    pass_test "Production Docker Compose Validation"
+}
+
+# Test 2: Environment templates exist and are complete
+test_environment_template() {
+    start_test "Environment Template Validation"
+    
+    local standard_env_template="$PROJECT_ROOT/config/runner.env.example"
+    local chrome_env_template="$PROJECT_ROOT/config/chrome-runner.env.example"
+    
+    # Check standard environment template
+    if [[ ! -f "$standard_env_template" ]]; then
+        fail_test "Environment Template Validation" "runner.env.example not found"
         return 1
     fi
     
-    if ! grep -q "Example:" "$env_template"; then
-        fail_test "Environment Template Validation" "Missing configuration examples"
+    # Check Chrome environment template
+    if [[ ! -f "$chrome_env_template" ]]; then
+        fail_test "Environment Template Validation" "chrome-runner.env.example not found"
         return 1
     fi
     
-    # Check Chrome-specific variables
-    if ! grep -q "CHROME_FLAGS" "$env_template"; then
-        fail_test "Environment Template Validation" "Missing Chrome configuration"
+    # Check required variables are present in standard template
+    local required_vars=("GITHUB_TOKEN" "GITHUB_REPOSITORY" "RUNNER_NAME" "RUNNER_LABELS")
+    
+    for var in "${required_vars[@]}"; do
+        if ! grep -q "^$var=" "$standard_env_template" && ! grep -q "^#.*$var=" "$standard_env_template"; then
+            fail_test "Environment Template Validation" "Missing variable $var in standard template"
+            return 1
+        fi
+    done
+    
+    # Check required variables are present in Chrome template
+    for var in "${required_vars[@]}"; do
+        if ! grep -q "^$var=" "$chrome_env_template" && ! grep -q "^#.*$var=" "$chrome_env_template"; then
+            fail_test "Environment Template Validation" "Missing variable $var in Chrome template"
+            return 1
+        fi
+    done
+    
+    # Check for helpful comments and examples in both templates
+    for template in "$standard_env_template" "$chrome_env_template"; do
+        if ! grep -q "Create one at:" "$template"; then
+            fail_test "Environment Template Validation" "Missing helpful comments for token creation in $(basename "$template")"
+            return 1
+        fi
+        
+        if ! grep -q "Example:" "$template"; then
+            fail_test "Environment Template Validation" "Missing configuration examples in $(basename "$template")"
+            return 1
+        fi
+    done
+    
+    # Check Chrome-specific variables in Chrome template
+    if ! grep -q "CHROME_FLAGS\|DISPLAY" "$chrome_env_template"; then
+        fail_test "Environment Template Validation" "Missing Chrome configuration in Chrome template"
         return 1
     fi
     
@@ -364,16 +402,24 @@ test_readme_deployment_section() {
 test_image_availability() {
     start_test "Docker Image Availability"
     
-    # Check if images exist in registry (dry run)
-    local images=("ghcr.io/grammatonic/github-runner:latest" "ghcr.io/grammatonic/github-runner:chrome-latest")
+    # Check standard runner image in production compose
+    local standard_image="ghcr.io/grammatonic/github-runner:latest"
+    local chrome_image="ghcr.io/grammatonic/github-runner:chrome-latest"
     
-    for image in "${images[@]}"; do
-        # We can't actually pull in tests, but we can validate the image names are correctly referenced
-        if ! grep -q "$image" "$PROJECT_ROOT/docker/docker-compose.production.yml"; then
-            fail_test "Docker Image Availability" "Image $image not referenced in production compose"
-            return 1
-        fi
-    done
+    local production_compose="$PROJECT_ROOT/docker/docker-compose.production.yml"
+    local chrome_compose="$PROJECT_ROOT/docker/docker-compose.chrome.yml"
+    
+    # Check standard image is referenced in production compose
+    if ! grep -q "$standard_image" "$production_compose"; then
+        fail_test "Docker Image Availability" "Standard image $standard_image not referenced in production compose"
+        return 1
+    fi
+    
+    # Check Chrome image is referenced in Chrome compose
+    if ! grep -q "$chrome_image" "$chrome_compose"; then
+        fail_test "Docker Image Availability" "Chrome image $chrome_image not referenced in Chrome compose"
+        return 1
+    fi
     
     pass_test "Docker Image Availability"
 }

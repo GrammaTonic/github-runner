@@ -34,21 +34,26 @@ This repository is for setting up and managing GitHub Actions self-hosted runner
 ### Core Components (to be implemented)
 
 - **Dockerfile & Docker Images**: Custom GitHub runner Docker images with pre-installed tools
-- **Docker Compose Configuration**: Multi-container setups for runner orchestration
+- **Docker Compose Configuration**: Separate compose files for different runner types (production vs Chrome)
 - **Configuration Management**: Environment variables and volume mounts for runner configuration
 - **Health Checks & Monitoring**: Container health monitoring and automatic restart policies
-- **Scaling Scripts**: Docker Compose scaling based on repository job demand
+- **Scaling Scripts**: Docker Compose scaling based on repository job demand and runner type
 
 ### Expected Directory Structure
 
 ```
 ├── docker/
-│   ├── Dockerfile              # Main runner image definition
-│   ├── docker-compose.yml      # Container orchestration
-│   └── entrypoint.sh          # Container startup script
+│   ├── Dockerfile                     # Main runner image definition
+│   ├── Dockerfile.chrome              # Chrome runner image definition
+│   ├── docker-compose.production.yml  # Standard runner deployment
+│   ├── docker-compose.chrome.yml      # Chrome runner deployment
+│   ├── entrypoint.sh                  # Container startup script
+│   └── entrypoint-chrome.sh           # Chrome runner startup script
 ├── config/
-│   ├── runner.env             # Environment variables
-│   └── docker.env             # Docker-specific configuration
+│   ├── runner.env.example         # Standard runner configuration template
+│   ├── chrome-runner.env.example  # Chrome runner configuration template
+│   ├── runner.env                 # User's standard runner config (created from template)
+│   └── chrome-runner.env          # User's Chrome runner config (optional)
 ├── scripts/
 │   ├── build.sh               # Image building automation
 │   ├── deploy.sh              # Container deployment
@@ -92,11 +97,15 @@ docker build -t github-runner:latest ./docker
 docker tag github-runner:latest ghcr.io/grammatonic/github-runner:latest
 docker push ghcr.io/grammatonic/github-runner:latest
 
-# Start runners with Docker Compose
-docker-compose up -d
+# Start standard runners
+docker compose -f docker/docker-compose.production.yml up -d
 
-# Scale runners based on demand
-docker-compose up -d --scale runner=3
+# Start Chrome runners
+docker compose -f docker/docker-compose.chrome.yml up -d
+
+# Scale runners based on demand and type
+docker compose -f docker/docker-compose.production.yml up -d --scale github-runner=3
+docker compose -f docker/docker-compose.chrome.yml up -d --scale github-runner-chrome=2
 ```
 
 ### Development Workflow
@@ -145,11 +154,10 @@ This project is built entirely on Docker technology:
 
 ### Configuration Management
 
-- Use Docker environment files (.env) for environment-specific settings
-- Volume mounts for persistent configuration and workspace data
-- Multi-stage Dockerfiles for different deployment environments
-- Health check definitions in docker-compose.yml
-- Local cache volume configuration for build artifacts and dependencies
+- **Multi-stage Dockerfiles** for different deployment environments
+- **Separate compose files** for standard and Chrome runners
+- **Health check definitions** in each compose file
+- **Local cache volume configuration** for build artifacts and dependencies
 
 ### Runner Lifecycle
 
@@ -190,7 +198,7 @@ This project is built entirely on Docker technology:
 - Implement comprehensive logging for troubleshooting runner issues
 - Use version pinning for runner software to ensure consistency
 - Document environment-specific setup requirements clearly
-- Consider dedicated Chrome runner if web UI tests remain slow
+- Use the dedicated Chrome runner for web UI tests requiring browser automation
 
 ## Troubleshooting Common Issues
 
@@ -198,20 +206,20 @@ This project is built entirely on Docker technology:
 - Job execution failures: Verify runner environment and dependency availability
 - Network connectivity: Ensure proper firewall and proxy configurations
 - Resource constraints: Monitor CPU, memory, and disk usage patterns
-- Performance optimization: Consider dedicated Chrome runner if web UI tests remain slow
+- Browser testing issues: Use the dedicated Chrome runner for UI test workloads
 
 ## Performance Optimization
 
 ### Web UI Testing Performance
 
-- **Dedicated Chrome Runner**: If web UI tests (Selenium, Playwright, Cypress) are slow, consider deploying a dedicated runner with Chrome browser optimizations
-- **Browser Container Isolation**: Use separate Docker containers for browser-heavy workloads to prevent resource contention
-- **Headless Browser Configuration**: Configure headless Chrome with optimized flags for CI/CD environments
+- **Dedicated Chrome Runner**: Deployed via `docker-compose.chrome.yml` with Chrome browser optimizations for UI testing
+- **Browser Container Isolation**: Chrome runners use separate containers to prevent resource contention with standard runners
+- **Headless Browser Configuration**: Pre-configured headless Chrome with optimized flags for CI/CD environments
 - **Parallel Test Execution**: Scale Chrome runners horizontally for parallel browser test execution
 
 ### Runner Specialization Strategies
 
-- **General Purpose Runners**: Standard runners for building, testing, and deployment tasks
-- **Browser Test Runners**: Specialized runners with Chrome, Firefox, and browser testing tools pre-installed
-- **Build-Heavy Runners**: High-CPU runners for compilation-intensive workloads
-- **Cache-Optimized Runners**: Runners with persistent volume mounts for dependency caching
+- **Standard Runners**: `docker-compose.production.yml` for general building, testing, and deployment tasks
+- **Chrome Runners**: `docker-compose.chrome.yml` for specialized browser testing with Chrome, Selenium, Playwright, Cypress
+- **Mixed Deployment**: Deploy both runner types simultaneously for comprehensive CI/CD coverage
+- **Cache-Optimized**: Both runner types include persistent volume mounts for dependency caching

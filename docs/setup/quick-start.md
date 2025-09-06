@@ -76,6 +76,75 @@ The script will:
 
 ---
 
+## 🎯 Runner Type Selection
+
+When using the interactive script, you can choose from three deployment options:
+
+### 1. Standard Runner
+
+- **Best for**: General CI/CD, building, testing, deployment
+- **Resources**: Minimal memory usage (~512MB), fast startup
+- **Tools**: Docker, Node.js, Python, common build tools
+- **Files**: `config/runner.env` + `docker/docker-compose.production.yml`
+- **Usage**: Perfect for most CI/CD workflows
+
+### 2. Chrome Runner
+
+- **Best for**: UI testing, browser automation, E2E testing
+- **Resources**: Higher memory usage (~2GB), includes Chrome browser
+- **Tools**: Chrome, ChromeDriver, Playwright, Selenium support
+- **Files**: `config/chrome-runner.env` + `docker/docker-compose.chrome.yml`
+- **Usage**: Essential for web UI testing workflows
+
+### 3. Both Runners
+
+- **Best for**: Projects needing both general CI/CD and UI testing
+- **Resources**: Deploys both runners with separate configurations
+- **Scaling**: Scale standard and Chrome runners independently
+- **Usage**: Complete solution for full-stack projects
+
+### Manual Deployment Examples
+
+#### Deploy Standard Runner Only
+
+```bash
+# Configure standard runner
+cp config/runner.env.example config/runner.env
+# Edit config/runner.env with your settings
+
+# Deploy
+cd docker
+docker compose -f docker-compose.production.yml --env-file ../config/runner.env up -d
+```
+
+#### Deploy Chrome Runner Only
+
+```bash
+# Configure Chrome runner
+cp config/chrome-runner.env.example config/chrome-runner.env
+# Edit config/chrome-runner.env with your settings
+
+# Deploy
+cd docker
+docker compose -f docker-compose.chrome.yml --env-file ../config/chrome-runner.env up -d
+```
+
+#### Deploy Both Runners
+
+```bash
+# Configure both runners
+cp config/runner.env.example config/runner.env
+cp config/chrome-runner.env.example config/chrome-runner.env
+# Edit both config files with your settings
+
+# Deploy both
+cd docker
+docker compose -f docker-compose.production.yml --env-file ../config/runner.env up -d
+docker compose -f docker-compose.chrome.yml --env-file ../config/chrome-runner.env up -d
+```
+
+---
+
 ## ⚙️ Configuration Options
 
 ### Basic Configuration

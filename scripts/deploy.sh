@@ -7,12 +7,7 @@ set -euo pipefail
 # Configuration
 ENTRYPOINT_PATH="${ENTRYPOINT_PATH:-/usr/local/bin/entrypoint.sh}"
 
-# Source configuration
-if [[ -f "config/docker.env" ]]; then
-    # shellcheck source=../config/docker.env
-    source config/docker.env
-fi
-
+# Source runner configuration if available
 if [[ -f "config/runner.env" ]]; then
     # shellcheck source=../config/runner.env.template
     source config/runner.env

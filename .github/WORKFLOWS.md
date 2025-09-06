@@ -181,8 +181,10 @@ The monitoring workflow provides:
 
 Update environment-specific settings in:
 
-- `config/runner.env` - Runner configuration
-- `docker/docker-compose.yml` - Container orchestration
+- `config/runner.env.example` - Standard runner configuration template
+- `config/chrome-runner.env.example` - Chrome runner configuration template
+- `docker/docker-compose.production.yml` - Standard runner orchestration
+- `docker/docker-compose.chrome.yml` - Chrome runner orchestration
 - Workflow environment sections
 
 ### Adding New Checks
