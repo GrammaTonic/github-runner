@@ -298,8 +298,14 @@ show_summary() {
     
     # Show image size
     if [[ "$MULTI_PLATFORM" != "true" ]] && docker image inspect "${FULL_IMAGE_NAME}" &> /dev/null; then
-        local size
-        size=$(docker image inspect "${FULL_IMAGE_NAME}" --format='{{.Size}}' | numfmt --to=iec-i --suffix=B)
+        local size raw_size
+        raw_size=$(docker image inspect "${FULL_IMAGE_NAME}" --format='{{.Size}}')
+        if command -v numfmt &> /dev/null; then
+            size=$(echo "$raw_size" | numfmt --to=iec-i --suffix=B)
+        else
+            size="${raw_size} bytes"
+            log_warning "numfmt not found; showing raw byte size. Install coreutils for human-readable sizes."
+        fi
         log_info "Image Size: ${size}"
     fi
     

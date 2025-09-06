@@ -13,8 +13,18 @@ log_error() {
 }
 
 # Get Chrome version
-CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+\.\d+')
-log_info "Chrome version: $CHROME_VERSION"
+
+# Detect Chrome binary
+if command -v chromium-browser &> /dev/null; then
+    CHROME_BIN="chromium-browser"
+else
+    log_error "chromium-browser not found. Aborting ChromeDriver install."
+    exit 1
+fi
+
+# Chromium version output: Chromium 123.0.6312.86
+CHROME_VERSION=$($CHROME_BIN --version | grep -oP '\d+\.\d+\.\d+\.\d+')
+log_info "Chromium version: $CHROME_VERSION"
 
 # Chrome for Testing API URLs
 CHROMEDRIVER_URL="https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json"
