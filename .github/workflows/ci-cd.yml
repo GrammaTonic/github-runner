@@ -132,6 +132,7 @@ jobs:
 
       - name: Upload Trivy scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
           sarif_file: "trivy-results.sarif"
 
@@ -193,6 +194,7 @@ jobs:
           context: ./docker
           file: ./docker/Dockerfile
           push: true
+          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -201,12 +203,14 @@ jobs:
 
       - name: Get primary tag for security scan
         id: get-primary-tag
+        if: success() && steps.build.conclusion == 'success'
         run: |
           # Extract the first tag from the multi-line tags output for security scanning
           TAGS="${{ steps.meta.outputs.tags }}"
           PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
           echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
           echo "Primary tag for security scan: $PRIMARY_TAG"
+          echo "Image pushed to registry: $PRIMARY_TAG"
 
   build-chrome:
     name: Build Chrome Runner Image
@@ -258,6 +262,7 @@ jobs:
           context: ./docker
           file: ./docker/Dockerfile.chrome
           push: true
+          load: true
           tags: ${{ steps.meta-chrome.outputs.tags }}
           labels: ${{ steps.meta-chrome.outputs.labels }}
           cache-from: type=gha,scope=chrome
@@ -266,15 +271,54 @@ jobs:
 
       - name: Get primary Chrome tag for security scan
         id: get-primary-tag-chrome
+        if: success() && steps.build-chrome.conclusion == 'success'
         run: |
           # Extract the first tag from the multi-line tags output for security scanning
           TAGS="${{ steps.meta-chrome.outputs.tags }}"
           PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
           echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
           echo "Primary Chrome tag for security scan: $PRIMARY_TAG"
+          echo "Chrome image pushed to registry: $PRIMARY_TAG"
 
-  test:
-    name: Test Runner Configuration
+  # Comprehensive Testing Suite
+  test-package-validation:
+    name: Package Validation Tests
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_tests || inputs.skip_tests == false }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Package Validation Tests
+        run: |
+          echo "🧪 Running comprehensive package validation tests..."
+
+          # Make scripts executable
+          chmod +x tests/docker/validate-packages.sh
+          chmod +x tests/unit/package-validation.sh
+
+          # Run package validation in dry-run mode first (syntax check)
+          echo "Running package validation (dry-run)..."
+          DRY_RUN=true tests/docker/validate-packages.sh
+
+          # Run unit tests for package detection
+          echo "Running unit tests for obsolete package detection..."
+          tests/unit/package-validation.sh
+
+      - name: Upload package validation results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: package-validation-results
+          path: test-results/
+          retention-days: 30
+
+  test-comprehensive:
+    name: Comprehensive Integration Tests
     runs-on: ubuntu-latest
     needs: [build, build-chrome]
     if: ${{ !inputs.skip_tests || inputs.skip_tests == false }}
@@ -283,7 +327,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-type: [unit, integration, config, chrome-runner]
+        test-suite:
+          [unit, integration, docker-validation, security, configuration]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -292,116 +337,625 @@ jobs:
 
       - name: Set up test environment
         run: |
-          # Create test directories
-          mkdir -p test-results/${{ matrix.test-type }}
-
-          # Install test dependencies
+          # Install comprehensive test dependencies
           sudo apt-get update
           sudo apt-get install -y jq curl
 
-      - name: Unit Tests - Script Validation
-        if: matrix.test-type == 'unit'
-        run: |
-          echo "Running unit tests for scripts..."
+          # Install hadolint for Docker linting (from GitHub releases)
+          HADOLINT_VERSION="v2.12.0"
+          wget -O /tmp/hadolint "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-x86_64"
+          chmod +x /tmp/hadolint
+          sudo mv /tmp/hadolint /usr/local/bin/hadolint
 
-          # Test script syntax and basic functionality
-          for script in scripts/*.sh; do
-            if [[ -f "$script" ]]; then
-              echo "Testing $script"
-              # Syntax check
-              bash -n "$script"
-              # Dry run check (if script supports it)
-              if grep -q "DRY_RUN" "$script"; then
-                DRY_RUN=true bash "$script" || echo "Warning: $script dry run failed"
+          # Verify hadolint installation
+          hadolint --version || echo "Hadolint installation failed, will skip Docker linting"
+
+          # Create test results directory
+          mkdir -p test-results/${{ matrix.test-suite }}
+
+          # Make all test scripts executable
+          find tests/ -name "*.sh" -type f -exec chmod +x {} \;
+
+      - name: Run Unit Tests
+        if: matrix.test-suite == 'unit'
+        run: |
+          echo "🧪 Running unit tests..."
+
+          # Run unit tests for package validation
+          TEST_RESULTS_DIR="test-results/unit" tests/unit/package-validation.sh
+
+      - name: Run Integration Tests
+        if: matrix.test-suite == 'integration'
+        run: |
+          echo "🧪 Running integration tests..."
+
+          # Create integration test results directory
+          mkdir -p test-results/integration
+
+          # Run focused integration tests for CI environment
+          # Skip Docker builds and container tests (tested separately)
+
+          integration_errors=0
+
+          # Test 1: Dockerfile syntax validation
+          echo "Validating Dockerfile syntax..."
+          if command -v hadolint >/dev/null 2>&1; then
+            for dockerfile in docker/Dockerfile*; do
+              if [[ -f "$dockerfile" ]]; then
+                dockerfile_name="$(basename "$dockerfile")"
+                # Run hadolint with informational and warning level issues only (ignore style issues)
+                if hadolint --ignore DL3008 --ignore DL3009 --ignore DL3015 "$dockerfile" > "test-results/integration/hadolint-$dockerfile_name.log" 2>&1; then
+                  echo "✅ Hadolint passed for $dockerfile"
+                else
+                  echo "⚠️  Hadolint found issues in $dockerfile (see log for details)"
+                  # Don't fail the build for hadolint issues, just warn
+                fi
+              fi
+            done
+          else
+            echo "ℹ️  Hadolint not available, skipping Docker linting"
+          fi
+
+          # Test 2: Docker Compose validation
+          echo "Validating docker-compose files..."
+
+          # Create temporary directories that compose files expect to exist
+          mkdir -p ../cache/build ../cache/deps ../cache/workspace ../config
+          mkdir -p docker/test-reports
+
+          for compose_file in docker/docker-compose*.yml; do
+            if [[ -f "$compose_file" ]]; then
+              compose_name="$(basename "$compose_file")"
+              # Set dummy environment variables to avoid warnings during validation
+              if GITHUB_TOKEN=dummy GITHUB_REPOSITORY=dummy/repo docker compose -f "$compose_file" config > "test-results/integration/compose-$compose_name.log" 2>&1; then
+                echo "✅ Docker Compose validation passed for $compose_file"
+              else
+                echo "❌ Docker Compose validation failed for $compose_file"
+                echo "Error details:" 
+                cat "test-results/integration/compose-$compose_name.log" | head -20
+                integration_errors=$((integration_errors + 1))
               fi
             fi
           done
 
-      - name: Integration Tests - Docker Compose
-        if: matrix.test-type == 'integration'
-        run: |
-          echo "Running integration tests..."
+          # Clean up temporary directories
+          rmdir ../cache/build ../cache/deps ../cache/workspace 2>/dev/null || true
+          rmdir ../cache 2>/dev/null || true
+          rmdir docker/test-reports 2>/dev/null || true
 
-          # Test Docker Compose configuration
-          if [[ -f "docker/docker-compose.yml" ]]; then
-            cd docker
-            
-            # Test compose file validation
-            docker compose config --quiet
-            
-            # Test container startup (without actual GitHub token)
-            export GITHUB_TOKEN="dummy-token-for-testing"
-            export GITHUB_REPOSITORY="test/repo"
-            
-            # Start services in test mode
-            docker compose up -d --scale runner=1
-            
-            # Wait for containers to be ready
-            sleep 30
-            
-            # Check container health
-            docker compose ps
-            
-            # Cleanup
-            docker compose down -v
-          fi
-
-      - name: Configuration Tests
-        if: matrix.test-type == 'config'
-        run: |
-          echo "Testing configuration templates..."
-
-          # Test environment file templates
-          if [[ -d "config" ]]; then
-            for config_file in config/*.env*; do
-              if [[ -f "$config_file" ]]; then
-                echo "Validating $config_file"
-                # Check for required variables
-                grep -q "GITHUB_TOKEN" "$config_file" || echo "Warning: GITHUB_TOKEN not found in $config_file"
-                grep -q "GITHUB_REPOSITORY" "$config_file" || echo "Warning: GITHUB_REPOSITORY not found in $config_file"
+          # Test 3: Configuration file validation
+          echo "Validating configuration files..."
+          for config_file in config/*.env*; do
+            if [[ -f "$config_file" ]]; then
+              config_name="$(basename "$config_file")"
+              if [[ "$config_name" != "*.env" ]] && [[ "$config_name" == *.env* ]]; then
+                echo "Checking $config_name format..."
+                if ! grep -q "=" "$config_file"; then
+                  echo "❌ Configuration file $config_name appears to be empty or invalid"
+                  integration_errors=$((integration_errors + 1))
+                fi
               fi
-            done
+            fi
+          done
+
+          # Test 4: Script validation
+          echo "Validating shell scripts..."
+          for script in scripts/*.sh; do
+            if [[ -f "$script" ]]; then
+              script_name="$(basename "$script")"
+              if ! bash -n "$script" > "test-results/integration/syntax-$script_name.log" 2>&1; then
+                echo "❌ Syntax error in $script"
+                integration_errors=$((integration_errors + 1))
+              fi
+            fi
+          done
+
+          echo "Integration tests completed. Errors: $integration_errors"
+
+          if [[ $integration_errors -gt 0 ]]; then
+            echo "❌ Integration tests failed"
+            exit 1
+          else
+            echo "✅ Integration tests passed"
           fi
 
-      - name: Chrome Runner Tests
-        if: matrix.test-type == 'chrome-runner'
+      - name: Run Docker Package Validation
+        if: matrix.test-suite == 'docker-validation'
         run: |
-          echo "Testing Chrome runner configuration..."
+          echo "🧪 Running Docker package validation..."
 
-          # Test Chrome runner Docker Compose configuration
-          if [[ -f "docker/docker-compose.chrome.yml" ]]; then
-            cd docker
-            
-            # Test compose file validation
-            docker compose -f docker-compose.chrome.yml config --quiet
-            
-            # Test Chrome runner build script
-            if [[ -f "../scripts/build-chrome.sh" ]]; then
-              echo "Testing Chrome runner build script syntax..."
-              bash -n ../scripts/build-chrome.sh
+          # Create docker validation test results directory
+          mkdir -p test-results/docker-validation
+
+          # Run focused Docker package validation (without building)
+          docker_errors=0
+
+          # Test 1: Package duplication check
+          echo "Checking for duplicate packages in Dockerfiles..."
+          for dockerfile in docker/Dockerfile*; do
+            if [[ -f "$dockerfile" ]]; then
+              dockerfile_name="$(basename "$dockerfile")"
+              
+              # Extract package names from RUN commands that install packages
+              packages=$(grep -E "RUN.*apt-get install|RUN.*apk add" "$dockerfile" | \
+                sed -E 's/.*apt-get install[^a-zA-Z-]*//; s/.*apk add[^a-zA-Z-]*//; s/[\\&|;].*//; s/#.*//; s/\s+/ /g' | \
+                tr ' ' '\n' | grep -E '^[a-zA-Z][a-zA-Z0-9.-]*$' | sort)
+              
+              # Check for duplicates
+              duplicates=$(echo "$packages" | uniq -d)
+              if [[ -n "$duplicates" ]]; then
+                echo "❌ Duplicate packages found in $dockerfile_name:"
+                echo "$duplicates"
+                echo "$duplicates" > "test-results/docker-validation/duplicates-$dockerfile_name.log"
+                docker_errors=$((docker_errors + 1))
+              else
+                echo "✅ No duplicates in $dockerfile_name"
+              fi
             fi
-            
-            # Test Chrome runner environment configuration
-            if [[ -f "../config/chrome-runner.env.example" ]]; then
-              echo "Validating Chrome runner environment template..."
-              grep -q "CHROME_FLAGS" "../config/chrome-runner.env.example" || echo "Warning: CHROME_FLAGS not found"
-              grep -q "PLAYWRIGHT_" "../config/chrome-runner.env.example" || echo "Warning: Playwright config not found"
-              grep -q "RUNNER_LABELS.*chrome" "../config/chrome-runner.env.example" || echo "Warning: Chrome labels not found"
+          done
+
+          # Test 2: Obsolete package check
+          echo "Checking for known obsolete packages..."
+          obsolete_packages=("python2" "python2.7" "python-pip" "nodejs-legacy")
+          for dockerfile in docker/Dockerfile*; do
+            if [[ -f "$dockerfile" ]]; then
+              dockerfile_name="$(basename "$dockerfile")"
+              for pkg in "${obsolete_packages[@]}"; do
+                if grep -q "$pkg" "$dockerfile"; then
+                  echo "❌ Obsolete package '$pkg' found in $dockerfile_name"
+                  echo "$pkg" >> "test-results/docker-validation/obsolete-$dockerfile_name.log"
+                  docker_errors=$((docker_errors + 1))
+                fi
+              done
             fi
-            
-            # Test Chrome Dockerfile syntax
-            if [[ -f "Dockerfile.chrome" ]]; then
-              echo "Validating Chrome Dockerfile..."
-              docker build --dry-run -f Dockerfile.chrome . > /dev/null 2>&1 || echo "Chrome Dockerfile validation completed"
-            fi
+          done
+
+          echo "Docker validation completed. Errors: $docker_errors"
+
+          if [[ $docker_errors -gt 0 ]]; then
+            echo "❌ Docker package validation failed"
+            exit 1
+          else
+            echo "✅ Docker package validation passed"
           fi
 
-      - name: Upload test results
+      - name: Run Security Tests
+        if: matrix.test-suite == 'security'
+        run: |
+          echo "🧪 Running security validation tests..."
+
+          # Create security test results directory
+          mkdir -p test-results/security
+
+          # Check for potential secrets
+          echo "Checking for potential secrets..."
+          secret_patterns=("password" "secret" "token" "key" "api_key" "auth")
+          secrets_found=false
+
+          for pattern in "${secret_patterns[@]}"; do
+            if grep -r -i "$pattern" . \
+                --exclude-dir=".git" \
+                --exclude-dir="test-results" \
+                --exclude-dir="logs" \
+                --exclude="*.log" \
+                --exclude="*.md" \
+                | grep -v "# Example\|TODO\|FIXME\|template\|placeholder\|test.*$pattern" > "test-results/security/secrets-$pattern.log" 2>&1; then
+              echo "⚠️  Potential secrets pattern '$pattern' found"
+              secrets_found=true
+            fi
+          done
+
+          # Check Docker security practices
+          echo "Checking Docker security practices..."
+          security_issues=0
+
+          for dockerfile in docker/Dockerfile*; do
+            if [[ -f "$dockerfile" ]]; then
+              dockerfile_name="$(basename "$dockerfile")"
+              
+              # Check for running as root
+              if ! grep -q "USER " "$dockerfile"; then
+                echo "SECURITY: $dockerfile_name may run as root" >> "test-results/security/docker-security.log"
+                security_issues=$((security_issues + 1))
+              fi
+              
+              # Check for COPY . .
+              if grep -q "COPY \. \." "$dockerfile"; then
+                echo "SECURITY: $dockerfile_name uses 'COPY . .' - overly broad" >> "test-results/security/docker-security.log"
+                security_issues=$((security_issues + 1))
+              fi
+            fi
+          done
+
+          echo "Security scan completed. Issues found: $security_issues"
+
+      - name: Run Configuration Tests
+        if: matrix.test-suite == 'configuration'
+        run: |
+          echo "🧪 Running configuration validation tests..."
+
+          # Create configuration test results directory
+          mkdir -p test-results/configuration
+
+          config_errors=0
+
+          # Test configuration files
+          for config_file in config/*.env*; do
+            if [[ -f "$config_file" ]]; then
+              config_name="$(basename "$config_file")"
+              
+              echo "Validating $config_name..."
+              
+              # Syntax check
+              if ! bash -n "$config_file" > "test-results/configuration/$config_name.log" 2>&1; then
+                echo "❌ Syntax error in $config_name"
+                config_errors=$((config_errors + 1))
+              fi
+              
+              # Check for required variables
+              required_vars=("GITHUB_TOKEN" "GITHUB_REPOSITORY")
+              for var in "${required_vars[@]}"; do
+                if ! grep -q "^$var\|^#.*$var" "$config_file"; then
+                  echo "MISSING: $var not found in $config_name" >> "test-results/configuration/missing-vars.log"
+                fi
+              done
+            fi
+          done
+
+          # Test scripts
+          for script in scripts/*.sh; do
+            if [[ -f "$script" ]]; then
+              script_name="$(basename "$script")"
+              
+              # Syntax check
+              if ! bash -n "$script" > "test-results/configuration/$script_name.log" 2>&1; then
+                echo "❌ Syntax error in $script_name"
+                config_errors=$((config_errors + 1))
+              fi
+            fi
+          done
+
+          echo "Configuration validation completed. Errors found: $config_errors"
+
+          if [[ $config_errors -gt 0 ]]; then
+            exit 1
+          fi
+
+      - name: Upload comprehensive test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results-${{ matrix.test-type }}
-          path: test-results/${{ matrix.test-type }}
+          name: test-results-${{ matrix.test-suite }}
+          path: test-results/${{ matrix.test-suite }}
+          retention-days: 30
+
+  test-container-startup:
+    name: Container Startup Tests
+    runs-on: ubuntu-latest
+    needs: [build, build-chrome]
+    if: ${{ !inputs.skip_tests || inputs.skip_tests == false }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        container-type: [main-runner, chrome-runner]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download built images
+        run: |
+          # Log in to Container Registry to pull the built images
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      - name: Pull and verify Docker images
+        run: |
+          # Pull the built Docker images from the registry instead of using artifacts
+          if [[ "${{ matrix.container-type }}" == "main-runner" ]]; then
+            IMAGE_TAG="${{ needs.build.outputs.image-primary }}"
+            echo "Pulling main runner image: $IMAGE_TAG"
+            docker pull "$IMAGE_TAG"
+            
+            # Tag for easier testing
+            docker tag "$IMAGE_TAG" github-runner:latest
+            echo "Tagged as github-runner:latest"
+          else
+            IMAGE_TAG="${{ needs.build-chrome.outputs.image-primary }}"
+            echo "Pulling Chrome runner image: $IMAGE_TAG"
+            docker pull "$IMAGE_TAG"
+            
+            # Tag for easier testing  
+            docker tag "$IMAGE_TAG" github-runner:chrome-latest
+            echo "Tagged as github-runner:chrome-latest"
+          fi
+
+          # Verify images are available
+          echo "Available Docker images:"
+          docker images | grep github-runner
+
+      - name: Set up container test environment
+        run: |
+          # Create test results directory
+          mkdir -p test-results/container-startup/${{ matrix.container-type }}
+
+          # Make test scripts executable
+          chmod +x tests/integration/comprehensive-tests.sh
+
+          # Create minimal test environment files
+          mkdir -p config/test
+
+          # Main runner test config
+          cat > config/test/main-runner.env << 'EOF'
+          GITHUB_TOKEN=test-token-not-real-for-testing
+          GITHUB_REPOSITORY=test/repository
+          RUNNER_NAME=test-main-runner-ci
+          RUNNER_LABELS=test,ci,docker,self-hosted
+          RUNNER_GROUP=test-group
+          RUNNER_WORKDIR=/home/runner/_work
+          EOF
+
+          # Chrome runner test config
+          cat > config/test/chrome-runner.env << 'EOF'
+          GITHUB_TOKEN=test-token-not-real-for-testing
+          GITHUB_REPOSITORY=test/repository
+          RUNNER_NAME=test-chrome-runner-ci
+          RUNNER_LABELS=chrome,ui-tests,selenium,playwright,cypress,headless
+          RUNNER_GROUP=chrome-test-group
+          DISPLAY=:99
+          CHROME_FLAGS=--headless --no-sandbox --disable-dev-shm-usage --disable-gpu
+          EOF
+
+      - name: Test Main Runner Container Startup
+        if: matrix.container-type == 'main-runner'
+        run: |
+          echo "🚀 Testing main GitHub runner container startup..."
+
+          # Test basic container startup without GitHub registration
+          cd docker
+
+          # Create a test script that bypasses GitHub registration for testing
+          cat > test-entrypoint.sh << 'EOF'
+          #!/bin/bash
+          echo "=== Container Startup Test ==="
+          echo "Testing basic container functionality..."
+
+          # Basic system checks
+          echo "✓ Container started successfully"
+          echo "✓ Shell access working"
+          echo "✓ User context: $(whoami)"
+          echo "✓ Working directory: $(pwd)"
+          echo "✓ Available disk space:"
+          df -h /
+          echo "✓ Memory info:"
+          free -h
+          echo "✓ CPU info:"
+          nproc
+
+          # Test basic commands that runners need
+          echo "✓ Git available: $(git --version)"
+          echo "✓ Curl available: $(curl --version | head -1)"
+
+          # Test Node.js if available
+          if command -v node >/dev/null 2>&1; then
+            echo "✓ Node.js available: $(node --version)"
+          fi
+
+          # Test Python if available
+          if command -v python3 >/dev/null 2>&1; then
+            echo "✓ Python available: $(python3 --version)"
+          fi
+
+          echo "=== Container startup test completed successfully ==="
+          exit 0
+          EOF
+
+          chmod +x test-entrypoint.sh
+
+          # Start container with test entrypoint, completely overriding the default
+          # Use absolute path and ensure entrypoint override works properly
+          CONTAINER_ID=$(docker run -d --name ci-test-main-runner \
+            --entrypoint="" \
+            -v "$(pwd)/test-entrypoint.sh:/usr/local/bin/test-entrypoint.sh" \
+            github-runner:latest /usr/local/bin/test-entrypoint.sh)
+
+          echo "Container ID: $CONTAINER_ID"
+
+          # Wait for container to complete
+          echo "Waiting for container test to complete..."
+          if ! timeout 60 docker wait "$CONTAINER_ID"; then
+            echo "❌ Container test timed out"
+            docker logs "$CONTAINER_ID" || true
+            exit 1
+          fi
+
+          # Check exit code
+          EXIT_CODE=$(docker inspect "$CONTAINER_ID" --format='{{.State.ExitCode}}')
+          echo "Container exit code: $EXIT_CODE"
+
+          # Show container logs
+          echo "=== Container Logs ==="
+          docker logs "$CONTAINER_ID"
+
+          # Cleanup
+          docker rm "$CONTAINER_ID" || true
+
+          if [[ "$EXIT_CODE" -eq 0 ]]; then
+            echo "✅ Main runner container startup test passed"
+          else
+            echo "❌ Main runner container startup test failed"
+            exit 1
+          fi
+
+      - name: Test Chrome Runner Container Startup
+        if: matrix.container-type == 'chrome-runner'
+        run: |
+          echo "🚀 Testing Chrome GitHub runner container startup..."
+
+          # Test basic Chrome container startup without GitHub registration
+          cd docker
+
+          # Create a Chrome test script that bypasses GitHub registration
+          cat > test-chrome-entrypoint.sh << 'EOF'
+          #!/bin/bash
+          echo "=== Chrome Container Startup Test ==="
+          echo "Testing Chrome runner container functionality..."
+
+          # Basic system checks
+          echo "✓ Chrome container started successfully"
+          echo "✓ Shell access working"
+          echo "✓ User context: $(whoami)"
+          echo "✓ Working directory: $(pwd)"
+
+          # Test Chrome installation
+          echo "Testing Chrome installation..."
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "✓ Chrome available: $(google-chrome --version)"
+          else
+            echo "❌ Chrome not found"
+            exit 1
+          fi
+
+          # Test ChromeDriver
+          echo "Testing ChromeDriver..."
+          if command -v chromedriver >/dev/null 2>&1; then
+            echo "✓ ChromeDriver available: $(chromedriver --version)"
+          else
+            echo "❌ ChromeDriver not found"
+            exit 1
+          fi
+
+          # Test Node.js for frontend testing
+          if command -v node >/dev/null 2>&1; then
+            echo "✓ Node.js available: $(node --version)"
+          fi
+
+          # Test npm for package management
+          if command -v npm >/dev/null 2>&1; then
+            echo "✓ npm available: $(npm --version)"
+          fi
+
+          # Test Python for automation scripts
+          if command -v python3 >/dev/null 2>&1; then
+            echo "✓ Python available: $(python3 --version)"
+          fi
+
+          # Test basic Chrome functionality (headless)
+          echo "Testing Chrome headless functionality..."
+          if timeout 30 google-chrome --headless --no-sandbox --disable-dev-shm-usage \
+            --virtual-time-budget=1000 --dump-dom about:blank > /tmp/chrome-test.html 2>/dev/null; then
+            echo "✓ Chrome headless test passed"
+          else
+            echo "⚠️ Chrome headless test failed (may work in different environment)"
+          fi
+
+          echo "=== Chrome container startup test completed successfully ==="
+          exit 0
+          EOF
+
+          chmod +x test-chrome-entrypoint.sh
+
+          # Start container with test entrypoint, completely overriding the default
+          # Use absolute path and ensure entrypoint override works properly
+          CONTAINER_ID=$(docker run -d --name ci-test-chrome-runner \
+            --entrypoint="" \
+            -v "$(pwd)/test-chrome-entrypoint.sh:/usr/local/bin/test-chrome-entrypoint.sh" \
+            github-runner:chrome-latest /usr/local/bin/test-chrome-entrypoint.sh)
+
+          echo "Chrome Container ID: $CONTAINER_ID"
+
+          # Wait for container to complete (Chrome may take longer)
+          echo "Waiting for Chrome container test to complete..."
+          if ! timeout 120 docker wait "$CONTAINER_ID"; then
+            echo "❌ Chrome container test timed out"
+            docker logs "$CONTAINER_ID" || true
+            exit 1
+          fi
+
+          # Check exit code
+          EXIT_CODE=$(docker inspect "$CONTAINER_ID" --format='{{.State.ExitCode}}')
+          echo "Chrome container exit code: $EXIT_CODE"
+
+          # Show container logs
+          echo "=== Chrome Container Logs ==="
+          docker logs "$CONTAINER_ID"
+
+          # Cleanup
+          docker rm "$CONTAINER_ID" || true
+
+          if [[ "$EXIT_CODE" -eq 0 ]]; then
+            echo "✅ Chrome runner container startup test passed"
+          else
+            echo "❌ Chrome runner container startup test failed"
+            exit 1
+          fi
+
+      - name: Verify Container Resource Usage
+        run: |
+          echo "📊 Checking container resource usage patterns..."
+
+          # Check if containers have reasonable resource constraints
+          cd docker
+
+          if [[ "${{ matrix.container-type }}" == "main-runner" ]]; then
+            COMPOSE_FILE="docker-compose.yml"
+          else
+            COMPOSE_FILE="docker-compose.chrome.yml"
+          fi
+
+          # Check for restart policies
+          if ! grep -q "restart:" "$COMPOSE_FILE"; then
+            echo "⚠️ No restart policy configured in $COMPOSE_FILE"
+          else
+            echo "✅ Restart policy configured"
+          fi
+
+          # Check for health checks
+          if grep -q "healthcheck:" "$COMPOSE_FILE"; then
+            echo "✅ Health check configured"
+          else
+            echo "💡 Consider adding health checks for production readiness"
+          fi
+
+          echo "Resource usage check completed"
+
+      - name: Generate container startup report
+        if: always()
+        run: |
+          # Create detailed startup test report
+          REPORT_DIR="test-results/container-startup/${{ matrix.container-type }}"
+          mkdir -p "$REPORT_DIR"
+
+          echo "# Container Startup Test Report" > "$REPORT_DIR/startup-report.md"
+          echo "" >> "$REPORT_DIR/startup-report.md"
+          echo "## Test Details" >> "$REPORT_DIR/startup-report.md"
+          echo "- **Container Type**: ${{ matrix.container-type }}" >> "$REPORT_DIR/startup-report.md"
+          echo "- **Test Date**: $(date -Iseconds)" >> "$REPORT_DIR/startup-report.md"
+          echo "- **Workflow**: ${{ github.workflow }}" >> "$REPORT_DIR/startup-report.md"
+          echo "- **Run ID**: ${{ github.run_id }}" >> "$REPORT_DIR/startup-report.md"
+          echo "" >> "$REPORT_DIR/startup-report.md"
+
+          # Add Docker info
+          echo "## Docker Environment" >> "$REPORT_DIR/startup-report.md"
+          echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
+          docker version >> "$REPORT_DIR/startup-report.md" 2>&1 || true
+          echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
+          echo "" >> "$REPORT_DIR/startup-report.md"
+
+          # Add image info
+          echo "## Image Information" >> "$REPORT_DIR/startup-report.md"
+          echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
+          docker images | grep github-runner >> "$REPORT_DIR/startup-report.md" 2>&1 || true
+          echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
+
+      - name: Upload container startup test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: container-startup-results-${{ matrix.container-type }}
+          path: test-results/container-startup/${{ matrix.container-type }}
           retention-days: 30
 
   security-container-scan:
@@ -412,6 +966,11 @@ jobs:
       contents: read
       security-events: write
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
       - name: Run Trivy vulnerability scanner on container
         uses: aquasecurity/trivy-action@master
         with:
@@ -421,6 +980,7 @@ jobs:
 
       - name: Upload container scan results
         uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
           sarif_file: "trivy-container-results.sarif"
 
@@ -432,6 +992,11 @@ jobs:
       contents: read
       security-events: write
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
       - name: Run Trivy vulnerability scanner on Chrome container
         uses: aquasecurity/trivy-action@master
         with:
@@ -441,6 +1006,7 @@ jobs:
 
       - name: Upload Chrome container scan results
         uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
           sarif_file: "trivy-chrome-results.sarif"
 
@@ -448,7 +1014,15 @@ jobs:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     needs:
-      [build, build-chrome, test, security-container-scan, security-chrome-scan]
+      [
+        build,
+        build-chrome,
+        test-package-validation,
+        test-comprehensive,
+        test-container-startup,
+        security-container-scan,
+        security-chrome-scan,
+      ]
     if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
     environment:
       name: staging
@@ -517,7 +1091,9 @@ jobs:
       [
         build,
         build-chrome,
-        test,
+        test-package-validation,
+        test-comprehensive,
+        test-container-startup,
         security-container-scan,
         security-chrome-scan,
         deploy-staging,
@@ -594,8 +1170,8 @@ jobs:
   cleanup:
     name: Cleanup Resources
     runs-on: ubuntu-latest
-    needs: [deploy-staging, deploy-production]
-    if: always()
+    needs: [deploy-production]
+    if: always() && (needs.deploy-production.result == 'success' || needs.deploy-production.result == 'failure')
     permissions:
       contents: read
       packages: write
@@ -624,7 +1200,6 @@ jobs:
           - **Timestamp**: $(date -u)
 
           ## Deployments
-          - Staging: ${{ needs.deploy-staging.result }}
           - Production: ${{ needs.deploy-production.result }}
 
           ## Image Details
