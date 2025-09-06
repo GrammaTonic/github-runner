@@ -280,6 +280,7 @@ validate_configuration() {
     fi
     
     # Source the environment file
+    # shellcheck source=/dev/null
     source "$ENV_FILE"
     
     # Validate required variables
