@@ -297,6 +297,7 @@ test_chrome_runner_startup() {
         log_info "Chrome headless test passed"
     else
         log_warn "Chrome headless test failed - may impact UI testing capabilities"
+        log_error "Check $TEST_RESULTS_DIR/chrome-headless-test.log for details. Consider increasing resources or updating Chrome."
     fi
     
     log_info "Chrome runner container health checks completed"

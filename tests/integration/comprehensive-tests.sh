@@ -623,6 +623,7 @@ EOF
         --virtual-time-budget=1000 --run-all-compositor-stages-before-draw \
         --dump-dom about:blank > "$TEST_RESULTS_DIR/chrome-headless-test.log" 2>&1; then
         log_warn "Chrome headless test failed - may impact UI testing capabilities"
+        log_error "Check $TEST_RESULTS_DIR/chrome-headless-test.log for details. Consider increasing resources or updating Chrome."
     else
         log_info "Chrome headless test passed"
     fi
