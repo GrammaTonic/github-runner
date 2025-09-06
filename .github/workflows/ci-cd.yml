@@ -629,6 +629,51 @@ jobs:
           path: test-results/${{ matrix.test-suite }}
           retention-days: 30
 
+  test-user-deployment:
+    name: User Deployment Experience Tests
+    runs-on: ubuntu-latest
+    needs: [build, build-chrome]
+    if: ${{ !inputs.skip_tests || inputs.skip_tests == false }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Download main runner image
+        uses: actions/download-artifact@v4
+        with:
+          name: github-runner-image
+          path: /tmp
+
+      - name: Download Chrome runner image
+        uses: actions/download-artifact@v4
+        with:
+          name: github-runner-chrome-image
+          path: /tmp
+
+      - name: Load Docker images
+        run: |
+          docker load < /tmp/github-runner.tar
+          docker load < /tmp/github-runner-chrome.tar
+
+      - name: Run User Deployment Experience Tests
+        run: |
+          chmod +x tests/user-deployment/test-user-experience.sh
+          tests/user-deployment/test-user-experience.sh
+
+      - name: Upload user deployment test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: user-deployment-test-results
+          path: test-results/user-deployment
+          retention-days: 30
+
   test-container-startup:
     name: Container Startup Tests
     runs-on: ubuntu-latest
