@@ -1061,8 +1061,8 @@ jobs:
 
           # Update configuration for staging
           if [[ -f "config/runner.env" ]]; then
-            sed -i 's/GITHUB_TOKEN=.*/GITHUB_TOKEN=${{ secrets.STAGING_GITHUB_TOKEN }}/' config/runner.env
-            sed -i 's/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=${{ secrets.STAGING_REPOSITORY }}/' config/runner.env
+            sed -i "s/GITHUB_TOKEN=.*/GITHUB_TOKEN=$STAGING_GITHUB_TOKEN/" config/runner.env
+            sed -i "s/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=$STAGING_REPOSITORY/" config/runner.env
           fi
 
       - name: Deploy to staging
@@ -1136,8 +1136,8 @@ jobs:
 
           # Update configuration for production
           if [[ -f "config/runner.env" ]]; then
-            sed -i 's/GITHUB_TOKEN=.*/GITHUB_TOKEN=${{ secrets.PROD_GITHUB_TOKEN }}/' config/runner.env
-            sed -i 's/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=${{ secrets.PROD_REPOSITORY }}/' config/runner.env
+            sed -i "s/GITHUB_TOKEN=.*/GITHUB_TOKEN=$PROD_GITHUB_TOKEN/" config/runner.env
+            sed -i "s/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=$PROD_REPOSITORY/" config/runner.env
           fi
 
       - name: Deploy to production
