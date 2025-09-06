@@ -210,23 +210,7 @@ jobs:
           PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
           echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
           echo "Primary tag for security scan: $PRIMARY_TAG"
-
-      - name: Save Docker image as artifact
-        if: success() && steps.build.conclusion == 'success'
-        run: |
-          # Save the primary image as tar for container startup tests
-          PRIMARY_TAG="${{ steps.get-primary-tag.outputs.primary-tag }}"
-          echo "Saving Docker image: $PRIMARY_TAG"
-          docker save "$PRIMARY_TAG" -o github-runner-latest.tar
-          ls -la github-runner-latest.tar
-
-      - name: Upload Docker image artifact
-        if: success() && steps.build.conclusion == 'success'
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-image-primary
-          path: github-runner-latest.tar
-          retention-days: 1
+          echo "Image pushed to registry: $PRIMARY_TAG"
 
   build-chrome:
     name: Build Chrome Runner Image
@@ -294,23 +278,7 @@ jobs:
           PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
           echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
           echo "Primary Chrome tag for security scan: $PRIMARY_TAG"
-
-      - name: Save Chrome Docker image as artifact
-        if: success() && steps.build-chrome.conclusion == 'success'
-        run: |
-          # Save the Chrome image as tar for container startup tests
-          PRIMARY_TAG="${{ steps.get-primary-tag-chrome.outputs.primary-tag }}"
-          echo "Saving Chrome Docker image: $PRIMARY_TAG"
-          docker save "$PRIMARY_TAG" -o github-runner-chrome-latest.tar
-          ls -la github-runner-chrome-latest.tar
-
-      - name: Upload Chrome Docker image artifact
-        if: success() && steps.build-chrome.conclusion == 'success'
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-image-chrome
-          path: github-runner-chrome-latest.tar
-          retention-days: 1
+          echo "Chrome image pushed to registry: $PRIMARY_TAG"
 
   # Comprehensive Testing Suite
   test-package-validation:
@@ -667,39 +635,32 @@ jobs:
           fetch-depth: 1
 
       - name: Download built images
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.container-type == 'main-runner' && 'docker-image-primary' || 'docker-image-chrome' }}
-          path: /tmp/
-
-      - name: Load Docker images
         run: |
-          # Load the built Docker images and retag them for testing
+          # Log in to Container Registry to pull the built images
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      - name: Pull and verify Docker images
+        run: |
+          # Pull the built Docker images from the registry instead of using artifacts
           if [[ "${{ matrix.container-type }}" == "main-runner" ]]; then
-            echo "Loading main runner image..."
-            docker load < /tmp/github-runner-latest.tar
+            IMAGE_TAG="${{ needs.build.outputs.image-primary }}"
+            echo "Pulling main runner image: $IMAGE_TAG"
+            docker pull "$IMAGE_TAG"
             
-            # Get the loaded image tag and retag it for testing
-            LOADED_TAG=$(docker images --format "table {{.Repository}}:{{.Tag}}" | grep "ghcr.io.*github-runner" | grep -v "chrome" | head -1)
-            echo "Loaded image tag: $LOADED_TAG"
-            
-            # Retag for easier testing
-            docker tag "$LOADED_TAG" github-runner:latest
-            echo "Retagged as github-runner:latest"
+            # Tag for easier testing
+            docker tag "$IMAGE_TAG" github-runner:latest
+            echo "Tagged as github-runner:latest"
           else
-            echo "Loading Chrome runner image..."
-            docker load < /tmp/github-runner-chrome-latest.tar
+            IMAGE_TAG="${{ needs.build-chrome.outputs.image-primary }}"
+            echo "Pulling Chrome runner image: $IMAGE_TAG"
+            docker pull "$IMAGE_TAG"
             
-            # Get the loaded Chrome image tag and retag it for testing
-            LOADED_TAG=$(docker images --format "table {{.Repository}}:{{.Tag}}" | grep "ghcr.io.*github-runner.*chrome" | head -1)
-            echo "Loaded Chrome image tag: $LOADED_TAG"
-            
-            # Retag for easier testing
-            docker tag "$LOADED_TAG" github-runner:chrome-latest
-            echo "Retagged as github-runner:chrome-latest"
+            # Tag for easier testing  
+            docker tag "$IMAGE_TAG" github-runner:chrome-latest
+            echo "Tagged as github-runner:chrome-latest"
           fi
 
-          # Verify images are loaded and tagged
+          # Verify images are available
           echo "Available Docker images:"
           docker images | grep github-runner
 
