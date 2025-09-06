@@ -890,8 +890,8 @@ jobs:
                   echo "
                   echo "\u2713 Chrome headless test passed"
                 else
-                  echo "\u26a0\ufe0f Chrome headless test warning (may work in different environment)"
-                  echo "\u26a0\ufe0f Check /tmp/chrome-test.html for details. Consider increasing resources or updating Chrome."
+                  printf "\u26a0\ufe0f Chrome headless test warning (may work in different environment)\n"
+                  printf "\u26a0\ufe0f Check /tmp/chrome-test.html for details. Consider increasing resources or updating Chrome.\n"
                 fi
                 
                 echo "✓ Production Chrome environment validation completed"
