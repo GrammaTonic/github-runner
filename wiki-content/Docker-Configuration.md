@@ -22,14 +22,32 @@ Complete guide to configuring Docker and Docker Compose for GitHub Actions self-
 
 ## 📁 Docker Compose Configuration
 
+### Separate Architecture
+
+The project uses separate Docker Compose files for different runner types:
+
+```yaml
+# docker/docker-compose.production.yml - Standard runners
+services:
+  github-runner:
+    image: ghcr.io/grammatonic/github-runner:latest
+    container_name: github-runner-main
+    # ... configuration for standard CI/CD
+
+# docker/docker-compose.chrome.yml - Chrome runners
+services:
+  github-runner-chrome:
+    image: ghcr.io/grammatonic/github-runner:chrome-latest
+    container_name: github-runner-chrome
+    # ... configuration for UI testing
+```
+
 ### Basic Setup
 
 ```yaml
-# docker/docker-compose.yml
-version: "3.8"
-
+# Standard runner deployment
 services:
-  runner:
+  github-runner:
     build:
       context: .
       dockerfile: Dockerfile
@@ -71,10 +89,10 @@ networks:
 version: "3.8"
 
 services:
-  runner:
+  github-runner:
     extends:
-      file: docker-compose.yml
-      service: runner
+      file: docker-compose.production.yml
+      service: github-runner
     deploy:
       replicas: 3
       restart_policy:
@@ -229,42 +247,23 @@ USER runner
 ### Development Environment
 
 ```bash
-# config/docker.env.dev
-DOCKER_BUILDKIT=1
-COMPOSE_PROJECT_NAME=github-runner-dev
-DOCKER_NETWORK=runner-dev-network
+# Environment variables for development
+export DOCKER_BUILDKIT=1
+export COMPOSE_PROJECT_NAME=github-runner-dev
 
-# Resource limits (development)
-RUNNER_MEMORY_LIMIT=1g
-RUNNER_CPU_LIMIT=0.5
-
-# Logging
-COMPOSE_LOG_LEVEL=INFO
-DOCKER_LOG_DRIVER=json-file
-DOCKER_LOG_OPTS_MAX_SIZE=10m
-DOCKER_LOG_OPTS_MAX_FILE=3
+# Use development compose file with lower resource limits
+docker compose -f docker/docker-compose.production.yml up -d
 ```
 
 ### Production Environment
 
 ```bash
-# config/docker.env.prod
-DOCKER_BUILDKIT=1
-COMPOSE_PROJECT_NAME=github-runner-prod
-DOCKER_NETWORK=runner-prod-network
+# Environment variables for production
+export DOCKER_BUILDKIT=1
+export COMPOSE_PROJECT_NAME=github-runner-prod
 
-# Resource limits (production)
-RUNNER_MEMORY_LIMIT=4g
-RUNNER_CPU_LIMIT=2.0
-
-# High availability
-RUNNER_REPLICAS=3
-HEALTH_CHECK_INTERVAL=30s
-RESTART_POLICY=unless-stopped
-
-# Security
-DOCKER_CONTENT_TRUST=1
-DOCKER_REGISTRY=ghcr.io/grammatonic
+# Deploy production runners
+docker compose -f docker/docker-compose.production.yml up -d
 ```
 
 ## 📊 Volume Management

@@ -4,6 +4,35 @@
 
 This repository is for setting up and managing GitHub Actions self-hosted runners using Docker containers for a single repository. The project focuses on automating containerized runner deployment, configuration, and lifecycle management with Docker and Docker Compose.
 
+## 🚨 CRITICAL WORKFLOW & BRANCH PROTECTION RULES
+
+### Branch Protection Status - ENFORCED
+
+- **`main` branch**: PROTECTED with branch protection rules
+- **`develop` branch**: PROTECTED with branch protection rules
+- **Direct pushes BLOCKED**: All changes must go through pull requests
+- **Review required**: 1 approving review required before merge
+- **Status checks required**: CI/CD Pipeline must pass before merge
+- **Force pushes BLOCKED**: History integrity preserved
+- **Conversation resolution**: All PR comments must be resolved
+
+### Development Workflow - MANDATORY
+
+1. **Start from develop**: Always create feature branches from `develop` branch
+2. **Feature development**: Work on features/fixes in dedicated feature branches
+3. **Pull Request workflow**: Submit PR from feature branch → `develop`
+4. **Code review & CI**: Get 1+ approval AND CI/CD Pipeline must pass
+5. **Merge to develop**: After approval and green CI, merge to `develop`
+6. **Release process**: Create PR from `develop` → `main` for releases
+
+**CRITICAL**: Direct pushes to `main` and `develop` are now IMPOSSIBLE due to branch protection.
+
+### Branch Protection Management
+
+- **Setup script**: `scripts/setup-branch-protection.sh` - Configure protection rules
+- **Status check**: `scripts/setup-branch-protection.sh --status` - View current rules
+- **Enforcement**: GitHub API enforced, cannot be bypassed without admin override
+
 ## 🚨 CRITICAL FILE ORGANIZATION RULES
 
 ### Documentation Structure - NEVER CREATE .MD FILES IN ROOT
@@ -29,38 +58,78 @@ This repository is for setting up and managing GitHub Actions self-hosted runner
 - Use `--fix` flag to automatically organize misplaced files
 - This script should be run before any commits to ensure compliance
 
-## Architecture & Key Components
+## Architecture & Key Components - CURRENT IMPLEMENTATION
 
-### Core Components (to be implemented)
+### Core Components (IMPLEMENTED)
 
 - **Dockerfile & Docker Images**: Custom GitHub runner Docker images with pre-installed tools
-- **Docker Compose Configuration**: Multi-container setups for runner orchestration
+- **Docker Compose Configuration**: Separate compose files implemented:
+  - `docker-compose.production.yml` - Standard runners
+  - `docker-compose.chrome.yml` - Chrome runners with browser support
 - **Configuration Management**: Environment variables and volume mounts for runner configuration
 - **Health Checks & Monitoring**: Container health monitoring and automatic restart policies
-- **Scaling Scripts**: Docker Compose scaling based on repository job demand
+- **CI/CD Pipeline**: Comprehensive testing and deployment automation
+- **Branch Protection**: Automated branch protection setup via scripts
 
-### Expected Directory Structure
+### Current Directory Structure
 
 ```
 ├── docker/
-│   ├── Dockerfile              # Main runner image definition
-│   ├── docker-compose.yml      # Container orchestration
-│   └── entrypoint.sh          # Container startup script
+│   ├── Dockerfile                     # Main runner image definition
+│   ├── Dockerfile.chrome              # Chrome runner image definition
+│   ├── docker-compose.production.yml  # Standard runner deployment (IMPLEMENTED)
+│   ├── docker-compose.chrome.yml      # Chrome runner deployment (IMPLEMENTED)
+│   ├── entrypoint.sh                  # Container startup script (IMPLEMENTED)
+│   └── entrypoint-chrome.sh           # Chrome runner startup script (IMPLEMENTED)
 ├── config/
-│   ├── runner.env             # Environment variables
-│   └── docker.env             # Docker-specific configuration
+│   ├── runner.env.example             # Standard runner configuration template
+│   ├── chrome-runner.env.example      # Chrome runner configuration template
+│   ├── runner.env                     # User's standard runner config (created from template)
+│   └── chrome-runner.env              # User's Chrome runner config (optional)
 ├── scripts/
-│   ├── build.sh               # Image building automation
-│   ├── deploy.sh              # Container deployment
-│   └── cleanup.sh             # Container cleanup and maintenance
-├── cache/                     # Local cache directories (volume mounts)
-│   ├── build/                 # Build artifacts and intermediate files
-│   ├── deps/                  # Dependencies cache (npm, pip, etc.)
-│   └── workspace/             # Persistent workspace data
+│   ├── build.sh                       # Image building automation (IMPLEMENTED)
+│   ├── build-chrome.sh                # Chrome image building (IMPLEMENTED)
+│   ├── deploy.sh                      # Container deployment (IMPLEMENTED)
+│   ├── setup-branch-protection.sh     # Branch protection automation (IMPLEMENTED)
+│   └── check-docs-structure.sh        # Documentation validation (IMPLEMENTED)
+├── cache/                             # Local cache directories (volume mounts)
+│   ├── build/                         # Build artifacts and intermediate files
+│   ├── deps/                          # Dependencies cache (npm, pip, etc.)
+│   └── workspace/                     # Persistent workspace data
 ├── monitoring/
-│   └── healthcheck.sh         # Container health monitoring
-└── docs/                      # Setup and operational documentation
+│   ├── prometheus.yml                 # Monitoring configuration
+│   └── grafana/                       # Dashboard configurations
+├── tests/                             # Comprehensive test suite
+│   ├── unit/                          # Unit tests
+│   ├── integration/                   # Integration tests
+│   ├── docker/                        # Docker validation tests
+│   └── security/                      # Security tests
+└── docs/                              # Documentation (organized structure)
+    ├── features/                      # Feature specifications
+    ├── community/                     # Community guidelines
+    ├── releases/                      # Release notes
+    └── archive/                       # Legacy documentation
 ```
+
+│ └── entrypoint-chrome.sh # Chrome runner startup script
+├── config/
+│ ├── runner.env.example # Standard runner configuration template
+│ ├── chrome-runner.env.example # Chrome runner configuration template
+│ ├── runner.env # User's standard runner config (created from template)
+│ └── chrome-runner.env # User's Chrome runner config (optional)
+├── scripts/
+│ ├── build.sh # Image building automation
+│ ├── deploy.sh # Container deployment
+│ └── cleanup.sh # Container cleanup and maintenance
+├── cache/ # Local cache directories (volume mounts)
+│ ├── build/ # Build artifacts and intermediate files
+│ ├── deps/ # Dependencies cache (npm, pip, etc.)
+│ └── workspace/ # Persistent workspace data
+├── monitoring/
+│ └── healthcheck.sh # Container health monitoring
+└── docs/ # Setup and operational documentation
+
+````
 
 ## Development Workflows
 
@@ -92,23 +161,69 @@ docker build -t github-runner:latest ./docker
 docker tag github-runner:latest ghcr.io/grammatonic/github-runner:latest
 docker push ghcr.io/grammatonic/github-runner:latest
 
-# Start runners with Docker Compose
-docker-compose up -d
+# Start standard runners
+docker compose -f docker/docker-compose.production.yml up -d
 
-# Scale runners based on demand
-docker-compose up -d --scale runner=3
+# Start Chrome runners
+docker compose -f docker/docker-compose.chrome.yml up -d
+
+# Scale runners based on demand and type
+docker compose -f docker/docker-compose.production.yml up -d --scale github-runner=3
+docker compose -f docker/docker-compose.chrome.yml up -d --scale github-runner-chrome=2
+````
+
+## Development Workflows
+
+### Branch Strategy
+
+- **`main`**: Production-ready code only. Protected branch requiring PR approval.
+- **`develop`**: Active development branch. Protected branch requiring PR approval.
+- **Feature branches**: Created from `develop` for new features
+- **Hotfix branches**: Created from `develop` for urgent fixes
+
+### Initial Setup Commands
+
+```bash
+# Clone and setup development environment
+git clone <repo-url>
+cd github-runner
+
+# Switch to develop branch (primary development branch)
+git checkout develop
+git pull origin develop
+
+# Create feature branch from develop
+git checkout -b feature/your-feature-name
+
+# Build the runner Docker image
+docker build -t github-runner:latest ./docker
+
+# Tag and push to GitHub Container Registry
+docker tag github-runner:latest ghcr.io/grammatonic/github-runner:latest
+docker push ghcr.io/grammatonic/github-runner:latest
+
+# Start standard runners
+docker compose -f docker/docker-compose.production.yml up -d
+
+# Start Chrome runners
+docker compose -f docker/docker-compose.chrome.yml up -d
+
+# Scale runners based on demand and type
+docker compose -f docker/docker-compose.production.yml up -d --scale github-runner=3
+docker compose -f docker/docker-compose.chrome.yml up -d --scale github-runner-chrome=2
 ```
 
-### Development Workflow
+### Development Workflow - UPDATED
 
-1. **Start from develop**: Always create feature branches from `develop`
+1. **Start from develop**: Always create feature branches from protected `develop` branch
 2. **Work on features**: Implement features, hotfixes on feature branches
-3. **Test thoroughly**: Ensure changes work and don't break existing functionality
+3. **Test thoroughly**: Ensure changes work and pass all CI/CD tests
 4. **Create PR to develop**: Submit pull request from feature branch → `develop`
-5. **Code review**: Get approval and merge to `develop`
-6. **Release process**: Periodically merge `develop` → `main` for releases
+5. **Code review & CI**: Get 1+ approval AND CI/CD Pipeline must pass (required by branch protection)
+6. **Merge to develop**: After approval and green CI, merge to `develop`
+7. **Release process**: Create PR from `develop` → `main` for releases (triggers User Deployment Experience Tests)
 
-**IMPORTANT**: Never work directly on `main`. All development work goes through `develop`.
+**CRITICAL**: Direct pushes to `main` and `develop` are IMPOSSIBLE due to branch protection rules.
 
 ### Common Operations
 
@@ -145,11 +260,10 @@ This project is built entirely on Docker technology:
 
 ### Configuration Management
 
-- Use Docker environment files (.env) for environment-specific settings
-- Volume mounts for persistent configuration and workspace data
-- Multi-stage Dockerfiles for different deployment environments
-- Health check definitions in docker-compose.yml
-- Local cache volume configuration for build artifacts and dependencies
+- **Multi-stage Dockerfiles** for different deployment environments
+- **Separate compose files** for standard and Chrome runners
+- **Health check definitions** in each compose file
+- **Local cache volume configuration** for build artifacts and dependencies
 
 ### Runner Lifecycle
 
@@ -190,7 +304,7 @@ This project is built entirely on Docker technology:
 - Implement comprehensive logging for troubleshooting runner issues
 - Use version pinning for runner software to ensure consistency
 - Document environment-specific setup requirements clearly
-- Consider dedicated Chrome runner if web UI tests remain slow
+- Use the dedicated Chrome runner for web UI tests requiring browser automation
 
 ## Troubleshooting Common Issues
 
@@ -198,20 +312,20 @@ This project is built entirely on Docker technology:
 - Job execution failures: Verify runner environment and dependency availability
 - Network connectivity: Ensure proper firewall and proxy configurations
 - Resource constraints: Monitor CPU, memory, and disk usage patterns
-- Performance optimization: Consider dedicated Chrome runner if web UI tests remain slow
+- Browser testing issues: Use the dedicated Chrome runner for UI test workloads
 
 ## Performance Optimization
 
 ### Web UI Testing Performance
 
-- **Dedicated Chrome Runner**: If web UI tests (Selenium, Playwright, Cypress) are slow, consider deploying a dedicated runner with Chrome browser optimizations
-- **Browser Container Isolation**: Use separate Docker containers for browser-heavy workloads to prevent resource contention
-- **Headless Browser Configuration**: Configure headless Chrome with optimized flags for CI/CD environments
+- **Dedicated Chrome Runner**: Deployed via `docker-compose.chrome.yml` with Chrome browser optimizations for UI testing
+- **Browser Container Isolation**: Chrome runners use separate containers to prevent resource contention with standard runners
+- **Headless Browser Configuration**: Pre-configured headless Chrome with optimized flags for CI/CD environments
 - **Parallel Test Execution**: Scale Chrome runners horizontally for parallel browser test execution
 
 ### Runner Specialization Strategies
 
-- **General Purpose Runners**: Standard runners for building, testing, and deployment tasks
-- **Browser Test Runners**: Specialized runners with Chrome, Firefox, and browser testing tools pre-installed
-- **Build-Heavy Runners**: High-CPU runners for compilation-intensive workloads
-- **Cache-Optimized Runners**: Runners with persistent volume mounts for dependency caching
+- **Standard Runners**: `docker-compose.production.yml` for general building, testing, and deployment tasks
+- **Chrome Runners**: `docker-compose.chrome.yml` for specialized browser testing with Chrome, Selenium, Playwright, Cypress
+- **Mixed Deployment**: Deploy both runner types simultaneously for comprehensive CI/CD coverage
+- **Cache-Optimized**: Both runner types include persistent volume mounts for dependency caching

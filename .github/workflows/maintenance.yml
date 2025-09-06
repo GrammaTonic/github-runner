@@ -453,12 +453,12 @@ jobs:
             "docs/VERSION_OVERVIEW.md"
             "docker/Dockerfile"
             "docker/Dockerfile.chrome"
-            "docker/docker-compose.yml"
+            "docker/docker-compose.production.yml"
             "docker/docker-compose.chrome.yml"
             "scripts/build.sh"
             "scripts/build-chrome.sh"
             "scripts/deploy.sh"
-            "config/runner.env.template"
+            "config/runner.env.example"
             "config/chrome-runner.env.example"
             ".github/workflows/ci-cd.yml"
             ".github/workflows/security-advisories.yml"
@@ -555,7 +555,7 @@ jobs:
           done
 
           # Validate Docker Compose files
-          for compose_file in docker/docker-compose.yml docker/docker-compose.chrome.yml; do
+          for compose_file in docker/docker-compose.production.yml docker/docker-compose.chrome.yml; do
             if [[ -f "$compose_file" ]]; then
               echo "Validating $compose_file..."
               # Basic syntax validation would go here

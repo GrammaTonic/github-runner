@@ -107,12 +107,40 @@ docker pull ghcr.io/grammatonic/github-runner:1
 
 ## ⚡ Quick Start
 
+> 📖 **For detailed setup instructions**, see our comprehensive [Quick Start Guide](docs/setup/quick-start.md)
+
+### One-Command Setup
+
+For the fastest deployment experience:
+
+```bash
+git clone https://github.com/GrammaTonic/github-runner.git
+cd github-runner
+./scripts/quick-start.sh
+```
+
+The interactive script will guide you through:
+
+- ✅ **Runner type selection** (Standard, Chrome, or Both)
+- ✅ Prerequisite checks (Docker, permissions)
+- ✅ Environment configuration with validation
+- ✅ Automatic runner deployment
+- ✅ Health verification and troubleshooting
+
+### Runner Types Available
+
+- **Standard Runner**: General CI/CD with Docker, Node.js, Python
+- **Chrome Runner**: UI testing with Chrome, Selenium, Playwright
+- **Both Runners**: Deploy both types with separate configurations
+
+### Manual Setup (Alternative)
+
 ### 1. Clone and Setup
 
 ```bash
 git clone https://github.com/GrammaTonic/github-runner.git
 cd github-runner
-cp config/runner.env.template config/runner.env
+cp config/runner.env.example config/runner.env
 ```
 
 ### 2. Configure Environment
@@ -133,24 +161,24 @@ ENVIRONMENT=production
 ### 3. Start Runners
 
 ```bash
-# Basic setup (development)
-docker compose -f docker/docker-compose.yml up -d
+# Production setup (recommended)
+docker compose -f docker/docker-compose.production.yml up -d
 
-# With monitoring (recommended)
-docker compose -f docker/docker-compose.yml --profile monitoring up -d
-
-# Scale runners
-docker compose -f docker/docker-compose.yml up -d --scale runner=3
+# Scale runners based on demand
+docker compose -f docker/docker-compose.production.yml up -d --scale github-runner=2 --scale github-runner-chrome=1
 ```
 
 ### 4. Verify Setup
 
 ```bash
 # Check runner status
-docker compose -f docker/docker-compose.yml ps
+docker compose -f docker/docker-compose.production.yml ps
 
 # View logs
-docker compose -f docker/docker-compose.yml logs -f runner
+docker compose -f docker/docker-compose.production.yml logs -f github-runner
+
+# Check runner registration in GitHub
+docker compose -f docker/docker-compose.production.yml logs github-runner | grep "Listening for Jobs"
 ```
 
 ## 🌐 Chrome Runner for Web UI Testing
@@ -229,21 +257,17 @@ Edit `config/runner.env`:
 | `RUNNER_LABELS`      | Custom runner labels        | `self-hosted,docker` | ❌       |
 | `ENVIRONMENT`        | Environment designation     | `production`         | ❌       |
 
-### Docker Configuration
+### Build Configuration
 
-Edit `config/docker.env`:
+The build system uses environment variables or defaults:
 
 ```bash
-# Container Settings
-COMPOSE_PROJECT_NAME=github-runner
-DOCKER_BUILDKIT=1
+# Override registry settings if needed
+export DOCKER_REGISTRY=ghcr.io
+export DOCKER_NAMESPACE=grammatonic
 
-# Network Configuration
-DOCKER_NETWORK=github-runner-network
-
-# Resource Limits
-RUNNER_MEMORY_LIMIT=2g
-RUNNER_CPU_LIMIT=1.0
+# Build with custom settings
+./scripts/build.sh --push
 ```
 
 ## 🚀 Deployment
@@ -251,8 +275,8 @@ RUNNER_CPU_LIMIT=1.0
 ### Local Development
 
 ```bash
-# Start with basic configuration
-docker compose -f docker/docker-compose.yml up -d
+# Start with basic configuration (choose runner type)
+docker compose -f docker/docker-compose.production.yml up -d
 ```
 
 ### Production Deployment
@@ -264,11 +288,14 @@ curl -fsSL https://get.docker.com | sh
 # Clone and configure
 git clone https://github.com/GrammaTonic/github-runner.git
 cd github-runner
-cp config/runner.env.template config/runner.env
+cp config/runner.env.example config/runner.env
 # Edit config/runner.env with your settings
 
-# Deploy with monitoring
-docker compose -f docker/docker-compose.yml --profile monitoring up -d
+# Deploy standard runners
+docker compose -f docker/docker-compose.production.yml up -d
+
+# Or deploy Chrome runners for UI testing
+docker compose -f docker/docker-compose.chrome.yml up -d
 ```
 
 ## 📊 Monitoring
@@ -328,9 +355,8 @@ docker compose logs runner
 # Monitor resources
 docker stats
 
-# Edit config/docker.env
-RUNNER_MEMORY_LIMIT=1g
-RUNNER_CPU_LIMIT=0.5
+# Adjust compose file resource limits if needed
+# Edit docker/docker-compose.production.yml or docker/docker-compose.chrome.yml
 ```
 
 ### Debug Mode
