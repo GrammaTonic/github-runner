@@ -32,45 +32,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  github-runner-chrome:
-    image: ghcr.io/grammatonic/github-runner:chrome-latest
-    container_name: github-runner-chrome
-    restart: unless-stopped
-    environment:
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
-      - RUNNER_NAME=${RUNNER_NAME_CHROME:-chrome-runner}
-      - RUNNER_LABELS=${RUNNER_LABELS_CHROME:-docker,chrome,self-hosted,linux,x64,ui-tests}
-      - RUNNER_GROUP=${RUNNER_GROUP:-default}
-      - RUNNER_WORKDIR=${RUNNER_WORKDIR:-/home/runner/_work}
-      - RUNNER_EPHEMERAL=${RUNNER_EPHEMERAL:-false}
-      - RUNNER_REPLACE_EXISTING=${RUNNER_REPLACE_EXISTING:-true}
-      - DISPLAY=${DISPLAY:-:99}
-      - CHROME_FLAGS=${CHROME_FLAGS:---headless --no-sandbox --disable-dev-shm-usage --disable-gpu}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - chrome-cache:/home/runner/_work
-      - chrome-config:/home/runner/.config
-      - chrome-cache-npm:/home/runner/.npm
-      - chrome-cache-pip:/home/runner/.cache/pip
-      - /dev/shm:/dev/shm
-    networks:
-      - runner-network
-    healthcheck:
-      test: ["CMD", "pgrep", "-f", "Runner.Listener"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 120s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    # Chrome needs more resources
-    mem_limit: 2g
-    cpus: 1.0
-
 volumes:
   runner-cache:
     driver: local
@@ -79,14 +40,6 @@ volumes:
   runner-cache-npm:
     driver: local
   runner-cache-pip:
-    driver: local
-  chrome-cache:
-    driver: local
-  chrome-config:
-    driver: local
-  chrome-cache-npm:
-    driver: local
-  chrome-cache-pip:
     driver: local
 
 networks:
