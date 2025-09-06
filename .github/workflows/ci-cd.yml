@@ -741,10 +741,10 @@ jobs:
           # Copy the user environment template
           cp config/runner.env.example config/runner.env
 
-          # Configure with test values (same values users would use)
-          sed -i 's/GITHUB_TOKEN=.*/GITHUB_TOKEN=test-token-not-real-for-testing/' config/runner.env
-          sed -i 's/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=test\/repository/' config/runner.env
-          sed -i 's/RUNNER_NAME=.*/RUNNER_NAME=ci-test-runner/' config/runner.env
+          # Configure with valid test values that won't cause GitHub API calls
+          sed -i 's/GITHUB_TOKEN=.*/GITHUB_TOKEN=ghp_test_token_for_ci_not_real/' config/runner.env
+          sed -i 's/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=test-org\/test-repository/' config/runner.env
+          sed -i 's/RUNNER_NAME=.*/RUNNER_NAME=ci-test-main-runner/' config/runner.env
           sed -i 's/RUNNER_LABELS=.*/RUNNER_LABELS=test,ci,docker,self-hosted/' config/runner.env
 
           # Verify the user environment file is properly configured
@@ -766,6 +766,13 @@ jobs:
           services:
             github-runner:
               image: ${IMAGE_TAG}
+              environment:
+                # Override environment to prevent GitHub API calls
+                - GITHUB_TOKEN=ghp_test_token_for_ci_not_real
+                - GITHUB_REPOSITORY=test-org/test-repository
+                - RUNNER_NAME=ci-test-main-runner
+                - RUNNER_LABELS=test,ci,docker,self-hosted
+                - RUNNER_TEST_MODE=true
               healthcheck:
                 test: ["CMD", "echo", "healthy"]
                 interval: 5s
@@ -845,6 +852,15 @@ jobs:
           services:
             github-runner-chrome:
               image: ${CHROME_IMAGE_TAG}
+              environment:
+                # Override environment to prevent GitHub API calls
+                - GITHUB_TOKEN=ghp_test_token_for_ci_not_real
+                - GITHUB_REPOSITORY=test-org/test-repository
+                - RUNNER_NAME=ci-test-chrome-runner
+                - RUNNER_LABELS=chrome,ui-tests,selenium,playwright,cypress,headless
+                - RUNNER_TEST_MODE=true
+                - DISPLAY=:99
+                - CHROME_FLAGS=--headless --no-sandbox --disable-dev-shm-usage --disable-gpu
               healthcheck:
                 test: ["CMD", "echo", "healthy"]
                 interval: 5s
