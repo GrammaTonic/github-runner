@@ -27,33 +27,36 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential=12.9ubuntu3 \
     git=1:2.34.1-1ubuntu1.10 \
     jq=1.6-2.1ubuntu3.1 \
-    libnss3=2:3.68.4-0ubuntu0.22.04.1 \
-    libnss3-dev=2:3.68.4-0ubuntu0.22.04.1 \
-    libatk-bridge2.0-0=2.38.0-3 \
-    libatk1.0-0=2.36.0-5 \
-    libdrm2=2.4.113-2~ubuntu22.04.1 \
-    libxcomposite1=1:0.4.5-1 \
-    libxdamage1=1:1.1.5-2 \
-    libxrandr2=2:1.5.2-1 \
-    libgbm1=21.2.6-0ubuntu0.1 \
-    libxss1=1:1.2.3-1 \
-    libasound2-dev=1.2.6.1-1ubuntu1 \
-    libatspi2.0-0=2.44.0-3 \
-    libgtk-3-0=3.24.33-1ubuntu2.2 \
-    libx11-6=2:1.7.5-1ubuntu0.2 \
-    libx11-xcb1=2:1.7.5-1ubuntu0.2 \
-    libxcb1=1.14-3ubuntu1 \
-    libxcursor1=1:1.2.0-2build1 \
-    libxi6=2:1.7.10-1 \
-    libxtst6=2:1.2.3-1build2 \
-    libpangocairo-1.0-0=1.50.6-2ubuntu0.1 \
-    libcairo-gobject2=1.16.0-5ubuntu2 \
-    libgdk-pixbuf2.0-0=2.42.6+dfsg-1ubuntu0.1 \
-    fonts-liberation=1:2.1.4-1 \
-    fonts-noto-color-emoji=2.042-2 \
-    fonts-noto-cjk=20201225-1 \
-    xvfb=2:1.20.13-1ubuntu1.4 \
-    procps=2:3.3.17-6ubuntu2.1 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libnss3 \
+    libnss3-dev \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libdrm2 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libxss1 \
+    libasound2-dev \
+    libatspi2.0-0 \
+    libgtk-3-0 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcursor1 \
+    libxi6 \
+    libxtst6 \
+    libpangocairo-1.0-0 \
+    libcairo-gobject2 \
+    libgdk-pixbuf2.0-0 \
+    fonts-liberation \
+    fonts-noto-color-emoji \
+    fonts-noto-cjk \
+    xvfb \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
