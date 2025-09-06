@@ -647,22 +647,28 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Download main runner image
-        uses: actions/download-artifact@v4
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
         with:
-          name: github-runner-image
-          path: /tmp
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download Chrome runner image
-        uses: actions/download-artifact@v4
-        with:
-          name: github-runner-chrome-image
-          path: /tmp
-
-      - name: Load Docker images
+      - name: Pull built images from registry
         run: |
-          docker load < /tmp/github-runner.tar
-          docker load < /tmp/github-runner-chrome.tar
+          # Pull the images that were just built and pushed by the build jobs
+          echo "Pulling main runner image: ${{ needs.build.outputs.image-primary }}"
+          docker pull "${{ needs.build.outputs.image-primary }}"
+
+          echo "Pulling Chrome runner image: ${{ needs.build-chrome.outputs.image-primary }}"
+          docker pull "${{ needs.build-chrome.outputs.image-primary }}"
+
+          # Tag for easier testing
+          docker tag "${{ needs.build.outputs.image-primary }}" github-runner:latest
+          docker tag "${{ needs.build-chrome.outputs.image-primary }}" github-runner:chrome-latest
+
+          echo "Available images for testing:"
+          docker images | grep github-runner
 
       - name: Run User Deployment Experience Tests
         run: |
