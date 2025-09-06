@@ -631,7 +631,10 @@ jobs:
     name: User Deployment Experience Tests
     runs-on: ubuntu-latest
     needs: [build, build-chrome]
-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main' && github.event.pull_request.head.ref == 'develop'  }}
+    # Run on either:
+    #  - Feature PRs targeting 'develop' (feature -> develop), so we validate user deployment experience early
+    #  - Promotion PRs from 'develop' into 'main' (develop -> main), so we validate release promotions
+    if: ${{ github.event_name == 'pull_request' && (github.event.pull_request.base.ref == 'develop' || (github.event.pull_request.base.ref == 'main' && github.event.pull_request.head.ref == 'develop')) }}
     permissions:
       contents: read
 
