@@ -809,6 +809,21 @@ jobs:
           echo "=== Production Container Test Results ==="
           echo "Container completed successfully"
 
+          # Verify Docker Compose configuration
+          echo "📊 Verifying production Docker Compose configuration..."
+          if ! grep -q "restart:" docker/docker-compose.production.yml; then
+            echo "⚠️ No restart policy configured in docker-compose.production.yml"
+          else
+            echo "✅ Restart policy configured"
+          fi
+
+          if grep -q "healthcheck:" docker/docker-compose.production.yml; then
+            echo "✅ Health check configured"
+          else
+            echo "💡 Consider adding health checks for production readiness"
+          fi
+          echo "✅ Production main runner container startup test passed"
+
           # Cleanup
           docker compose -f docker/docker-compose.production.yml down || true
 
@@ -899,39 +914,23 @@ jobs:
           echo "=== Production Chrome Container Test Results ==="
           echo "Chrome container completed successfully"
 
-          # Cleanup
-          docker compose -f docker/docker-compose.chrome.yml down || true
-
-      - name: Verify Container Resource Usage
-        run: |
-          echo "📊 Checking container resource usage patterns..."
-
-          # Check if containers have reasonable resource constraints
-          cd docker
-
-          if [[ "${{ matrix.container-type }}" == "main-runner" ]]; then
-            COMPOSE_FILE="docker-compose.production.yml"
-          else
-            COMPOSE_FILE="docker-compose.chrome.yml"
-          fi
-            COMPOSE_FILE="docker-compose.chrome.yml"
-          fi
-
-          # Check for restart policies
-          if ! grep -q "restart:" "$COMPOSE_FILE"; then
-            echo "⚠️ No restart policy configured in $COMPOSE_FILE"
+          # Verify Chrome Docker Compose configuration
+          echo "📊 Verifying Chrome Docker Compose configuration..."
+          if ! grep -q "restart:" docker/docker-compose.chrome.yml; then
+            echo "⚠️ No restart policy configured in docker-compose.chrome.yml"
           else
             echo "✅ Restart policy configured"
           fi
 
-          # Check for health checks
-          if grep -q "healthcheck:" "$COMPOSE_FILE"; then
+          if grep -q "healthcheck:" docker/docker-compose.chrome.yml; then
             echo "✅ Health check configured"
           else
             echo "💡 Consider adding health checks for production readiness"
           fi
+          echo "✅ Production Chrome runner container startup test passed"
 
-          echo "Resource usage check completed"
+          # Cleanup
+          docker compose -f docker/docker-compose.chrome.yml down || true
 
       - name: Generate container startup report
         if: always()
