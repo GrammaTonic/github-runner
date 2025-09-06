@@ -196,6 +196,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: "dependency-security-scan.sarif"
+          category: "filesystem-scan"
 
       - name: Check for known security patches
         run: |
