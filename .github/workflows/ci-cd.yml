@@ -887,8 +887,7 @@ jobs:
                 # Test Chrome headless functionality
                 echo "Testing Chrome headless functionality..."
                 if timeout 30 google-chrome --headless --no-sandbox --disable-dev-shm-usage --virtual-time-budget=1000 --dump-dom about:blank > /tmp/chrome-test.html 2>/dev/null; then
-                  echo "
-                  echo "\u2713 Chrome headless test passed"
+                    printf "\u2713 Chrome headless test passed\n"
                 else
                   printf "\u26a0\ufe0f Chrome headless test warning (may work in different environment)\n"
                   printf "\u26a0\ufe0f Check /tmp/chrome-test.html for details. Consider increasing resources or updating Chrome.\n"
