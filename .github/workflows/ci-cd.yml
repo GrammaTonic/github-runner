@@ -881,15 +881,15 @@ jobs:
                 '
           EOF
 
-          # Start Chrome container using production compose with test override
-          docker compose -f docker/docker-compose.production.yml -f docker/docker-compose.chrome-test-override.yml up --wait --timeout 120 github-runner-chrome
+          # Start Chrome container using Chrome compose with test override
+          docker compose -f docker/docker-compose.chrome.yml -f docker/docker-compose.chrome-test-override.yml up --wait --timeout 120 github-runner-chrome
 
           # Get container logs
           echo "=== Production Chrome Container Logs ==="
-          docker compose -f docker/docker-compose.production.yml logs github-runner-chrome
+          docker compose -f docker/docker-compose.chrome.yml logs github-runner-chrome
 
           # Check container exit code
-          CONTAINER_ID=$(docker compose -f docker/docker-compose.production.yml ps -q github-runner-chrome)
+          CONTAINER_ID=$(docker compose -f docker/docker-compose.chrome.yml ps -q github-runner-chrome)
           if [[ -n "$CONTAINER_ID" ]]; then
             EXIT_CODE=$(docker inspect "$CONTAINER_ID" --format='{{.State.ExitCode}}')
             echo "Production Chrome container exit code: $EXIT_CODE"
@@ -906,7 +906,7 @@ jobs:
           fi
 
           # Cleanup
-          docker compose -f docker/docker-compose.production.yml down || true
+          docker compose -f docker/docker-compose.chrome.yml down || true
 
       - name: Verify Container Resource Usage
         run: |
