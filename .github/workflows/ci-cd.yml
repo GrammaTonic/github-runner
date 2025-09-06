@@ -3,12 +3,8 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [main, develop]
-    paths:
-      - "docker/**"
-      - "scripts/**"
-      - "config/**"
-      - "monitoring/**"
-      - ".github/workflows/**"
+    # Run on all pushes to main/develop (including merges)
+    # No path filters to ensure merge events always trigger CI/CD
     tags: ["v*.*.*"] # Tags trigger regardless of paths
   pull_request:
     branches: [main, develop]
@@ -18,6 +14,18 @@ on:
       - "config/**"
       - "monitoring/**"
       - ".github/workflows/**"
+      - "tests/**"
+      - "docs/**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment for deployment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
   workflow_dispatch:
     inputs:
       environment:
