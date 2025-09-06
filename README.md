@@ -9,6 +9,9 @@
 
 A comprehensive, production-ready GitHub Actions self-hosted runner solution with monitoring, scaling, and security features.
 
+Note: Documentation workflows and repo prompts were recently improved — see
+`.github/prompts/Wiki-Readme.prompt.md` and `docs/examples/update-docs-example.md` for guidance on updating docs to match code changes.
+
 ## 📊 Current Versions
 
 | Component                 | Standard Runner  | Chrome Runner    | Status            |
