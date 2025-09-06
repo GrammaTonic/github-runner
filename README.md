@@ -423,7 +423,7 @@ We welcome contributions! Please see our [Contributing Guide](docs/community/CON
 git clone https://github.com/yourusername/github-runner.git
 cd github-runner
 
-# Switch to develop branch (primary development branch)
+# Switch to develop branch (integration branch)
 git checkout develop
 git pull origin develop
 
@@ -436,7 +436,7 @@ make test
 # Submit pull request to develop branch
 ```
 
-**Important**: All development work should be done on the `develop` branch. Never work directly on `main`.
+**Important**: All regular development work should be done on feature branches created from `develop` and merged into `develop` via pull requests. Never commit directly to `main`. Hotfixes may be created from `main` when necessary and must be merged back into `develop` afterwards.
 
 ## 📄 License
 

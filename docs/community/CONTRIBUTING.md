@@ -9,7 +9,7 @@ Thank you for considering contributing to this project! We welcome contributions
    ```bash
    git clone https://github.com/your-username/github-runner.git
    ```
-3. **Switch to Develop**: Always start from and work on the `develop` branch.
+3. **Start from Develop**: This repository uses an integration branch workflow. Create feature branches from `develop` and open pull requests to `develop`.
    ```bash
    git checkout develop
    git pull origin develop
@@ -17,8 +17,8 @@ Thank you for considering contributing to this project! We welcome contributions
 4. **Create a Branch**: Create a new branch for your changes from `develop`.
    ```bash
    git checkout -b feature/your-feature-name
-   # or for hotfixes:
-   git checkout -b hotfix/your-fix-name
+   # For urgent production hotfixes, branch from main instead:
+   # git checkout -b hotfix/your-fix-name main
    ```
 5. **Make Changes**: Make your changes in the new branch.
 6. **Test Your Changes**: Ensure your changes work as expected and do not break existing functionality.
@@ -30,16 +30,29 @@ Thank you for considering contributing to this project! We welcome contributions
    ```bash
    git push origin feature/your-feature-name
    ```
-9. **Open a Pull Request**: Open a pull request from your branch to the `develop` branch of this repository.
+9. **Open a Pull Request**: Open a pull request from your feature branch to the `develop` branch of this repository.
+
+10. **Release / Promote**: After your change is merged into `develop`, the integration branch is promoted to `main` via a pull request from `develop` → `main`. The release flow is:
+
+- feature/\* → PR → develop
+- develop → PR → main
+
+To create the feature PR:
+
+```bash
+gh pr create --base develop --title "feat: ..." --body "..."
+```
+
+To promote develop to main (maintainers):
+
+```bash
+# After tests and approvals on develop
+gh pr create --base main --head develop --title "chore: promote develop -> main" --body "Promote integration branch to main"
+```
 
 ## Branch Strategy
 
-- **`main`**: Production-ready code only. Protected branch that requires PR approval.
-- **`develop`**: Active development branch. All features, hotfixes, and improvements go here.
-- **Feature branches**: Create from `develop` for new features (`feature/feature-name`)
-- **Hotfix branches**: Create from `develop` for urgent fixes (`hotfix/fix-name`)
-
-**Important**: Never work directly on `main`. All development work should be done on `develop` or feature branches created from `develop`.
+**Important**: Never work directly on `main`. All regular development work should be done on feature branches created from `develop` and merged into `develop` via pull requests. For emergency hotfixes, branch from `main`, open a PR to `main`, and then merge `main` back to `develop` to keep integration in sync.
 
 ## Code Style
 

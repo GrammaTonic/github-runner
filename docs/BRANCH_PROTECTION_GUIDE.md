@@ -23,7 +23,7 @@ This guide explains the branch protection setup and recommended Git workflow for
 - **Purpose**: Individual feature development
 - **Protection Level**: None (developer managed)
 - **Naming**: `feature/description` or `feature/ticket-number`
-- **Lifecycle**: Created from `develop`, merged back to `develop`
+- **Lifecycle**: Created from `develop`, merged back to `develop` via pull request. After validation in `develop`, integration is promoted to `main` with a PR from `develop` → `main`.
 
 ### 🐛 Hotfix Branches (`hotfix/*`)
 
@@ -48,25 +48,12 @@ Required Status Checks:
 
 Pull Request Reviews:
   - Required reviewers: 1
-  - Dismiss stale reviews: Yes
-  - Require code owner reviews: Yes
-  - Require review of last push: Yes
-
 Additional Restrictions:
   - Linear history required: Yes
   - Force pushes: Blocked
-  - Deletions: Blocked
-  - Admin enforcement: Yes
-  - Conversation resolution: Required
-```
 
 ### Develop Branch Protection
 
-```yaml
-Required Status Checks:
-  - Lint and Validate
-  - Security Scanning
-  - Build Docker Images
   - Test Runner Configuration (unit)
   - Test Runner Configuration (integration)
 
@@ -84,12 +71,8 @@ Additional Restrictions:
   - Conversation resolution: Required
 ```
 
-## Git Workflow
-
-### 1. Feature Development
-
 ```bash
-# Start from develop branch
+# Start from develop (feature branches should be created from the integration branch)
 git checkout develop
 git pull origin develop
 
@@ -107,25 +90,21 @@ git commit -m "feat: add monitoring dashboard for runner health
 # Push feature branch
 git push origin feature/add-monitoring-dashboard
 
-# Create pull request to develop branch
+# Create pull request to develop (feature PR)
 gh pr create --base develop --title "feat: add monitoring dashboard" --body "..."
 ```
 
 ### 2. Release Process
 
 ```bash
-# From develop branch, create release
+# Promote integration branch to main (maintainers)
 git checkout develop
 git pull origin develop
 
-# All features are tested in staging, ready for production
-git checkout main
-git pull origin main
+# Create PR to promote develop -> main after validation
+gh pr create --base main --head develop --title "chore: promote develop -> main" --body "Promote integration branch to main after validation"
 
-# Create pull request from develop to main
-gh pr create --base main --head develop --title "Release v1.2.0" --body "..."
-
-# After approval and merge, tag the release
+# After approval and merge, tag the release on main
 git checkout main
 git pull origin main
 git tag v1.2.0
@@ -134,7 +113,7 @@ git push origin v1.2.0
 
 ### 3. Hotfix Process
 
-```bash
+````bash
 # Create hotfix from main
 git checkout main
 git pull origin main
@@ -150,12 +129,18 @@ git push origin hotfix/security-vulnerability-fix
 # Create PR to main (emergency bypass if needed)
 gh pr create --base main --title "HOTFIX: Security vulnerability patch" --body "..."
 
-# After merge to main, also merge to develop
+## After merge to main
+Always sync `develop` with `main` after hotfixes so the integration branch remains up to date:
+
+```bash
+# Sync integration branch with main
 git checkout develop
 git pull origin develop
 git merge main
 git push origin develop
 ```
+
+````
 
 ## Emergency Procedures
 
@@ -210,36 +195,21 @@ git push origin main
 
 3. **Security Review**
    - No hardcoded secrets
-   - Proper permission scoping
-   - Vulnerability scan results reviewed
-   - Dependencies up to date
 
 ### Review Process
 
 1. **Automated Checks**: CI/CD workflows run automatically
-2. **Code Owner Review**: Required for critical paths
-3. **Security Review**: For security-related changes
-4. **Final Approval**: Minimum required reviewers approve
-5. **Merge**: Squash and merge to maintain clean history
 
 ## Environment Management
 
 ### Staging Environment
 
-- **Trigger**: Push to `develop` branch
+- **Trigger**: Push to `main` branch (or `develop` if your team uses it)
 - **Purpose**: Feature testing and integration validation
 - **Access**: Development team
-- **Data**: Sanitized production data or test data
-
-### Production Environment
-
 - **Trigger**: Push to `main` branch
 - **Purpose**: Live GitHub runner deployment
 - **Access**: Operations team with manual approval
-- **Data**: Live production data
-- **Monitoring**: 24/7 monitoring and alerting
-
-## Monitoring and Compliance
 
 ### Branch Protection Monitoring
 
@@ -271,14 +241,13 @@ The monitoring workflow checks:
    gh run view <run-id>
    ```
 
-2. **Permission Denied**
-
-   ```bash
    # Check your repository permissions
-   gh api repos/GrammaTonic/github-runner/collaborators/$(gh api user --jq .login)
+
    ```
 
-3. **Branch Protection Conflicts**
+   ```
+
+2. **Branch Protection Conflicts**
    ```bash
    # View current protection rules
    gh api repos/GrammaTonic/github-runner/branches/main/protection

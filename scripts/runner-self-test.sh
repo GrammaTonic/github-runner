@@ -37,7 +37,7 @@ if ! check_runner_registered; then
   exit 3
 fi
 
-gh workflow run ".github/workflows/$WORKFLOW_FILE" --repo "$GH_REPO" --ref develop
+gh workflow run ".github/workflows/$WORKFLOW_FILE" --repo "$GH_REPO" --ref main
 
 run_id=""
 for i in $(seq 1 60); do

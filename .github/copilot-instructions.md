@@ -9,7 +9,6 @@ This repository is for setting up and managing GitHub Actions self-hosted runner
 ### Branch Protection Status - ENFORCED
 
 - **`main` branch**: PROTECTED with branch protection rules
-- **`develop` branch**: PROTECTED with branch protection rules
 - **Direct pushes BLOCKED**: All changes must go through pull requests
 - **Review required**: 1 approving review required before merge
 - **Status checks required**: CI/CD Pipeline must pass before merge
@@ -18,14 +17,14 @@ This repository is for setting up and managing GitHub Actions self-hosted runner
 
 ### Development Workflow - MANDATORY
 
-1. **Start from develop**: Always create feature branches from `develop` branch
-2. **Feature development**: Work on features/fixes in dedicated feature branches
-3. **Pull Request workflow**: Submit PR from feature branch → `develop`
-4. **Code review & CI**: Get 1+ approval AND CI/CD Pipeline must pass
-5. **Merge to develop**: After approval and green CI, merge to `develop`
-6. **Release process**: Create PR from `develop` → `main` for releases
+1. **Start from develop**: Create feature branches from the integration branch `develop`.
+2. **Feature development**: Work on features/fixes in dedicated feature branches created from `develop`.
+3. **Pull Request workflow**: Submit PR from feature branch → `develop` for integration and review.
+4. **Code review & CI**: Get 1+ approval AND CI/CD Pipeline must pass on the `develop` PR.
+5. **Merge to develop**: After approval and green CI, merge to `develop`.
+6. **Release process**: Maintainers create a PR from `develop` → `main` to promote integration to production.
 
-**CRITICAL**: Direct pushes to `main` and `develop` are now IMPOSSIBLE due to branch protection.
+**CRITICAL**: Direct pushes to `main` are blocked by branch protection; promotions to `main` must be done via PR from `develop`.
 
 ### Branch Protection Management
 
@@ -147,7 +146,7 @@ This repository is for setting up and managing GitHub Actions self-hosted runner
 git clone <repo-url>
 cd github-runner
 
-# Switch to develop branch (primary development branch)
+# Switch to develop branch (integration branch)
 git checkout develop
 git pull origin develop
 
@@ -215,15 +214,15 @@ docker compose -f docker/docker-compose.chrome.yml up -d --scale github-runner-c
 
 ### Development Workflow - UPDATED
 
-1. **Start from develop**: Always create feature branches from protected `develop` branch
+1. **Start from main**: Always create feature branches from protected `main` branch
 2. **Work on features**: Implement features, hotfixes on feature branches
 3. **Test thoroughly**: Ensure changes work and pass all CI/CD tests
-4. **Create PR to develop**: Submit pull request from feature branch → `develop`
+4. **Create PR to main**: Submit pull request from feature branch → `main`
 5. **Code review & CI**: Get 1+ approval AND CI/CD Pipeline must pass (required by branch protection)
-6. **Merge to develop**: After approval and green CI, merge to `develop`
-7. **Release process**: Create PR from `develop` → `main` for releases (triggers User Deployment Experience Tests)
+6. **Merge to main**: After approval and green CI, merge to `main`
+7. **Release process**: Create PR from `main` → `release/*` or tag releases from `main` (triggers User Deployment Experience Tests)
 
-**CRITICAL**: Direct pushes to `main` and `develop` are IMPOSSIBLE due to branch protection rules.
+**CRITICAL**: Direct pushes to `main` are IMPOSSIBLE due to branch protection rules.
 
 ### Common Operations
 
