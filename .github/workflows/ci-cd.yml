@@ -773,12 +773,6 @@ jobs:
                 - RUNNER_NAME=ci-test-main-runner
                 - RUNNER_LABELS=test,ci,docker,self-hosted
                 - RUNNER_TEST_MODE=true
-              healthcheck:
-                test: ["CMD", "echo", "healthy"]
-                interval: 5s
-                timeout: 3s
-                retries: 2
-                start_period: 10s
               entrypoint: |
                 bash -c '
                 echo "=== Production Container Startup Test ==="
@@ -807,8 +801,9 @@ jobs:
                 '
           EOF
 
-          # Start container using production compose with test override
-          docker compose -f docker/docker-compose.production.yml -f docker/docker-compose.test-override.yml up --wait --timeout 60 github-runner
+          # Start container using production compose with test override (no --wait for one-shot containers)
+          echo "Starting test container..."
+          docker compose -f docker/docker-compose.production.yml -f docker/docker-compose.test-override.yml up --no-deps github-runner
 
           # Get container logs
           echo "=== Production Container Logs ==="
@@ -861,12 +856,6 @@ jobs:
                 - RUNNER_TEST_MODE=true
                 - DISPLAY=:99
                 - CHROME_FLAGS=--headless --no-sandbox --disable-dev-shm-usage --disable-gpu
-              healthcheck:
-                test: ["CMD", "echo", "healthy"]
-                interval: 5s
-                timeout: 3s
-                retries: 2
-                start_period: 10s
               entrypoint: |
                 bash -c '
                 echo "=== Production Chrome Container Startup Test ==="
@@ -919,8 +908,9 @@ jobs:
                 '
           EOF
 
-          # Start Chrome container using Chrome compose with test override
-          docker compose -f docker/docker-compose.chrome.yml -f docker/docker-compose.chrome-test-override.yml up --wait --timeout 120 github-runner-chrome
+          # Start Chrome container using Chrome compose with test override (no --wait for one-shot containers)
+          echo "Starting Chrome test container..."
+          docker compose -f docker/docker-compose.chrome.yml -f docker/docker-compose.chrome-test-override.yml up --no-deps github-runner-chrome
 
           # Get container logs
           echo "=== Production Chrome Container Logs ==="
