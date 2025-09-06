@@ -73,9 +73,7 @@
 
 #### **Protection Management**
 
-- ✅ `setup-branch-protection.sh` - Automated protection setup script
-- ✅ `scripts/emergency-bypass.sh` - Emergency protection bypass
-- ✅ `scripts/restore-branch-protection.sh` - Protection restoration
+- ✅ Branch protection already configured on GitHub
 - ✅ `.github/CODEOWNERS` - Required code review assignments
 
 #### **Documentation**

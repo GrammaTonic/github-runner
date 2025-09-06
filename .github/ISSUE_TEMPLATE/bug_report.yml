@@ -93,7 +93,7 @@ body:
     id: configuration
     attributes:
       label: Configuration
-      description: Relevant configuration files (docker-compose.yml, .env files, etc.)
+      description: Relevant configuration files (docker-compose.production.yml, docker-compose.chrome.yml, .env files, etc.)
       render: yaml
       placeholder: Paste configuration here...
 

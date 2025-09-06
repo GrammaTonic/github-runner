@@ -4,12 +4,6 @@ set -euo pipefail
 # GitHub Runner Docker Image Build Script
 # Automates building, tagging, and pushing runner images
 
-# Source configuration
-if [[ -f "config/docker.env" ]]; then
-    # shellcheck source=../config/docker.env
-    source config/docker.env
-fi
-
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

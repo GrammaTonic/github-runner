@@ -62,14 +62,29 @@ jobs:
         run: |
           echo "Testing Docker Compose configuration..."
 
-          if [[ -f "docker/docker-compose.yml" ]]; then
+          # Test production compose file
+          if [[ -f "docker/docker-compose.production.yml" ]]; then
             cd docker
             
-            # Validate compose file
-            if docker compose config --quiet; then
-              echo "✅ Docker Compose configuration: VALID"
+            # Validate production compose file
+            if docker compose -f docker-compose.production.yml config --quiet; then
+              echo "✅ Production Docker Compose configuration: VALID"
             else
-              echo "❌ Docker Compose configuration: INVALID"
+              echo "❌ Production Docker Compose configuration: INVALID"
+              exit 1
+            fi
+          else
+            echo "❌ Production Docker Compose file not found"
+            exit 1
+          fi
+
+          # Test Chrome compose file
+          if [[ -f "docker/docker-compose.chrome.yml" ]]; then
+            # Validate Chrome compose file
+            if docker compose -f docker-compose.chrome.yml config --quiet; then
+              echo "✅ Chrome Docker Compose configuration: VALID"
+            else
+              echo "❌ Chrome Docker Compose configuration: INVALID"
               exit 1
             fi
           else

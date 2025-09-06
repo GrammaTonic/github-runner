@@ -21,14 +21,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     gnupg \
     lsb-release \
-    software-properties-common \
+    sudo \
     # Build tools
     build-essential \
     git \
     jq \
     # Chrome dependencies
     libnss3 \
+    libnss3-dev \
     libatk-bridge2.0-0 \
+    libatk1.0-0 \
     libdrm2 \
     libxcomposite1 \
     libxdamage1 \
@@ -36,28 +38,52 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgbm1 \
     libxss1 \
     libasound2t64 \
+    libasound2-dev \
     libatspi2.0-0 \
     libgtk-3-0 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcursor1 \
+    libxi6 \
+    libxtst6 \
+    libpangocairo-1.0-0 \
+    libcairo-gobject2 \
+    libgdk-pixbuf2.0-0 \
     # Fonts for proper rendering
     fonts-liberation \
     fonts-noto-color-emoji \
     fonts-noto-cjk \
     # Virtual display
     xvfb \
-    # Docker CLI (for Docker-in-Docker if needed)
-    apt-transport-https \
+    # Process management
+    procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install software-properties-common separately (renamed package handling)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-software-properties \
     && rm -rf /var/lib/apt/lists/*
 
 # Set shell options for better error handling
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Install Google Chrome
-RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
-    > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable \
-    && rm -rf /var/lib/apt/lists/*
+# Install Google Chrome (architecture-aware)
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "amd64" ]; then \
+    curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
+    > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && \
+    apt-get install -y google-chrome-stable && \
+    rm -rf /var/lib/apt/lists/*; \
+    else \
+    echo "Google Chrome not available for architecture $ARCH, using Chromium instead" && \
+    apt-get update && \
+    apt-get install -y chromium-browser && \
+    ln -sf /usr/bin/chromium-browser /usr/bin/google-chrome && \
+    rm -rf /var/lib/apt/lists/*; \
+    fi
 
 # Install ChromeDriver using dedicated script
 COPY install-chromedriver.sh /tmp/install-chromedriver.sh

@@ -34,6 +34,68 @@ RUNNER_WORKDIR="${RUNNER_WORKDIR:-/home/runner/_work}"
 RUNNER_LABELS="${RUNNER_LABELS:-docker,self-hosted,linux}"
 RUNNER_GROUP="${RUNNER_GROUP:-default}"
 RUNNER_REPLACE_EXISTING="${RUNNER_REPLACE_EXISTING:-true}"
+RUNNER_TEST_MODE="${RUNNER_TEST_MODE:-false}"
+
+# Test mode handling
+if [[ "$RUNNER_TEST_MODE" == "true" ]]; then
+    log_info "🧪 Running in test mode - skipping GitHub registration"
+    
+    # Test basic functionality without GitHub API calls
+    log_info "Testing environment setup..."
+    log_info "Runner name: $RUNNER_NAME"
+    log_info "Repository: $GITHUB_REPOSITORY"
+    log_info "Labels: $RUNNER_LABELS"
+    log_info "Working directory: $RUNNER_WORKDIR"
+    log_info "Group: $RUNNER_GROUP"
+    
+    # Test tool availability
+    log_info "Testing tool availability..."
+    if command -v git >/dev/null 2>&1; then
+        log_success "Git: $(git --version)"
+    else
+        log_error "Git not found"
+        exit 1
+    fi
+    
+    if command -v docker >/dev/null 2>&1; then
+        log_success "Docker: $(docker --version)"
+    else
+        log_error "Docker not found"
+        exit 1
+    fi
+    
+    if command -v node >/dev/null 2>&1; then
+        log_success "Node.js: $(node --version)"
+    else
+        log_warning "Node.js not found"
+    fi
+    
+    if command -v python3 >/dev/null 2>&1; then
+        log_success "Python: $(python3 --version)"
+    else
+        log_warning "Python3 not found"
+    fi
+    
+    # For Chrome runner, test Chrome availability
+    if [[ "$RUNNER_LABELS" == *"chrome"* ]]; then
+        if command -v google-chrome >/dev/null 2>&1; then
+            log_success "Chrome: $(google-chrome --version)"
+        else
+            log_error "Chrome not found in Chrome runner"
+            exit 1
+        fi
+        
+        if command -v chromedriver >/dev/null 2>&1; then
+            log_success "ChromeDriver: $(chromedriver --version)"
+        else
+            log_error "ChromeDriver not found in Chrome runner"
+            exit 1
+        fi
+    fi
+    
+    log_success "Test mode completed successfully - all tools available"
+    exit 0
+fi
 
 # Required environment variables check
 check_required_vars() {
