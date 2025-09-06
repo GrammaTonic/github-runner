@@ -121,7 +121,7 @@ RUN npm install -g \
     && rm -rf /tmp/* /var/tmp/* /root/.npm /home/*/.npm 2>/dev/null || true
 
 # Install Python testing packages
-RUN pip3 install --upgrade pip setuptools wheel --break-system-packages \
+RUN pip3 install --upgrade pip setuptools wheel --break-system-packages --no-cache-dir \
     && pip3 install --no-cache-dir --break-system-packages \
     selenium \
     pytest \
