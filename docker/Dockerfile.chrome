@@ -112,8 +112,8 @@ RUN npm install -g playwright@1.55.0 cypress@15.1.0 @playwright/test@1.55.0 npm@
     && rm -rf /tmp/* /var/tmp/* /root/.npm /home/*/.npm 2>/dev/null || true
 
 # Pin Python package versions
-RUN pip3 install --upgrade pip==24.0 setuptools==68.2.2 wheel==0.42.0 --break-system-packages --no-cache-dir \
-    && pip3 install selenium==4.15.2 pytest==7.4.4 pytest-selenium==4.0.0 webdriver-manager==4.0.1 --no-cache-dir --break-system-packages
+RUN pip3 install --upgrade pip==24.0 setuptools==68.2.2 wheel==0.42.0 --no-cache-dir \
+    && pip3 install selenium==4.15.2 pytest==7.4.4 pytest-selenium==4.0.0 webdriver-manager==4.0.1 --no-cache-dir
 
 # Create runner user
 RUN useradd -m -s /bin/bash runner \
