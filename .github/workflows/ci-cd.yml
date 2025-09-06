@@ -26,16 +26,6 @@ on:
         options:
           - staging
           - production
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: "Target environment for deployment"
-        required: true
-        default: "staging"
-        type: choice
-        options:
-          - staging
-          - production
       skip_tests:
         description: "Skip testing steps"
         required: false
@@ -226,7 +216,6 @@ jobs:
     name: Build Chrome Runner Image
     runs-on: ubuntu-latest
     needs: [lint-and-validate]
-    if: ${{ !inputs.skip_tests || inputs.skip_tests == false }}
     permissions:
       contents: read
       packages: write
@@ -294,7 +283,6 @@ jobs:
   test-package-validation:
     name: Package Validation Tests
     runs-on: ubuntu-latest
-    if: ${{ !inputs.skip_tests || inputs.skip_tests == false }}
     permissions:
       contents: read
     steps:
@@ -331,7 +319,6 @@ jobs:
     name: Comprehensive Integration Tests
     runs-on: ubuntu-latest
     needs: [build, build-chrome]
-    if: ${{ !inputs.skip_tests || inputs.skip_tests == false }}
     permissions:
       contents: read
     strategy:
@@ -694,7 +681,6 @@ jobs:
     name: Container Startup Tests
     runs-on: ubuntu-latest
     needs: [build, build-chrome]
-    if: ${{ !inputs.skip_tests || inputs.skip_tests == false }}
     permissions:
       contents: read
     strategy:
