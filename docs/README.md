@@ -41,6 +41,7 @@ docs/
 - [Setup Guide](../docs/SETUP_SUMMARY.md) - Quick setup instructions
 - [API Documentation](API.md) - API reference
 - [Deployment Guide](DEPLOYMENT.md) - Production deployment instructions
+- [Chrome Runner Architecture Enforcement](features/CHROME_RUNNER_FEATURE.md) - Details on amd64-only support
 
 ## 📝 Documentation Guidelines
 

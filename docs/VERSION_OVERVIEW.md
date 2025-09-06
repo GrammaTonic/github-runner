@@ -11,7 +11,7 @@ This document provides a comprehensive overview of all software versions, depend
 - **Image Version**: 1.0.1
 - **Base Image**: `ubuntu:22.04`
 - **Purpose**: General-purpose GitHub Actions runner with development tools
-- **Target Architectures**: `linux/amd64`, `linux/arm64`
+- **Target Architectures**: `linux/amd64` only (ARM builds are blocked for Chrome runner)
 
 ### 2. Chrome Runner (`docker/Dockerfile.chrome`)
 
