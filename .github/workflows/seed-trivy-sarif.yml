@@ -1,0 +1,42 @@
+name: Seed Trivy SARIF Baseline
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Target branch to seed baseline on"
+        required: false
+        default: "develop"
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  seed-filesystem-baseline:
+    name: Seed Trivy filesystem SARIF baseline
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem scan (generate SARIF)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-filesystem-baseline.sarif"
+
+      - name: Upload Trivy filesystem SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-filesystem-baseline.sarif"
+          category: "filesystem-scan"
+
+      - name: Emit note
+        run: |
+          echo "Seed SARIF uploaded as category 'filesystem-scan'. To seed other categories (container/chrome), add corresponding steps or run the container scans on a runner with access to built images."
