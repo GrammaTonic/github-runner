@@ -11,6 +11,10 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Default settings
+COPILOT_AUTO_MERGE=false
+REVIEW_COUNT=1
+
 # Logging functions
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -73,7 +77,28 @@ setup_develop_protection() {
     fi
     
     # Set up branch protection rules for develop
-    cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection --method PUT --input -
+    if [ "$COPILOT_AUTO_MERGE" = true ]; then
+        # Copilot-friendly configuration (no review requirement)
+        cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection --method PUT --input -
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["CI/CD Pipeline"]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": null,
+  "restrictions": null,
+  "allow_force_pushes": false,
+  "allow_deletions": false,
+  "block_creations": false,
+  "required_conversation_resolution": false,
+  "lock_branch": false,
+  "allow_fork_syncing": true
+}
+EOF
+    else
+        # Standard configuration with review requirement
+        cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection --method PUT --input -
 {
   "required_status_checks": {
     "strict": true,
@@ -81,7 +106,7 @@ setup_develop_protection() {
   },
   "enforce_admins": false,
   "required_pull_request_reviews": {
-    "required_approving_review_count": 1,
+    "required_approving_review_count": $REVIEW_COUNT,
     "dismiss_stale_reviews": true,
     "require_code_owner_reviews": false,
     "require_last_push_approval": false
@@ -95,20 +120,31 @@ setup_develop_protection() {
   "allow_fork_syncing": true
 }
 EOF
+    fi
     
     if [ $? -ne 0 ]; then
         log_warning "Failed to set full protection rules. Trying with minimal protection..."
         
         # Fallback to minimal protection
-        cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection --method PUT --input -
+        if [ "$COPILOT_AUTO_MERGE" = true ]; then
+            cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection --method PUT --input -
+{
+  "required_pull_request_reviews": null,
+  "enforce_admins": false,
+  "restrictions": null
+}
+EOF
+        else
+            cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection --method PUT --input -
 {
   "required_pull_request_reviews": {
-    "required_approving_review_count": 1
+    "required_approving_review_count": $REVIEW_COUNT
   },
   "enforce_admins": false,
   "restrictions": null
 }
 EOF
+        fi
     fi
     
     log_success "Branch protection configured for 'develop' branch"
@@ -119,7 +155,28 @@ setup_main_protection() {
     log_info "Setting up branch protection for 'main' branch..."
     
     # Set up branch protection rules for main
-    cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/main/protection --method PUT --input -
+    if [ "$COPILOT_AUTO_MERGE" = true ]; then
+        # Copilot-friendly configuration (no review requirement)
+        cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/main/protection --method PUT --input -
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["CI/CD Pipeline"]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": null,
+  "restrictions": null,
+  "allow_force_pushes": false,
+  "allow_deletions": false,
+  "block_creations": false,
+  "required_conversation_resolution": false,
+  "lock_branch": false,
+  "allow_fork_syncing": true
+}
+EOF
+    else
+        # Standard configuration with review requirement
+        cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/main/protection --method PUT --input -
 {
   "required_status_checks": {
     "strict": true,
@@ -127,7 +184,7 @@ setup_main_protection() {
   },
   "enforce_admins": false,
   "required_pull_request_reviews": {
-    "required_approving_review_count": 1,
+    "required_approving_review_count": $REVIEW_COUNT,
     "dismiss_stale_reviews": true,
     "require_code_owner_reviews": false,
     "require_last_push_approval": false
@@ -141,20 +198,31 @@ setup_main_protection() {
   "allow_fork_syncing": true
 }
 EOF
+    fi
     
     if [ $? -ne 0 ]; then
         log_warning "Failed to set full protection rules. Trying with minimal protection..."
         
         # Fallback to minimal protection
-        cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/main/protection --method PUT --input -
+        if [ "$COPILOT_AUTO_MERGE" = true ]; then
+            cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/main/protection --method PUT --input -
+{
+  "required_pull_request_reviews": null,
+  "enforce_admins": false,
+  "restrictions": null
+}
+EOF
+        else
+            cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/main/protection --method PUT --input -
 {
   "required_pull_request_reviews": {
-    "required_approving_review_count": 1
+    "required_approving_review_count": $REVIEW_COUNT
   },
   "enforce_admins": false,
   "restrictions": null
 }
 EOF
+        fi
     fi
     
     log_success "Branch protection configured for 'main' branch"
@@ -204,11 +272,16 @@ main() {
     echo ""
     log_info "Branch protection rules configured:"
     log_info "✓ Pull requests required for both main and develop branches"
-    log_info "✓ At least 1 approving review required"
+    if [ "$COPILOT_AUTO_MERGE" = true ]; then
+        log_info "✓ No review requirement (Copilot auto-merge enabled)"
+        log_info "✓ No conversation resolution required (Copilot friendly)"
+    else
+        log_info "✓ At least $REVIEW_COUNT approving review required"
+        log_info "✓ Conversation resolution required"
+    fi
     log_info "✓ Status checks required (CI/CD Pipeline must pass)"
     log_info "✓ Force pushes blocked"
     log_info "✓ Branch deletions blocked"
-    log_info "✓ Conversation resolution required"
     
     echo ""
     log_warning "Note: You may need admin permissions to modify some protection settings."
@@ -217,13 +290,14 @@ main() {
 # Handle script arguments
 case "${1:-}" in
     --help|-h)
-        echo "Usage: $0 [--help|--status]"
+        echo "Usage: $0 [--help|--status|--copilot-auto-merge]"
         echo ""
         echo "Sets up branch protection rules for main and develop branches."
         echo ""
         echo "Options:"
-        echo "  --help, -h     Show this help message"
-        echo "  --status, -s   Show current protection status only"
+        echo "  --help, -h               Show this help message"
+        echo "  --status, -s             Show current protection status only"
+        echo "  --copilot-auto-merge     Enable Copilot auto-merge (removes review requirement)"
         echo ""
         echo "Requirements:"
         echo "  - GitHub CLI (gh) installed and authenticated"
@@ -235,6 +309,12 @@ case "${1:-}" in
         get_repo_info
         show_protection_status
         exit 0
+        ;;
+    --copilot-auto-merge)
+        COPILOT_AUTO_MERGE=true
+        REVIEW_COUNT=0
+        log_info "🤖 Enabling Copilot auto-merge mode (no review requirement)"
+        main
         ;;
     "")
         main
