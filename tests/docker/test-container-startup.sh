@@ -296,8 +296,10 @@ test_chrome_runner_startup() {
         > "$TEST_RESULTS_DIR/chrome-headless-test.log" 2>&1; then
         log_info "Chrome headless test passed"
     else
-        log_warn "Chrome headless test failed - may impact UI testing capabilities"
-        log_error "Check $TEST_RESULTS_DIR/chrome-headless-test.log for details. Consider increasing resources or updating Chrome."
+        # Treat headless Chrome failure as a test failure so CI fails fast on UI capability issues
+        docker logs "$container_id" > "$TEST_RESULTS_DIR/chrome-runner-failure.log" 2>&1 || true
+        fail_test "Chrome Runner Container Startup" "Chrome headless test failed - see $TEST_RESULTS_DIR/chrome-headless-test.log"
+        return 1
     fi
     
     log_info "Chrome runner container health checks completed"
