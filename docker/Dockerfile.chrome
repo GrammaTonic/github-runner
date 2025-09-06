@@ -30,33 +30,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libnss3 \
     libnss3-dev \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
-    libdrm2 \
-    libxcomposite1 \
-    libxdamage1 \
     libxrandr2 \
-    libgbm1 \
     libxss1 \
     libasound2-dev \
     libatspi2.0-0 \
     libgtk-3-0 \
-    libx11-6 \
-    libx11-xcb1 \
-    libxcb1 \
-    libxcursor1 \
-    libxi6 \
-    libxtst6 \
     libpangocairo-1.0-0 \
     libcairo-gobject2 \
     libgdk-pixbuf2.0-0 \
     fonts-liberation \
     fonts-noto-color-emoji \
     fonts-noto-cjk \
-    xvfb \
-    procps \
     && rm -rf /var/lib/apt/lists/*
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
