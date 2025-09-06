@@ -398,6 +398,11 @@ jobs:
 
           # Test 2: Docker Compose validation
           echo "Validating docker-compose files..."
+
+          # Create temporary directories that compose files expect to exist
+          mkdir -p ../cache/build ../cache/deps ../cache/workspace ../config
+          mkdir -p docker/test-reports
+
           for compose_file in docker/docker-compose*.yml; do
             if [[ -f "$compose_file" ]]; then
               compose_name="$(basename "$compose_file")"
@@ -406,10 +411,17 @@ jobs:
                 echo "✅ Docker Compose validation passed for $compose_file"
               else
                 echo "❌ Docker Compose validation failed for $compose_file"
+                echo "Error details:" 
+                cat "test-results/integration/compose-$compose_name.log" | head -20
                 integration_errors=$((integration_errors + 1))
               fi
             fi
           done
+
+          # Clean up temporary directories
+          rmdir ../cache/build ../cache/deps ../cache/workspace 2>/dev/null || true
+          rmdir ../cache 2>/dev/null || true
+          rmdir docker/test-reports 2>/dev/null || true
 
           # Test 3: Configuration file validation
           echo "Validating configuration files..."
