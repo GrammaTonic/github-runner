@@ -1,5 +1,15 @@
 name: CI/CD Pipeline
 
+# Canonical branch flow for this repository:
+# - Feature work: create feature branches from `develop` and open PRs targeting `develop` (feature -> develop).
+# - Integration: merge feature PRs into `develop` and run integration/user-experience checks on those PRs.
+# - Promotion: create a PR from `develop` -> `main` to promote integrated changes to production; CI also validates promotions.
+#
+# Jobs in this workflow are intentionally conservative:
+# - Many jobs run on both `develop` and `main` pushes to keep staging and deployment paths intact.
+# - Job-level `if:` guards that check `github.event.pull_request.base.ref` are updated to account for feature PRs targeting `develop` as well as promotion PRs from `develop`->`main`.
+# Edit with care: updating triggers or branch checks may affect deployment or baseline seeding behavior.
+
 on:
   push:
     branches: [main, develop]
@@ -136,6 +146,7 @@ jobs:
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
+          category: "filesystem-scan"
 
       - name: Check for secrets in repository
         uses: trufflesecurity/trufflehog@main
@@ -630,7 +641,14 @@ jobs:
     name: User Deployment Experience Tests
     runs-on: ubuntu-latest
     needs: [build, build-chrome]
+<<<<<<< HEAD
+    # Run on either:
+    #  - Feature PRs targeting 'develop' (feature -> develop), so we validate user deployment experience early
+    #  - Promotion PRs from 'develop' into 'main' (develop -> main), so we validate release promotions
+    if: ${{ github.event_name == 'pull_request' && (github.event.pull_request.base.ref == 'develop' || (github.event.pull_request.base.ref == 'main' && github.event.pull_request.head.ref == 'develop')) }}
+=======
     if: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main' && github.event.pull_request.head.ref == 'develop'  }}
+>>>>>>> origin/main
     permissions:
       contents: read
 
@@ -987,6 +1005,7 @@ jobs:
         if: always()
         with:
           sarif_file: "trivy-container-results.sarif"
+          category: "container-scan"
 
   security-chrome-scan:
     name: Chrome Container Security Scan
@@ -1013,6 +1032,7 @@ jobs:
         if: always()
         with:
           sarif_file: "trivy-chrome-results.sarif"
+          category: "chrome-container-scan"
 
   deploy-staging:
     name: Deploy to Staging

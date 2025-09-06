@@ -9,11 +9,14 @@
 
 A comprehensive, production-ready GitHub Actions self-hosted runner solution with monitoring, scaling, and security features.
 
+Note: Documentation workflows and repo prompts were recently improved — see
+`.github/prompts/Wiki-Readme.prompt.md` and `docs/examples/update-docs-example.md` for guidance on updating docs to match code changes.
+
 ## 📊 Current Versions
 
 | Component                 | Standard Runner  | Chrome Runner    | Status            |
 | ------------------------- | ---------------- | ---------------- | ----------------- |
-| **Image Version**         | v1.0.1           | v1.0.4           | ✅ Latest         |
+| **Image Version**         | v2.0.1           | v2.0.1           | ✅ Latest         |
 | **GitHub Actions Runner** | v2.328.0         | v2.328.0         | ✅ Latest         |
 | **Base OS**               | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS | ✅ Supported      |
 | **Node.js**               | 20.x             | 20.x             | ✅ Latest LTS     |
@@ -72,8 +75,8 @@ cd github-runner
 ### Using Release Archive
 
 ```bash
-wget https://github.com/GrammaTonic/github-runner/archive/v1.0.1.tar.gz
-tar -xzf v1.0.1.tar.gz
+wget https://github.com/GrammaTonic/github-runner/archive/v2.0.1.tar.gz
+tar -xzf v2.0.1.tar.gz
 cd github-runner-1.0.1
 ```
 
@@ -83,10 +86,10 @@ Pre-built Docker images are available for each release:
 
 ```bash
 # Standard Runner (latest)
-docker pull ghcr.io/grammatonic/github-runner:v1.0.1
+docker pull ghcr.io/grammatonic/github-runner:v2.0.1
 
 # Chrome Runner (latest)
-docker pull ghcr.io/grammatonic/github-runner-chrome:v1.0.4
+docker pull ghcr.io/grammatonic/github-runner-chrome:v2.0.1
 
 # Development versions
 docker pull ghcr.io/grammatonic/github-runner:develop
@@ -420,7 +423,7 @@ We welcome contributions! Please see our [Contributing Guide](docs/community/CON
 git clone https://github.com/yourusername/github-runner.git
 cd github-runner
 
-# Switch to develop branch (primary development branch)
+# Switch to develop branch (integration branch)
 git checkout develop
 git pull origin develop
 
@@ -433,7 +436,7 @@ make test
 # Submit pull request to develop branch
 ```
 
-**Important**: All development work should be done on the `develop` branch. Never work directly on `main`.
+**Important**: All regular development work should be done on feature branches created from `develop` and merged into `develop` via pull requests. Never commit directly to `main`. Hotfixes may be created from `main` when necessary and must be merged back into `develop` afterwards.
 
 ## 📄 License
 

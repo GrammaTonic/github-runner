@@ -60,19 +60,19 @@ get_repo_info() {
 
 # Setup branch protection for develop branch
 setup_develop_protection() {
-    log_info "Setting up branch protection for 'develop' branch..."
-    
+    log_info "Setting up branch protection for 'develop' branch (create if missing)..."
+
     # Check if develop branch exists
     if ! gh api repos/$REPO_OWNER/$REPO_NAME/branches/develop >/dev/null 2>&1; then
-        log_warning "The 'develop' branch does not exist. Creating it..."
-        
-        # Create develop branch from main
+        log_warning "The 'develop' branch does not exist. Creating it from the repository default..."
+
+        # Create develop branch from the default branch
         DEFAULT_BRANCH=$(gh repo view --json defaultBranch --jq .defaultBranch)
         gh api repos/$REPO_OWNER/$REPO_NAME/git/refs \
             --method POST \
             --field ref="refs/heads/develop" \
             --field sha="$(gh api repos/$REPO_OWNER/$REPO_NAME/git/refs/heads/$DEFAULT_BRANCH --jq .object.sha)"
-        
+
         log_success "Created 'develop' branch from '$DEFAULT_BRANCH'"
     fi
     
