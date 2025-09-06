@@ -1,7 +1,10 @@
-# GitHub Actions Self-Hosted Chrome Runner Docker Image
-# Specialized for web UI testing with browser automation tools
 
-FROM ubuntu:24.04
+FROM ubuntu:22.04
+# --- ARCHITECTURE ENFORCEMENT ---
+# This image is ONLY supported on linux/amd64 (x86_64) due to Chrome/ChromeDriver binary compatibility.
+# If you attempt to build on ARM (Apple Silicon, etc.), the build will fail.
+ARG TARGETARCH
+RUN if [ "$TARGETARCH" != "amd64" ]; then echo "ERROR: Chrome runner image only supports linux/amd64 (x86_64)." && exit 1; fi
 
 # Metadata
 LABEL maintainer="GrammaTonic"
@@ -37,7 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrandr2 \
     libgbm1 \
     libxss1 \
-    libasound2t64 \
+    # libasound2t64 (not available in Ubuntu 22.04)
     libasound2-dev \
     libatspi2.0-0 \
     libgtk-3-0 \
@@ -69,24 +72,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Install Google Chrome (architecture-aware)
-RUN ARCH=$(dpkg --print-architecture) && \
-    if [ "$ARCH" = "amd64" ]; then \
-    curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
-    > /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get update && \
-    apt-get install -y google-chrome-stable && \
-    rm -rf /var/lib/apt/lists/*; \
-    else \
-    echo "Google Chrome not available for architecture $ARCH, using Chromium instead" && \
-    apt-get update && \
-    apt-get install -y chromium-browser && \
-    ln -sf /usr/bin/chromium-browser /usr/bin/google-chrome && \
-    rm -rf /var/lib/apt/lists/*; \
-    fi
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libglib2.0-0 libnss3 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxtst6 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgbm1 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf2.0-0 libgtk-3-0 fonts-liberation fonts-noto-color-emoji fonts-noto-cjk xvfb procps wget ca-certificates && \
+    CHROME_VERSION="124.0.6367.207" && \
+    curl -L -o /tmp/chrome-linux64.zip "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROME_VERSION}/linux64/chrome-linux64.zip" && \
+    unzip /tmp/chrome-linux64.zip -d /opt/ && \
+    ln -sf /opt/chrome-linux64/chrome /usr/bin/google-chrome && \
+    ln -sf /opt/chrome-linux64/chrome /usr/bin/chromium-browser && \
+    rm -rf /tmp/chrome-linux64.zip /var/lib/apt/lists/*
 
 # Install ChromeDriver using dedicated script
-COPY install-chromedriver.sh /tmp/install-chromedriver.sh
+COPY --chown=runner:runner install-chromedriver.sh /tmp/install-chromedriver.sh
 RUN chmod +x /tmp/install-chromedriver.sh \
     && /tmp/install-chromedriver.sh \
     && rm /tmp/install-chromedriver.sh
@@ -151,16 +147,12 @@ ARG TARGETPLATFORM
 
 WORKDIR /actions-runner
 
-# Download the appropriate runner based on architecture
-RUN case "${TARGETPLATFORM}" in \
-    "linux/amd64") RUNNER_ARCH="x64" ;; \
-    "linux/arm64") RUNNER_ARCH="arm64" ;; \
-    *) echo "Unsupported platform: ${TARGETPLATFORM}" && exit 1 ;; \
-    esac \
-    && curl -o "actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
-    -L "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
-    && tar xzf "actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
-    && rm "actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
+
+# Download the GitHub Actions runner for x64 only
+RUN curl -o "actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
+    -L "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
+    && tar xzf "actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
+    && rm "actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
     && chown -R runner:runner /actions-runner
 
 # Create necessary directories
@@ -173,8 +165,9 @@ ENV CHROME_BIN=/usr/bin/google-chrome-stable
 ENV DISPLAY=:99
 
 # Copy entrypoint script
-COPY entrypoint-chrome.sh /entrypoint.sh
+COPY --chown=runner:runner entrypoint-chrome.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+# For extra security, recommend running container with read-only root filesystem and tmpfs for /tmp in compose/k8s.
 
 # Set up working directory and user
 WORKDIR /actions-runner
