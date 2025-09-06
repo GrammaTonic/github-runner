@@ -1,5 +1,15 @@
 name: CI/CD Pipeline
 
+# Canonical branch flow for this repository:
+# - Feature work: create feature branches from `develop` and open PRs targeting `develop` (feature -> develop).
+# - Integration: merge feature PRs into `develop` and run integration/user-experience checks on those PRs.
+# - Promotion: create a PR from `develop` -> `main` to promote integrated changes to production; CI also validates promotions.
+#
+# Jobs in this workflow are intentionally conservative:
+# - Many jobs run on both `develop` and `main` pushes to keep staging and deployment paths intact.
+# - Job-level `if:` guards that check `github.event.pull_request.base.ref` are updated to account for feature PRs targeting `develop` as well as promotion PRs from `develop`->`main`.
+# Edit with care: updating triggers or branch checks may affect deployment or baseline seeding behavior.
+
 on:
   push:
     branches: [main, develop]
