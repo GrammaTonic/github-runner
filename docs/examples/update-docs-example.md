@@ -14,6 +14,14 @@ Steps (run locally):
 
 Example commands:
 
+# Example documenting architecture enforcement:
+
+#
+
+# - path: docker/Dockerfile.chrome
+
+# reason: enforced amd64-only architecture for Chrome runner image
+
 ```bash
 # Start from develop
 git checkout develop

@@ -1,3 +1,5 @@
+- **Warning:** Chrome runner image only supports `linux/amd64`. If you are on ARM (Apple Silicon), use emulation or an amd64 host.
+
 # Quick Start Guide
 
 Deploy GitHub self-hosted runners in Docker containers in under 5 minutes.

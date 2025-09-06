@@ -42,39 +42,16 @@ LABEL version="1.0.1"
 # Avoid prompts from apt
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Create runner user
+## Create non-root runner user early for security
 RUN useradd -m -s /bin/bash runner
 
-# Install runtime dependencies
-# hadolint ignore=DL3008,DL3015
+## Install runtime dependencies (minimal, secure)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Core tools
-    curl \
-    wget \
-    unzip \
-    tar \
-    gzip \
-    ca-certificates \
-    # Version control
-    git \
-    git-lfs \
-    # Build tools
-    build-essential \
-    # Python ecosystem
-    python3 \
-    python3-pip \
-    python3-venv \
-    # Docker CLI (for Docker-in-Docker scenarios)
-    docker.io \
-    # Utilities
-    jq \
-    zip \
-    # Network tools
-    iputils-ping \
-    netcat-openbsd \
-    # Process tools
-    htop \
-    psmisc \
+    curl wget unzip tar gzip ca-certificates \
+    git git-lfs build-essential \
+    python3 python3-pip python3-venv \
+    docker.io jq zip \
+    iputils-ping netcat-openbsd htop psmisc \
     && rm -rf /var/lib/apt/lists/*
 
 # Set shell with pipefail for safer pipe operations
@@ -92,47 +69,33 @@ RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
 # For minimal installations, remove unused cloud CLIs.
 # hadolint ignore=DL3013
 RUN python3 -m pip install --no-cache-dir --break-system-packages \
-    pyyaml \
-    requests \
-    boto3 \
-    azure-cli \
-    google-cloud-storage
+    pyyaml requests boto3 azure-cli google-cloud-storage
 
 # Install additional tools via npm
 # hadolint ignore=DL3016
 RUN npm install -g \
-    @actions/core \
-    @actions/github \
-    typescript \
-    eslint \
-    prettier \
+    @actions/core @actions/github typescript eslint prettier \
     && echo "Applying security fix for flat package vulnerability (VDB-216777)..." \
     && npm install -g flat@5.0.2 --force 2>/dev/null || true \
-    && echo "Cleaning npm cache and temporary files..." \
     && npm cache clean --force \
     && rm -rf /tmp/* /var/tmp/* /root/.npm
 
 # Copy runner from builder stage and set up directories
 COPY --from=builder /actions-runner /home/runner/actions-runner
 RUN chown -R runner:runner /home/runner \
-    && mkdir -p /home/runner/work \
-    && mkdir -p /home/runner/_work \
-    && mkdir -p /home/runner/.cache \
+    && mkdir -p /home/runner/work /home/runner/_work /home/runner/.cache \
     && chown -R runner:runner /home/runner \
     && usermod -aG docker runner
 
 # Copy entrypoint script
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY --chown=runner:runner entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Final cleanup to minimize image size
 RUN echo "Final cleanup to minimize image size..." \
     && apt-get autoremove -y \
     && apt-get autoclean \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* /var/tmp/* \
-    && rm -rf /var/log/* \
-    && rm -rf /root/.cache \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/log/* /root/.cache \
     && find /usr/share/doc -type f -delete 2>/dev/null || true \
     && find /usr/share/man -type f -delete 2>/dev/null || true
 
@@ -156,3 +119,4 @@ EXPOSE 8080
 
 # Entrypoint
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# For extra security, recommend running container with read-only root filesystem and tmpfs for /tmp in compose/k8s.

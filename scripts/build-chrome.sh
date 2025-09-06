@@ -3,7 +3,7 @@
 # Chrome Runner Build Script
 # Builds Docker image optimized for web UI testing
 
-set -e
+set -euo pipefail
 
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

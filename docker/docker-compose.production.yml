@@ -18,6 +18,18 @@ services:
       - runner-config:/home/runner/.config
       - runner-cache-npm:/home/runner/.npm
       - runner-cache-pip:/home/runner/.cache/pip
+    # Security: run container with read-only root filesystem and tmpfs for /tmp
+    read_only: true
+    tmpfs:
+      - /tmp
+    # Drop all capabilities except those needed for Docker socket
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - NET_BIND_SERVICE
     networks:
       - runner-network
     healthcheck:
