@@ -51,16 +51,9 @@ All containers include standardized labels:
 
 ### Required
 
-- `GITHUB_TOKEN` - GitHub Personal Access Token
-- `GITHUB_REPOSITORY` - Target repository (owner/repo format)
+**Note:** Chrome runner image requires `GITHUB_TOKEN` and `GITHUB_REPOSITORY` and must be run on `linux/amd64`.
 
 ### Optional
-
-- `RUNNER_LABELS` - Comma-separated list of custom labels
-- `RUNNER_NAME_PREFIX` - Prefix for runner names (default: "runner")
-- `RUNNER_WORKDIR` - Working directory (default: "/actions-runner/\_work")
-- `REGISTRATION_TIMEOUT` - Registration timeout in seconds (default: 300)
-- `RUNNER_ALLOW_RUNASROOT` - Allow running as root (default: false)
 
 ## Exit Codes
 

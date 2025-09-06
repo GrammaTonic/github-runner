@@ -1,3 +1,5 @@
+- **Warning:** Chrome runner image only supports `linux/amd64`. Do not deploy on ARM hosts.
+
 # Deployment Guide
 
 ## Production Deployment Checklist

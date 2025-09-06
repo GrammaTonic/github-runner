@@ -45,8 +45,9 @@ Note: Documentation workflows and repo prompts were recently improved — see
 - **CI/CD Integration**: Automated building, testing, and deployment with GitHub Actions
 - **High Availability**: Health checks, automatic restarts, and failover mechanisms
 - **Multi-Environment**: Support for dev, staging, and production environments
-- **Cache Optimization**: Persistent volume caching for build artifacts and dependencies
-- **Security Scanning**: Weekly Trivy scans with automated SARIF reporting
+  - **Cache Optimization**: Persistent volume caching for build artifacts and dependencies
+  - **Security Scanning**: Weekly Trivy scans with automated SARIF reporting
+  - **Architecture Enforcement**: Chrome runner image only supports `linux/amd64` (x86_64). Builds on ARM (Apple Silicon) will fail with a clear error.
 
 ### 🆕 Recent Improvements (January 2025)
 
@@ -60,12 +61,15 @@ Note: Documentation workflows and repo prompts were recently improved — see
 
 ### Using Git Clone
 
-```bash
-git clone https://github.com/GrammaTonic/github-runner.git
-cd github-runner
+```sh
+# Build the Chrome runner image (amd64 only)
+docker buildx build --platform linux/amd64 -f docker/Dockerfile.chrome -t github-runner:chrome-latest .
+
+# Start the runner with Docker Compose
+docker compose -f docker/docker-compose.chrome.yml up -d
 ```
 
-### Using GitHub CLI
+> **Note:** The Chrome runner image is only supported on `linux/amd64`. If you attempt to build or run on ARM, the build will fail.
 
 ```bash
 gh repo clone GrammaTonic/github-runner
@@ -451,4 +455,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 ⭐ If this project helps you, please consider giving it a star on GitHub!
+
 # Test commit to trigger CI/CD
