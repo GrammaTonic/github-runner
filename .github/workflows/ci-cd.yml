@@ -754,10 +754,18 @@ jobs:
           # Test using the actual production Docker Compose file that users would use
           # This validates the real user experience, not custom CI configurations
 
-          # Create test override to bypass GitHub registration for CI
-          cat > docker/docker-compose.test-override.yml << 'EOF'
+          # Create test override to bypass GitHub registration for CI and use the built image
+          IMAGE_TAG="${{ needs.build.outputs.image-primary }}"
+          cat > docker/docker-compose.test-override.yml << EOF
           services:
             github-runner:
+              image: ${IMAGE_TAG}
+              healthcheck:
+                test: ["CMD", "echo", "healthy"]
+                interval: 5s
+                timeout: 3s
+                retries: 2
+                start_period: 10s
               entrypoint: |
                 bash -c '
                 echo "=== Production Container Startup Test ==="
@@ -825,10 +833,18 @@ jobs:
           sed -i 's/RUNNER_NAME=.*/RUNNER_NAME=ci-test-chrome-runner/' config/runner.env
           sed -i 's/RUNNER_LABELS=.*/RUNNER_LABELS=chrome,ui-tests,selenium,playwright,cypress,headless/' config/runner.env
 
-          # Create Chrome test override to bypass GitHub registration for CI
-          cat > docker/docker-compose.chrome-test-override.yml << 'EOF'
+          # Create Chrome test override to bypass GitHub registration for CI and use the built image
+          CHROME_IMAGE_TAG="${{ needs.build-chrome.outputs.image-primary }}"
+          cat > docker/docker-compose.chrome-test-override.yml << EOF
           services:
             github-runner-chrome:
+              image: ${CHROME_IMAGE_TAG}
+              healthcheck:
+                test: ["CMD", "echo", "healthy"]
+                interval: 5s
+                timeout: 3s
+                retries: 2
+                start_period: 10s
               entrypoint: |
                 bash -c '
                 echo "=== Production Chrome Container Startup Test ==="
