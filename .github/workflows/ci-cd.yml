@@ -801,30 +801,13 @@ jobs:
                 '
           EOF
 
-          # Start container using production compose with test override (no --wait for one-shot containers)
-          echo "Starting test container..."
-          docker compose -f docker/docker-compose.production.yml -f docker/docker-compose.test-override.yml up --no-deps github-runner
+          # Start container using production compose with test override (run one-shot container)
+          echo "Running test container..."
+          docker compose -f docker/docker-compose.production.yml -f docker/docker-compose.test-override.yml run --rm github-runner
 
-          # Get container logs
-          echo "=== Production Container Logs ==="
-          docker compose -f docker/docker-compose.production.yml logs github-runner
-
-          # Check container exit code
-          CONTAINER_ID=$(docker compose -f docker/docker-compose.production.yml ps -q github-runner)
-          if [[ -n "$CONTAINER_ID" ]]; then
-            EXIT_CODE=$(docker inspect "$CONTAINER_ID" --format='{{.State.ExitCode}}')
-            echo "Production container exit code: $EXIT_CODE"
-            
-            if [[ "$EXIT_CODE" -eq 0 ]]; then
-              echo "✅ Production main runner container startup test passed"
-            else
-              echo "❌ Production main runner container startup test failed"
-              exit 1
-            fi
-          else
-            echo "❌ Could not find production container"
-            exit 1
-          fi
+          # Get container logs from the completed run
+          echo "=== Production Container Test Results ==="
+          echo "Container completed successfully"
 
           # Cleanup
           docker compose -f docker/docker-compose.production.yml down || true
@@ -908,30 +891,13 @@ jobs:
                 '
           EOF
 
-          # Start Chrome container using Chrome compose with test override (no --wait for one-shot containers)
-          echo "Starting Chrome test container..."
-          docker compose -f docker/docker-compose.chrome.yml -f docker/docker-compose.chrome-test-override.yml up --no-deps github-runner-chrome
+          # Start Chrome container using Chrome compose with test override (run one-shot container)
+          echo "Running Chrome test container..."
+          docker compose -f docker/docker-compose.chrome.yml -f docker/docker-compose.chrome-test-override.yml run --rm github-runner-chrome
 
-          # Get container logs
-          echo "=== Production Chrome Container Logs ==="
-          docker compose -f docker/docker-compose.chrome.yml logs github-runner-chrome
-
-          # Check container exit code
-          CONTAINER_ID=$(docker compose -f docker/docker-compose.chrome.yml ps -q github-runner-chrome)
-          if [[ -n "$CONTAINER_ID" ]]; then
-            EXIT_CODE=$(docker inspect "$CONTAINER_ID" --format='{{.State.ExitCode}}')
-            echo "Production Chrome container exit code: $EXIT_CODE"
-            
-            if [[ "$EXIT_CODE" -eq 0 ]]; then
-              echo "✅ Production Chrome runner container startup test passed"
-            else
-              echo "❌ Production Chrome runner container startup test failed"
-              exit 1
-            fi
-          else
-            echo "❌ Could not find production Chrome container"
-            exit 1
-          fi
+          # Test completed successfully if we reach here
+          echo "=== Production Chrome Container Test Results ==="
+          echo "Chrome container completed successfully"
 
           # Cleanup
           docker compose -f docker/docker-compose.chrome.yml down || true
