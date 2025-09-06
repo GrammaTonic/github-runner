@@ -781,11 +781,12 @@ jobs:
 
           chmod +x test-entrypoint.sh
 
-          # Start container with test entrypoint, overriding the default entrypoint
+          # Start container with test entrypoint, completely overriding the default
+          # Use absolute path and ensure entrypoint override works properly
           CONTAINER_ID=$(docker run -d --name ci-test-main-runner \
-            --entrypoint /test-entrypoint.sh \
-            -v "$(pwd)/test-entrypoint.sh:/test-entrypoint.sh" \
-            github-runner:latest)
+            --entrypoint="" \
+            -v "$(pwd)/test-entrypoint.sh:/usr/local/bin/test-entrypoint.sh" \
+            github-runner:latest /usr/local/bin/test-entrypoint.sh)
 
           echo "Container ID: $CONTAINER_ID"
 
@@ -883,11 +884,12 @@ jobs:
 
           chmod +x test-chrome-entrypoint.sh
 
-          # Start container with test entrypoint, overriding the default entrypoint
+          # Start container with test entrypoint, completely overriding the default
+          # Use absolute path and ensure entrypoint override works properly
           CONTAINER_ID=$(docker run -d --name ci-test-chrome-runner \
-            --entrypoint /test-chrome-entrypoint.sh \
-            -v "$(pwd)/test-chrome-entrypoint.sh:/test-chrome-entrypoint.sh" \
-            github-runner:chrome-latest)
+            --entrypoint="" \
+            -v "$(pwd)/test-chrome-entrypoint.sh:/usr/local/bin/test-chrome-entrypoint.sh" \
+            github-runner:chrome-latest /usr/local/bin/test-chrome-entrypoint.sh)
 
           echo "Chrome Container ID: $CONTAINER_ID"
 
