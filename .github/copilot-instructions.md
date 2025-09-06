@@ -9,6 +9,7 @@ This repository is for setting up and managing GitHub Actions self-hosted runner
 ### Branch Protection Status - ENFORCED
 
 - **`main` branch**: PROTECTED with branch protection rules
+- **`develop` branch**: PROTECTED with branch protection rules
 - **Direct pushes BLOCKED**: All changes must go through pull requests
 - **Review required**: 1 approving review required before merge
 - **Status checks required**: CI/CD Pipeline must pass before merge
@@ -17,14 +18,14 @@ This repository is for setting up and managing GitHub Actions self-hosted runner
 
 ### Development Workflow - MANDATORY
 
-1. **Start from develop**: Create feature branches from the integration branch `develop`.
+1. **Start from develop**: Always create feature branches from the integration branch `develop`.
 2. **Feature development**: Work on features/fixes in dedicated feature branches created from `develop`.
 3. **Pull Request workflow**: Submit PR from feature branch → `develop` for integration and review.
-4. **Code review & CI**: Get 1+ approval AND CI/CD Pipeline must pass on the `develop` PR.
+4. **Code review & CI**: Get 1+ approval AND CI/CD Pipeline must pass on feature PRs to `develop`.
 5. **Merge to develop**: After approval and green CI, merge to `develop`.
-6. **Release process**: Maintainers create a PR from `develop` → `main` to promote integration to production.
+6. **Release process**: Create a PR from `develop` → `main` to promote integrated changes to production.
 
-**CRITICAL**: Direct pushes to `main` are blocked by branch protection; promotions to `main` must be done via PR from `develop`.
+**CRITICAL**: Direct pushes to `main` and `develop` are blocked by branch protection; promotions must be done via PRs.
 
 ### Branch Protection Management
 
@@ -212,17 +213,59 @@ docker compose -f docker/docker-compose.production.yml up -d --scale github-runn
 docker compose -f docker/docker-compose.chrome.yml up -d --scale github-runner-chrome=2
 ```
 
+## Development Workflows
+
+### Branch Strategy
+
+- **`main`**: Production-ready code only. Protected branch requiring PR approval.
+- **`develop`**: Active development branch. Protected branch requiring PR approval.
+- **Feature branches**: Created from `develop` for new features
+- **Hotfix branches**: Created from `develop` for urgent fixes
+
+### Initial Setup Commands
+
+```bash
+# Clone and setup development environment
+git clone <repo-url>
+cd github-runner
+
+# Switch to develop branch (primary development branch)
+git checkout develop
+git pull origin develop
+
+# Create feature branch from develop
+git checkout -b feature/your-feature-name
+
+# Build the runner Docker image
+docker build -t github-runner:latest ./docker
+
+# Tag and push to GitHub Container Registry
+docker tag github-runner:latest ghcr.io/grammatonic/github-runner:latest
+docker push ghcr.io/grammatonic/github-runner:latest
+
+# Start standard runners
+docker compose -f docker/docker-compose.production.yml up -d
+
+# Start Chrome runners
+docker compose -f docker/docker-compose.chrome.yml up -d
+
+# Scale runners based on demand and type
+docker compose -f docker/docker-compose.production.yml up -d --scale github-runner=3
+docker compose -f docker/docker-compose.chrome.yml up -d --scale github-runner-chrome=2
+>>>>>>> origin/main
+```
+
 ### Development Workflow - UPDATED
 
-1. **Start from main**: Always create feature branches from protected `main` branch
-2. **Work on features**: Implement features, hotfixes on feature branches
-3. **Test thoroughly**: Ensure changes work and pass all CI/CD tests
-4. **Create PR to main**: Submit pull request from feature branch → `main`
-5. **Code review & CI**: Get 1+ approval AND CI/CD Pipeline must pass (required by branch protection)
-6. **Merge to main**: After approval and green CI, merge to `main`
-7. **Release process**: Create PR from `main` → `release/*` or tag releases from `main` (triggers User Deployment Experience Tests)
+1. **Start from develop**: Always create feature branches from protected `develop` branch.
+2. **Work on features**: Implement features and fixes on feature branches.
+3. **Test thoroughly**: Ensure changes work and pass all CI/CD tests.
+4. **Create PR to develop**: Submit pull request from feature branch → `develop`.
+5. **Code review & CI**: Get 1+ approval AND CI/CD Pipeline must pass (required by branch protection).
+6. **Merge to develop**: After approval and green CI, merge to `develop`.
+7. **Release process**: Create PR from `develop` → `main` for releases (triggers release validation).
 
-**CRITICAL**: Direct pushes to `main` are IMPOSSIBLE due to branch protection rules.
+**CRITICAL**: Direct pushes to `main` and `develop` are blocked by branch protection rules.
 
 ### Common Operations
 

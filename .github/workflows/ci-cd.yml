@@ -641,10 +641,14 @@ jobs:
     name: User Deployment Experience Tests
     runs-on: ubuntu-latest
     needs: [build, build-chrome]
+<<<<<<< HEAD
     # Run on either:
     #  - Feature PRs targeting 'develop' (feature -> develop), so we validate user deployment experience early
     #  - Promotion PRs from 'develop' into 'main' (develop -> main), so we validate release promotions
     if: ${{ github.event_name == 'pull_request' && (github.event.pull_request.base.ref == 'develop' || (github.event.pull_request.base.ref == 'main' && github.event.pull_request.head.ref == 'develop')) }}
+=======
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main' && github.event.pull_request.head.ref == 'develop'  }}
+>>>>>>> origin/main
     permissions:
       contents: read
 
@@ -1077,8 +1081,8 @@ jobs:
 
           # Update configuration for staging
           if [[ -f "config/runner.env" ]]; then
-            sed -i 's/GITHUB_TOKEN=.*/GITHUB_TOKEN=${{ secrets.STAGING_GITHUB_TOKEN }}/' config/runner.env
-            sed -i 's/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=${{ secrets.STAGING_REPOSITORY }}/' config/runner.env
+            sed -i "s/GITHUB_TOKEN=.*/GITHUB_TOKEN=$STAGING_GITHUB_TOKEN/" config/runner.env
+            sed -i "s/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=$STAGING_REPOSITORY/" config/runner.env
           fi
 
       - name: Deploy to staging
@@ -1152,8 +1156,8 @@ jobs:
 
           # Update configuration for production
           if [[ -f "config/runner.env" ]]; then
-            sed -i 's/GITHUB_TOKEN=.*/GITHUB_TOKEN=${{ secrets.PROD_GITHUB_TOKEN }}/' config/runner.env
-            sed -i 's/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=${{ secrets.PROD_REPOSITORY }}/' config/runner.env
+            sed -i "s/GITHUB_TOKEN=.*/GITHUB_TOKEN=$PROD_GITHUB_TOKEN/" config/runner.env
+            sed -i "s/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=$PROD_REPOSITORY/" config/runner.env
           fi
 
       - name: Deploy to production

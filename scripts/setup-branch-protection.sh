@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # GitHub Branch Protection Setup Script
-# Sets up branch protection rules for main and develop branches (main is primary)
+# Sets up branch protection rules for main and develop branches
 
 # Color output for logging
 RED='\033[0;31m'
@@ -60,19 +60,19 @@ get_repo_info() {
 
 # Setup branch protection for develop branch
 setup_develop_protection() {
-  log_info "Setting up branch protection for 'develop' branch (created from main if missing)..."
-    
+    log_info "Setting up branch protection for 'develop' branch (create if missing)..."
+
     # Check if develop branch exists
     if ! gh api repos/$REPO_OWNER/$REPO_NAME/branches/develop >/dev/null 2>&1; then
-  log_warning "The 'develop' branch does not exist. Creating it from the repository default (usually main)..."
-        
-        # Create develop branch from main
+        log_warning "The 'develop' branch does not exist. Creating it from the repository default..."
+
+        # Create develop branch from the default branch
         DEFAULT_BRANCH=$(gh repo view --json defaultBranch --jq .defaultBranch)
         gh api repos/$REPO_OWNER/$REPO_NAME/git/refs \
             --method POST \
             --field ref="refs/heads/develop" \
             --field sha="$(gh api repos/$REPO_OWNER/$REPO_NAME/git/refs/heads/$DEFAULT_BRANCH --jq .object.sha)"
-        
+
         log_success "Created 'develop' branch from '$DEFAULT_BRANCH'"
     fi
     
@@ -147,7 +147,7 @@ EOF
         fi
     fi
     
-  log_success "Branch protection configured for 'develop' branch"
+    log_success "Branch protection configured for 'develop' branch"
 }
 
 # Setup branch protection for main branch
@@ -255,7 +255,7 @@ show_protection_status() {
 
 # Main execution
 main() {
-  log_info "🛡️ Setting up GitHub branch protection rules (main is primary)..."
+    log_info "🛡️ Setting up GitHub branch protection rules..."
     
     check_gh_cli
     get_repo_info
@@ -271,7 +271,7 @@ main() {
     
     echo ""
     log_info "Branch protection rules configured:"
-  log_info "✓ Pull requests required for both main and develop branches"
+    log_info "✓ Pull requests required for both main and develop branches"
     if [ "$COPILOT_AUTO_MERGE" = true ]; then
         log_info "✓ No review requirement (Copilot auto-merge enabled)"
         log_info "✓ No conversation resolution required (Copilot friendly)"
@@ -284,7 +284,7 @@ main() {
     log_info "✓ Branch deletions blocked"
     
     echo ""
-  log_warning "Note: You may need admin permissions to modify some protection settings."
+    log_warning "Note: You may need admin permissions to modify some protection settings."
 }
 
 # Handle script arguments
