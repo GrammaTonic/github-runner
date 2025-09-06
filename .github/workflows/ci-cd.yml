@@ -407,7 +407,7 @@ jobs:
             if [[ -f "$compose_file" ]]; then
               compose_name="$(basename "$compose_file")"
               # Set dummy environment variables to avoid warnings during validation
-              if GITHUB_TOKEN=dummy GITHUB_REPOSITORY=dummy/repo docker-compose -f "$compose_file" config > "test-results/integration/compose-$compose_name.log" 2>&1; then
+              if GITHUB_TOKEN=dummy GITHUB_REPOSITORY=dummy/repo docker compose -f "$compose_file" config > "test-results/integration/compose-$compose_name.log" 2>&1; then
                 echo "✅ Docker Compose validation passed for $compose_file"
               else
                 echo "❌ Docker Compose validation failed for $compose_file"
