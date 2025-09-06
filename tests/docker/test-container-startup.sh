@@ -230,9 +230,9 @@ test_chrome_runner_startup() {
     
     log_info "Starting Chrome GitHub runner container..."
     
-    # Start the Chrome container
+    # Start the Chrome container (service name in docker-compose.chrome.yml is 'github-runner-chrome')
     if ! timeout "$TIMEOUT_CHROME" docker compose -f docker-compose.chrome.yml \
-        --env-file "$config_file" -p test-startup-chrome up -d chrome-runner \
+        --env-file "$config_file" -p test-startup-chrome up -d github-runner-chrome \
         > "$TEST_RESULTS_DIR/chrome-runner-startup.log" 2>&1; then
         fail_test "Chrome Runner Container Startup" "Failed to start container - see chrome-runner-startup.log"
         return 1
@@ -240,7 +240,7 @@ test_chrome_runner_startup() {
     
     # Get container ID
     local container_id
-    container_id=$(docker compose -f docker-compose.chrome.yml -p test-startup-chrome ps -q chrome-runner)
+    container_id=$(docker compose -f docker-compose.chrome.yml -p test-startup-chrome ps -q github-runner-chrome)
     
     if [[ -z "$container_id" ]]; then
         fail_test "Chrome Runner Container Startup" "Container not found after startup"
