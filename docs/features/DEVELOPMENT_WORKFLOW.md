@@ -10,33 +10,32 @@ This document outlines the branch strategy and development workflow for the GitH
 
 - **Purpose**: Production-ready code only
 - **Protection**: Fully protected with branch protection rules
-- **Access**: No direct pushes allowed - only through approved PRs from `develop`
+- **Access**: No direct pushes allowed - only through approved PRs
 - **Deployment**: Automatically deploys to production environments
 - **Stability**: Should always be stable and deployable
 
-#### `develop` Branch
+#### `develop` Branch (Integration)
 
-- **Purpose**: Active development branch where all work happens
-- **Access**: All feature branches, hotfixes, and improvements merge here first
-- **Testing**: CI/CD runs full test suite on all commits
-- **Integration**: Integration point for all development work
-- **Releases**: Periodically merged to `main` for releases
+- **Purpose**: Integration branch for feature work and testing
+- **Access**: Feature branches target `develop` via PRs
+- **Testing**: CI/CD runs full test suite on `develop` for integration validation
+- **Integration**: Aggregates feature work prior to promotion to `main`
 
 ### Supporting Branches
 
 #### Feature Branches
 
 - **Naming**: `feature/feature-name` or `feature/issue-number-description`
-- **Source**: Created from `develop`
-- **Target**: Merged back to `develop` via PR
+  -- **Source**: Created from `develop`
+  -- **Target**: Merged back to `develop` via PR
 - **Lifecycle**: Deleted after successful merge
 - **Purpose**: Develop new features, enhancements, or improvements
 
 #### Hotfix Branches
 
 - **Naming**: `hotfix/issue-description` or `hotfix/issue-number`
-- **Source**: Created from `develop` (not `main`)
-- **Target**: Merged to `develop` via PR, then `develop` → `main` for urgent release
+- **Source**: Created from `main` (hotfixes are applied directly to production branch)
+- **Target**: Merged to `main` via PR, then `main` → `develop` to keep integration branch in sync
 - **Purpose**: Critical bug fixes that need immediate attention
 
 ## 🔄 Development Workflow
@@ -44,19 +43,20 @@ This document outlines the branch strategy and development workflow for the GitH
 ### 1. Starting New Work
 
 ```bash
-# Always start from develop
+# Always start from develop for regular feature work
 git checkout develop
 git pull origin develop
 
 # Create your working branch
 git checkout -b feature/your-feature-name
-# or for hotfixes:
-git checkout -b hotfix/critical-fix
+# or for hotfixes (branch from main):
+# git checkout -b hotfix/critical-fix main
 ```
 
 ### 2. During Development
 
 ```bash
+git commit -m "feat: implement new feature"
 # Make your changes
 git add .
 git commit -m "feat: implement new feature"
@@ -82,7 +82,7 @@ git push origin feature/your-feature-name
 ### 4. Release Process
 
 ```bash
-# When ready for release, create PR: develop → main
+# When ready for release, create PR: develop → main (maintainers) or tag a release from main
 # This triggers production deployment after approval
 ```
 
@@ -171,10 +171,10 @@ git push origin v1.2.0
 
 ## ❌ What NOT to Do
 
-- ❌ **Never work directly on `main`** - Always work on `develop` or feature branches
+- ❌ **Never work directly on `main`** - Always work on feature branches created from `develop` and merge to `develop` via PR
 - ❌ **Never force push to `main`** - It's protected anyway
-- ❌ **Never merge to `main` without PR** - Branch protection prevents this
-- ❌ **Never create feature branches from `main`** - Always use `develop` as base
+- ❌ **Never merge to `main` without PR** - Branch protection prevents this; use `develop` → `main` PRs for promotion
+- ✅ **Feature branches should be created from `develop` and kept up-to-date with `develop`**
 - ❌ **Never bypass code review** - All changes must go through PR process
 
 ## ✅ Best Practices
@@ -184,7 +184,7 @@ git push origin v1.2.0
 - ✅ **Write clear commit messages** - Follow conventional commits format
 - ✅ **Test before pushing** - Run tests locally before creating PR
 - ✅ **Keep PRs small** - Easier to review and less likely to have conflicts
-- ✅ **Update branch regularly** - Merge/rebase from `develop` frequently
+- ✅ **Update branch regularly** - Merge/rebase from `main` frequently
 - ✅ **Delete merged branches** - Keep repository clean
 
 ## 🔍 Monitoring and Maintenance

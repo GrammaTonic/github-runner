@@ -5,7 +5,7 @@
 ### 1. **Repository Structure**
 
 - **Main Branch**: Production-ready code with maximum protection
-- **Develop Branch**: Integration branch with standard protection
+- **Main Branch**: Integration branch with standard protection
 - **Feature Branches**: Developer-managed branches (no protection)
 - **Hotfix Branches**: Emergency fix branches with bypass capability
 
@@ -37,7 +37,7 @@
   - Conversation resolution: Required
 ```
 
-#### **Develop Branch Protection**
+#### **Main Branch Protection**
 
 ```yaml
 ✅ Required Status Checks:
@@ -86,7 +86,7 @@
 ### 5. **GitHub Environments**
 
 - ✅ **Staging Environment**:
-  - Automatic deployment from develop/main branches
+  - Automatic deployment from main branches
   - No manual approval required
   - Custom branch policies enabled
 - ✅ **Production Environment**:
@@ -109,7 +109,7 @@ All existing workflows are fully integrated:
 #### **Active Protection Rules**
 
 - 🔒 **Main Branch**: Fully protected, PR-only access
-- 🔒 **Develop Branch**: Protected with required reviews
+- 🔒 **Main Branch**: Protected with required reviews
 - 📝 **Pull Request #1**: Created to demonstrate workflow
 - 🚨 **Emergency Tools**: Ready for critical incidents
 
