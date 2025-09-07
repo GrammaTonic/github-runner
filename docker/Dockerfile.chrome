@@ -48,7 +48,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Install Google Chrome (architecture-aware)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+        # Download Chrome for Testing
     libglib2.0-0 \
     libnss3 \
     libx11-6 \
@@ -77,11 +77,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     ca-certificates \
     && CHROME_VERSION="124.0.6367.207" \
-    && curl -L -o /tmp/chrome-linux64.zip "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
-    && unzip /tmp/chrome-linux64.zip -d /opt/ \
+
+    # Download Chrome for Testing
+    && curl -fSL -o /tmp/chrome-linux64.zip "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
+    && unzip -o /tmp/chrome-linux64.zip -d /opt/ \
+    && chmod +x /opt/chrome-linux64/chrome \
     && ln -sf /opt/chrome-linux64/chrome /usr/bin/google-chrome \
     && ln -sf /opt/chrome-linux64/chrome /usr/bin/chromium-browser \
-    && rm -rf /tmp/chrome-linux64.zip /var/lib/apt/lists/*
+    && rm -rf /tmp/chrome-linux64.zip /var/lib/apt/lists/* \
+    # Debug: List Chrome files and check permissions
+    && echo "Listing /opt/chrome-linux64:" \
+    && ls -l /opt/chrome-linux64 \
+    && echo "Listing /usr/bin/google-chrome:" \
+    && ls -l /usr/bin/google-chrome \
+    && echo "Checking Chrome version:" \
+    && /usr/bin/google-chrome --version || (echo "ERROR: Google Chrome is not installed correctly!" && exit 1)
 
 # Verify Chrome installation
 RUN if ! /usr/bin/google-chrome --version; then echo "ERROR: Google Chrome is not installed correctly!" && exit 1; fi
