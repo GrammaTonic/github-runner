@@ -83,6 +83,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ln -sf /opt/chrome-linux64/chrome /usr/bin/chromium-browser \
     && rm -rf /tmp/chrome-linux64.zip /var/lib/apt/lists/*
 
+# Verify Chrome installation
+RUN if ! /usr/bin/google-chrome --version; then echo "ERROR: Google Chrome is not installed correctly!" && exit 1; fi
+
 # Install ChromeDriver using dedicated script
 COPY --chown=runner:runner install-chromedriver.sh /tmp/install-chromedriver.sh
 RUN chmod +x /tmp/install-chromedriver.sh \
