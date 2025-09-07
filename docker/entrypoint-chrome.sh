@@ -191,10 +191,35 @@ cd "$RUNNER_CONFIG_DIR"
 # Copy necessary files to writable location
 cp -rp /actions-runner/* "$RUNNER_CONFIG_DIR/" 2>/dev/null || true
 
-# Ensure config.sh has execute permissions
-chmod +x "$RUNNER_CONFIG_DIR/config.sh" 2>/dev/null || true
+# Debug: Show what was copied
+log_info "Contents of $RUNNER_CONFIG_DIR after copy:"
+ls -la "$RUNNER_CONFIG_DIR/" | head -10
 
-./config.sh \
+# Ensure config.sh has execute permissions (multiple approaches for robustness)
+if [ -f "$RUNNER_CONFIG_DIR/config.sh" ]; then
+    log_info "Setting execute permissions on config.sh..."
+    chmod +x "$RUNNER_CONFIG_DIR/config.sh" 2>/dev/null || true
+    # Also try with full path
+    chmod +x /tmp/runner-config/config.sh 2>/dev/null || true
+    # Verify permissions
+    if [ -x "$RUNNER_CONFIG_DIR/config.sh" ]; then
+        log_success "config.sh execute permissions set successfully"
+    else
+        log_error "Failed to set execute permissions on config.sh"
+        ls -la "$RUNNER_CONFIG_DIR/config.sh"
+        exit 1
+    fi
+else
+    log_error "config.sh not found in $RUNNER_CONFIG_DIR"
+    ls -la "$RUNNER_CONFIG_DIR/"
+    exit 1
+fi
+
+# Ensure we're in the right directory
+log_info "Current directory: $(pwd)"
+log_info "Executing config.sh from: $RUNNER_CONFIG_DIR"
+
+"$RUNNER_CONFIG_DIR/config.sh" \
     --url "https://github.com/${GITHUB_REPOSITORY}" \
     --token "${RUNNER_TOKEN}" \
     --name "${RUNNER_NAME}" \
