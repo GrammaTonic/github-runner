@@ -72,7 +72,7 @@ setup_chrome() {
     
     # Playwright specific settings
     export PLAYWRIGHT_BROWSERS_PATH=/home/runner/.cache/ms-playwright
-    export PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+    export PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome
     
     # Set memory limits for Chrome processes
     MEMORY_LIMIT_KB=$((4 * 1024 * 1024))  # 4GB virtual memory limit
@@ -85,7 +85,7 @@ setup_chrome() {
 validate_chrome() {
     log_info "Validating Chrome installation..."
     
-    if ! command -v google-chrome-stable &> /dev/null; then
+    if ! command -v google-chrome &> /dev/null; then
         log_error "Google Chrome is not installed"
         exit 1
     fi
@@ -98,16 +98,16 @@ validate_chrome() {
     # Test Chrome can start with comprehensive headless flags for Docker
     CHROME_TEST_FLAGS="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=TranslateUI --disable-extensions --disable-plugins --no-first-run --no-default-browser-check --single-process"
     
-    if timeout 10 google-chrome-stable "$CHROME_TEST_FLAGS" --version > /dev/null 2>&1; then
-        CHROME_VERSION=$(google-chrome-stable --version 2>/dev/null | head -1)
+    if timeout 10 google-chrome "$CHROME_TEST_FLAGS" --version > /dev/null 2>&1; then
+        CHROME_VERSION=$(google-chrome --version 2>/dev/null | head -1)
         log_success "Chrome validation successful: $CHROME_VERSION"
     else
         log_error "Chrome failed to start with flags: $CHROME_TEST_FLAGS"
         log_info "Attempting fallback validation..."
         
         # Try with minimal flags as fallback
-        if timeout 5 google-chrome-stable --no-sandbox --single-process --version > /dev/null 2>&1; then
-            CHROME_VERSION=$(google-chrome-stable --version 2>/dev/null | head -1)
+        if timeout 5 google-chrome --no-sandbox --single-process --version > /dev/null 2>&1; then
+            CHROME_VERSION=$(google-chrome --version 2>/dev/null | head -1)
             log_warning "Chrome validation passed with minimal flags: $CHROME_VERSION"
         else
             log_error "Chrome completely failed to start - this may indicate missing dependencies or incompatible architecture"
