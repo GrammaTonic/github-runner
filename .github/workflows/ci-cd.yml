@@ -133,9 +133,11 @@ jobs:
       - name: Provision Chrome runner container in staging
         env:
           RUNNER_LABELS: chrome,ui-tests,extra-label
+          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
         run: |
           echo "Provisioning Chrome runner container in staging..."
           echo "Using labels: $RUNNER_LABELS"
+          echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
           docker compose -f docker/docker-compose.chrome.yml up -d
           echo "Checking if Chrome runner container is running..."
           RUNNING=$(docker ps --filter "name=github-runner-chrome" --filter "status=running" -q)
