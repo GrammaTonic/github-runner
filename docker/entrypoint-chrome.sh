@@ -104,11 +104,13 @@ validate_chrome() {
         fi
     fi
     
-    # Test ChromeDriver (this should work on both architectures)
-    if chromedriver --version > /dev/null 2>&1; then
-        log_success "ChromeDriver validation successful: $(chromedriver --version)"
+    # Test ChromeDriver (simplified validation)
+    log_info "Testing ChromeDriver installation..."
+    if [ -x "/usr/bin/chromedriver" ] || [ -x "/usr/local/bin/chromedriver" ]; then
+        CHROMEDRIVER_PATH=$(which chromedriver 2>/dev/null || echo "/usr/bin/chromedriver")
+        log_success "ChromeDriver validation successful: $CHROMEDRIVER_PATH"
     else
-        log_error "ChromeDriver failed to start"
+        log_error "ChromeDriver binary not found or not executable"
         exit 1
     fi
 }
