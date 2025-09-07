@@ -443,6 +443,20 @@ jobs:
           echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
           echo "Primary tag for security scan: $PRIMARY_TAG"
           echo "Image pushed to registry: $PRIMARY_TAG"
+          echo "$PRIMARY_TAG" > build-image-tag.txt
+          echo "${{ steps.build.outputs.digest }}" > build-image-digest.txt
+      - name: Upload build image tag as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-image-tag
+          path: build-image-tag.txt
+          retention-days: 30
+      - name: Upload build image digest as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-image-digest
+          path: build-image-digest.txt
+          retention-days: 30
 
   build-chrome:
     name: Build Chrome Runner Image
@@ -510,6 +524,20 @@ jobs:
           echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
           echo "Primary Chrome tag for security scan: $PRIMARY_TAG"
           echo "Chrome image pushed to registry: $PRIMARY_TAG"
+          echo "$PRIMARY_TAG" > build-chrome-image-tag.txt
+          echo "${{ steps.build-chrome.outputs.digest }}" > build-chrome-image-digest.txt
+      - name: Upload Chrome build image tag as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-chrome-image-tag
+          path: build-chrome-image-tag.txt
+          retention-days: 30
+      - name: Upload Chrome build image digest as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-chrome-image-digest
+          path: build-chrome-image-digest.txt
+          retention-days: 30
 
   # Comprehensive Testing Suite
   test-package-validation:
