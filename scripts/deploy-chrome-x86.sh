@@ -58,6 +58,7 @@ validate_config() {
     fi
 
     # Check required variables
+    # shellcheck disable=SC1090
     source "$CONFIG_FILE"
 
     if [[ -z "${GITHUB_TOKEN:-}" ]] || [[ "$GITHUB_TOKEN" == "ghp_your_personal_access_token_here" ]]; then
@@ -78,7 +79,7 @@ build_image() {
     log_info "Building Chrome runner image for x86..."
 
     # Temporarily restore architecture check for production
-    sed -i 's/# RUN if \[ "\$TARGETARCH" != "amd64" \]; then/RUN if [ "$TARGETARCH" != "amd64" ]; then/' docker/Dockerfile.chrome
+    sed -i "s/# RUN if \[ \"\$TARGETARCH\" != \"amd64\" \]; then/RUN if [ \"\$TARGETARCH\" != \"amd64\" ]; then/" docker/Dockerfile.chrome
     sed -i 's/# fi/fi/' docker/Dockerfile.chrome
 
     # Restore Chrome version check
