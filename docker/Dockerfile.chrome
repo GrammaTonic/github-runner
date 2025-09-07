@@ -91,10 +91,18 @@ RUN CHROME_VERSION="124.0.6367.207" \
     && echo "Listing /usr/bin/google-chrome:" \
     && ls -l /usr/bin/google-chrome \
     && echo "Checking Chrome version:" \
-    && /usr/bin/google-chrome --version || (echo "ERROR: Google Chrome is not installed correctly!" && exit 1)
+    && if /usr/bin/google-chrome --version > /dev/null 2>&1; then \
+         echo "Chrome installed successfully"; \
+       else \
+         echo "ERROR: Google Chrome is not installed correctly!" && exit 1; \
+       fi
 
 # Verify Chrome installation
-RUN /usr/bin/google-chrome --version > /dev/null 2>&1 || (echo "ERROR: Google Chrome is not installed correctly!" && exit 1)
+RUN if /usr/bin/google-chrome --version > /dev/null 2>&1; then \
+      echo "Chrome verification successful"; \
+    else \
+      echo "ERROR: Google Chrome is not installed correctly!" && exit 1; \
+    fi
 
 # Install ChromeDriver using dedicated script
 COPY --chown=runner:runner install-chromedriver.sh /tmp/install-chromedriver.sh
