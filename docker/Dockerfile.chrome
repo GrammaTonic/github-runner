@@ -1,4 +1,3 @@
-
 FROM ubuntu:22.04
 # --- ARCHITECTURE ENFORCEMENT ---
 # This image is ONLY supported on linux/amd64 (x86_64) due to Chrome/ChromeDriver binary compatibility.
@@ -18,15 +17,15 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     wget \
-    unzip=6.0-26ubuntu3.2 \
+    unzip \
     tar \
     ca-certificates \
     gnupg \
-    lsb-release=11.1.0ubuntu4 \
+    lsb-release \
     sudo \
-    build-essential=12.9ubuntu3 \
+    build-essential \
     git \
-    jq=1.6-2.1ubuntu3.1 \
+    jq \
     && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -46,9 +45,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/*
 
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-# Install Google Chrome (architecture-aware)
-        # Download Chrome for Testing
+# Install system dependencies and Chrome dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     libnss3 \
     libx11-6 \
@@ -76,16 +74,18 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
     procps \
     wget \
     ca-certificates \
-    && CHROME_VERSION="124.0.6367.207" \
+    && rm -rf /var/lib/apt/lists/*
 
-    # Download Chrome for Testing
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Install Google Chrome (architecture-aware)
+RUN CHROME_VERSION="124.0.6367.207" \
     && curl -fSL -o /tmp/chrome-linux64.zip "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
     && unzip -o /tmp/chrome-linux64.zip -d /opt/ \
     && chmod +x /opt/chrome-linux64/chrome \
     && ln -sf /opt/chrome-linux64/chrome /usr/bin/google-chrome \
     && ln -sf /opt/chrome-linux64/chrome /usr/bin/chromium-browser \
-    && rm -rf /tmp/chrome-linux64.zip /var/lib/apt/lists/* \
-    # Debug: List Chrome files and check permissions
+    && rm -rf /tmp/chrome-linux64.zip \
     && echo "Listing /opt/chrome-linux64:" \
     && ls -l /opt/chrome-linux64 \
     && echo "Listing /usr/bin/google-chrome:" \
@@ -94,7 +94,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
     && /usr/bin/google-chrome --version || (echo "ERROR: Google Chrome is not installed correctly!" && exit 1)
 
 # Verify Chrome installation
-RUN if ! /usr/bin/google-chrome --version; then echo "ERROR: Google Chrome is not installed correctly!" && exit 1; fi
+RUN /usr/bin/google-chrome --version > /dev/null 2>&1 || (echo "ERROR: Google Chrome is not installed correctly!" && exit 1)
 
 # Install ChromeDriver using dedicated script
 COPY --chown=runner:runner install-chromedriver.sh /tmp/install-chromedriver.sh
@@ -104,7 +104,7 @@ RUN chmod +x /tmp/install-chromedriver.sh \
 
 # Install Node.js (for npm-based testing tools)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y --no-install-recommends nodejs=20.13.1-1nodesource1 \
+    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python (for Selenium testing)
@@ -116,8 +116,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-wheel \
     && rm -rf /var/lib/apt/lists/*
 
-# Pin npm package versions
-RUN npm install -g playwright@1.55.0 cypress@15.1.0 @playwright/test@1.55.0 npm@10.5.0 flat@5.0.2 sha.js@2.4.12 ws@8.17.1 --force \
+# Install npm packages for testing
+RUN npm install -g playwright cypress @playwright/test npm flat sha.js ws --force \
     && npx playwright install chromium \
     && echo "Applying comprehensive security fixes for known vulnerabilities..." \
     && echo "Cleaning npm cache and temporary files..." \
@@ -125,8 +125,8 @@ RUN npm install -g playwright@1.55.0 cypress@15.1.0 @playwright/test@1.55.0 npm@
     && rm -rf /tmp/* /var/tmp/* /root/.npm /home/*/.npm 2>/dev/null || true
 
 # Pin Python package versions
-RUN pip3 install --upgrade pip==24.0 setuptools==68.2.2 wheel==0.42.0 --no-cache-dir \
-    && pip3 install selenium==4.15.2 pytest pytest-selenium webdriver-manager==4.0.1 --no-cache-dir
+RUN pip3 install --upgrade pip setuptools wheel --no-cache-dir \
+    && pip3 install selenium pytest pytest-selenium webdriver-manager --no-cache-dir
 
 # Create runner user
 RUN useradd -m -s /bin/bash runner \

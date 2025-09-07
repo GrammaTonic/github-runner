@@ -98,7 +98,7 @@ validate_chrome() {
     # Test Chrome can start with comprehensive headless flags for Docker
     CHROME_TEST_FLAGS="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=TranslateUI --disable-extensions --disable-plugins --no-first-run --no-default-browser-check --single-process"
     
-    if timeout 10 google-chrome-stable $CHROME_TEST_FLAGS --version > /dev/null 2>&1; then
+    if timeout 10 google-chrome-stable "$CHROME_TEST_FLAGS" --version > /dev/null 2>&1; then
         CHROME_VERSION=$(google-chrome-stable --version 2>/dev/null | head -1)
         log_success "Chrome validation successful: $CHROME_VERSION"
     else
