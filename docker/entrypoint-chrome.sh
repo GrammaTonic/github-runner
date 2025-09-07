@@ -93,7 +93,8 @@ validate_chrome() {
         log_info "Running on x86_64 architecture - performing full Chrome validation..."
         
         # Test Chrome can start using xvfb-run for reliable display management
-        if timeout 15 xvfb-run -a google-chrome --headless --no-sandbox --disable-dev-shm-usage --disable-gpu --version > /dev/null 2>&1; then
+        log_info "Testing Chrome with xvfb-run..."
+        if xvfb-run -a timeout 15 google-chrome --headless --no-sandbox --disable-dev-shm-usage --disable-gpu --version > /dev/null 2>&1; then
             CHROME_VERSION=$(xvfb-run -a google-chrome --version 2>/dev/null | head -1)
             log_success "Chrome validation successful: $CHROME_VERSION"
         else
@@ -101,7 +102,7 @@ validate_chrome() {
             log_info "Attempting fallback validation with minimal flags..."
             
             # Try with minimal flags as fallback
-            if timeout 10 xvfb-run -a google-chrome --no-sandbox --version > /dev/null 2>&1; then
+            if xvfb-run -a timeout 10 google-chrome --no-sandbox --version > /dev/null 2>&1; then
                 CHROME_VERSION=$(xvfb-run -a google-chrome --version 2>/dev/null | head -1)
                 log_warning "Chrome validation passed with minimal flags: $CHROME_VERSION"
             else
