@@ -33,38 +33,8 @@ log_error() {
 setup_chrome() {
     log_info "Setting up Chrome for CI/CD environment..."
     
-    # Start Xvfb for headless display (with cleanup if needed)
-    DISPLAY_NUM=99
-    export DISPLAY=:$DISPLAY_NUM
-    
-    # Create X11 directory if it doesn't exist (with proper permissions)
-    sudo mkdir -p /tmp/.X11-unix
-    sudo chmod 1777 /tmp/.X11-unix
-    
-    # Clean up any stale display lock files
-    if [ -f "/tmp/.X${DISPLAY_NUM}-lock" ]; then
-        log_info "Removing stale X11 lock file..."
-        sudo rm -f "/tmp/.X${DISPLAY_NUM}-lock"
-    fi
-    
-    # Kill any existing Xvfb on our display
-    if pgrep -f "Xvfb :${DISPLAY_NUM}" > /dev/null; then
-        log_info "Stopping existing Xvfb instance..."
-        sudo pkill -f "Xvfb :${DISPLAY_NUM}" || true
-        sleep 1
-    fi
-    
-    # Start Xvfb
-    log_info "Starting virtual display (Xvfb)..."
-    Xvfb :${DISPLAY_NUM} -screen 0 1920x1080x24 -nolisten tcp -dpi 96 +extension GLX +render -noreset &
-    XVFB_PID=$!
-    sleep 3
-    
-    # Verify Xvfb started successfully
-    if ! pgrep -f "Xvfb :${DISPLAY_NUM}" > /dev/null; then
-        log_error "Failed to start Xvfb"
-        exit 1
-    fi
+    # Note: Using xvfb-run for Chrome execution instead of manual Xvfb management
+    # This provides more reliable display handling and automatic cleanup
     
     # Set Chrome flags for optimal CI/CD performance
     export CHROME_FLAGS="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --remote-debugging-port=9222 --disable-extensions --disable-plugins --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=TranslateUI --no-first-run --no-default-browser-check --disable-software-rasterizer --disable-web-security --disable-features=VizDisplayCompositor"
@@ -122,19 +92,17 @@ validate_chrome() {
     else
         log_info "Running on x86_64 architecture - performing full Chrome validation..."
         
-        # Test Chrome can start with comprehensive headless flags for Docker
-        CHROME_TEST_FLAGS="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=TranslateUI --disable-extensions --disable-plugins --no-first-run --no-default-browser-check --single-process"
-        
-        if timeout 10 google-chrome "$CHROME_TEST_FLAGS" --version > /dev/null 2>&1; then
-            CHROME_VERSION=$(google-chrome --version 2>/dev/null | head -1)
+        # Test Chrome can start using xvfb-run for reliable display management
+        if timeout 15 xvfb-run -a google-chrome --headless --no-sandbox --disable-dev-shm-usage --disable-gpu --version > /dev/null 2>&1; then
+            CHROME_VERSION=$(xvfb-run -a google-chrome --version 2>/dev/null | head -1)
             log_success "Chrome validation successful: $CHROME_VERSION"
         else
-            log_error "Chrome failed to start with flags: $CHROME_TEST_FLAGS"
-            log_info "Attempting fallback validation..."
+            log_error "Chrome failed to start with xvfb-run"
+            log_info "Attempting fallback validation with minimal flags..."
             
             # Try with minimal flags as fallback
-            if timeout 5 google-chrome --no-sandbox --single-process --version > /dev/null 2>&1; then
-                CHROME_VERSION=$(google-chrome --version 2>/dev/null | head -1)
+            if timeout 10 xvfb-run -a google-chrome --no-sandbox --version > /dev/null 2>&1; then
+                CHROME_VERSION=$(xvfb-run -a google-chrome --version 2>/dev/null | head -1)
                 log_warning "Chrome validation passed with minimal flags: $CHROME_VERSION"
             else
                 log_error "Chrome completely failed to start - this may indicate missing dependencies"
@@ -236,17 +204,8 @@ log_success "Runner configured successfully"
 cleanup() {
     log_info "Received shutdown signal, cleaning up..."
     
-    # Stop Xvfb if running
-    if [ -n "$XVFB_PID" ] && kill -0 "$XVFB_PID" 2>/dev/null; then
-        log_info "Stopping virtual display (PID: $XVFB_PID)..."
-        kill "$XVFB_PID" || true
-    elif pgrep -f "Xvfb :${DISPLAY_NUM:-99}" > /dev/null; then
-        log_info "Stopping virtual display..."
-        sudo pkill -f "Xvfb :${DISPLAY_NUM:-99}" || true
-    fi
-    
-    # Clean up display lock files
-    sudo rm -f "/tmp/.X${DISPLAY_NUM:-99}-lock" 2>/dev/null || true
+    # Note: xvfb-run automatically handles Xvfb process cleanup
+    # No manual Xvfb process management needed
     
     # Remove runner registration
     log_info "Removing runner registration..."
