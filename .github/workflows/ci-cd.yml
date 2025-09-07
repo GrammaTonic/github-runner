@@ -94,8 +94,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Provision normal runner container in staging
+        env:
+          RUNNER_LABELS: staging,ci,self-hosted
         run: |
           echo "Provisioning normal runner container in staging..."
+          echo "Using labels: $RUNNER_LABELS"
           docker compose -f docker/docker-compose.production.yml up -d
   provision-staging-chrome-runner:
     name: Provision Staging Chrome Runner
