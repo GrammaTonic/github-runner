@@ -1155,59 +1155,47 @@ jobs:
           path: test-results/container-startup/${{ matrix.container-type }}
           retention-days: 30
 
+
   security-container-scan:
-    name: Container Security Scan
+    name: Container Security Scan (Matrix)
     runs-on: ubuntu-latest
-    needs: [build]
+    needs:
+      - build
+      - build-chrome
     permissions:
       contents: read
       security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - name: main
+            ref: ${{ needs.build.outputs.image-primary }}
+            output: trivy-container-results.sarif
+            category: container-scan
+          - name: chrome
+            ref: ${{ needs.build-chrome.outputs.image-primary }}
+            output: trivy-chrome-results.sarif
+            category: chrome-container-scan
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Run Trivy vulnerability scanner on container
+      - name: Run Trivy vulnerability scanner on ${{ matrix.image.name }} container
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build.outputs.image-primary }}
+          image-ref: ${{ matrix.image.ref }}
           format: "sarif"
-          output: "trivy-container-results.sarif"
+          output: ${{ matrix.image.output }}
 
-      - name: Upload container scan results
+      - name: Upload ${{ matrix.image.name }} container scan results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: "trivy-container-results.sarif"
-          category: "container-scan"
-
-  security-chrome-scan:
-    name: Chrome Container Security Scan
-    runs-on: ubuntu-latest
-    needs: [build-chrome]
-    permissions:
-      contents: read
-      security-events: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Run Trivy vulnerability scanner on Chrome container
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ needs.build-chrome.outputs.image-primary }}
-          format: "sarif"
-          output: "trivy-chrome-results.sarif"
-
-      - name: Upload Chrome container scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: "trivy-chrome-results.sarif"
-          category: "chrome-container-scan"
+          sarif_file: ${{ matrix.image.output }}
+          category: ${{ matrix.image.category }}
 
 
   cleanup:
