@@ -1237,25 +1237,27 @@ jobs:
       - name: Generate deployment report
         run: |
           echo "Generating deployment report..."
-
-          # Create deployment summary
-          cat > deployment-report.md << 'EOF'
-          # Deployment Report
-
-          ## Summary
-          - **Workflow Run ID**: ${{ github.run_id }}
-          - **Commit SHA**: ${{ github.sha }}
-          - **Branch**: ${{ github.ref_name }}
-          - **Triggered by**: ${{ github.actor }}
-          - **Timestamp**: $(date -u)
-
-          ## Image Details
-          - Registry: ${{ env.REGISTRY }}
-          - Repository: ${{ env.IMAGE_NAME }}
-          - Tags: Built and scanned successfully
-          EOF
-
+          # Create deployment summary line by line
+          echo "# Deployment Report" > deployment-report.md
+          echo "" >> deployment-report.md
+          echo "## Summary" >> deployment-report.md
+          echo "- **Workflow Run ID**: ${{ github.run_id }}" >> deployment-report.md
+          echo "- **Commit SHA**: ${{ github.sha }}" >> deployment-report.md
+          echo "- **Branch**: ${{ github.ref_name }}" >> deployment-report.md
+          echo "- **Triggered by**: ${{ github.actor }}" >> deployment-report.md
+          echo "- **Timestamp**: $(date -u)" >> deployment-report.md
+          echo "" >> deployment-report.md
+          echo "## Image Details" >> deployment-report.md
+          echo "- Registry: ${{ env.REGISTRY }}" >> deployment-report.md
+          echo "- Repository: ${{ env.IMAGE_NAME }}" >> deployment-report.md
+          echo "- Tags: Built and scanned successfully" >> deployment-report.md
+          # Check if file was created
+          if [[ ! -f deployment-report.md ]]; then
+            echo "ERROR: deployment-report.md not created"
+            exit 1
+          fi
           cat deployment-report.md
+
       - name: Upload deployment report
         uses: actions/upload-artifact@v4
         with:
