@@ -137,6 +137,16 @@ jobs:
           echo "Provisioning Chrome runner container in staging..."
           echo "Using labels: $RUNNER_LABELS"
           docker compose -f docker/docker-compose.chrome.yml up -d
+          echo "Checking if Chrome runner container is running..."
+          RUNNING=$(docker ps --filter "name=github-runner-chrome" --filter "status=running" -q)
+          if [ -z "$RUNNING" ]; then
+            echo "ERROR: Chrome runner container is not running! Printing status and logs:"
+            docker ps -a
+            docker logs github-runner-chrome || echo "No logs available."
+            exit 1
+          else
+            echo "Chrome runner container is running."
+          fi
       - name: Health check Chrome runner container
         run: |
           echo "Checking health of Chrome runner container..."
@@ -147,7 +157,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
         run: |
           echo "Setting extra label for Chrome runner via GitHub API..."
-          # Example: PATCH request to update runner labels (replace runner_id and repo as needed)
+          # Only attempt label update if container is running
+          RUNNING=$(docker ps --filter "name=github-runner-chrome" --filter "status=running" -q)
+          if [ -z "$RUNNING" ]; then
+            echo "SKIP: Chrome runner container is not running, skipping label update."
+            exit 0
+          fi
+          # Wait briefly to allow runner registration
+          sleep 10
           RUNNER_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/actions/runners" | jq '.runners[] | select(.labels[]?.name=="chrome") | .id')
           if [ -n "$RUNNER_ID" ]; then
             curl -X PATCH -H "Authorization: token $GITHUB_TOKEN" \
@@ -155,8 +172,8 @@ jobs:
               -d '{"labels":["chrome","ui-tests","extra-label"]}' \
               "https://api.github.com/repos/${{ github.repository }}/actions/runners/$RUNNER_ID/labels"
           else
-            echo "Chrome runner not found or not registered yet."
-            exit 1
+            echo "WARNING: Chrome runner not found or not registered yet. Skipping label update."
+            exit 0
           fi
   verify-staging-runners:
     name: Verify Staging Runners
