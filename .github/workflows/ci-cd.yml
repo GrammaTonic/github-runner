@@ -1219,6 +1219,8 @@ jobs:
       - teardown-self-hosted-runner
       - security-container-scan
       - security-chrome-scan
+      - test-container-startup
+      - test-comprehensive
     if: always()
     permissions:
       contents: read
