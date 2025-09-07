@@ -24,7 +24,7 @@ services:
     # Security: run container with read-only root filesystem and tmpfs for /tmp
     read_only: true
     tmpfs:
-      - /tmp
+      - /tmp:size=1g,uid=1001,gid=1001,mode=755
     # Drop all capabilities except those needed for Chrome and Docker socket
     cap_drop:
       - ALL
