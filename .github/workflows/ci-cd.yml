@@ -146,6 +146,9 @@ jobs:
             exit 1
           else
             echo "Chrome runner container is running."
+              echo "--- Chrome runner container logs (post-startup) ---"
+              docker logs github-runner-chrome || echo "No logs available."
+              echo "--- End of Chrome runner container logs ---"
           fi
       - name: Health check Chrome runner container
         run: |
