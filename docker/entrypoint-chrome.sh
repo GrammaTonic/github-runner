@@ -189,7 +189,10 @@ mkdir -p "$RUNNER_CONFIG_DIR"
 cd "$RUNNER_CONFIG_DIR"
 
 # Copy necessary files to writable location
-cp -r /actions-runner/* "$RUNNER_CONFIG_DIR/" 2>/dev/null || true
+cp -rp /actions-runner/* "$RUNNER_CONFIG_DIR/" 2>/dev/null || true
+
+# Ensure config.sh has execute permissions
+chmod +x "$RUNNER_CONFIG_DIR/config.sh" 2>/dev/null || true
 
 ./config.sh \
     --url "https://github.com/${GITHUB_REPOSITORY}" \
