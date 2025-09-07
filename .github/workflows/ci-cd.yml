@@ -155,23 +155,36 @@ jobs:
       - name: Health check Chrome runner container
         run: |
             echo "Checking health of Chrome runner container..."
-            HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-chrome)
-            echo "Full health JSON: $HEALTH_JSON"
-            STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
-            FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
-            LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
-            echo "Health status: $STATUS"
-            echo "Failing streak: $FAILING_STREAK"
-            echo "Health logs: $LOGS"
-            if [ "$STATUS" != "healthy" ]; then
-              echo "WARNING: Chrome runner container health is '$STATUS'."
-              if [ "$STATUS" = "unhealthy" ]; then
+            MAX_RETRIES=6
+            RETRY_INTERVAL=5
+            for i in $(seq 1 $MAX_RETRIES); do
+              HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-chrome)
+              echo "Full health JSON: $HEALTH_JSON"
+              STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
+              FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
+              LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
+              echo "Health status: $STATUS"
+              echo "Failing streak: $FAILING_STREAK"
+              echo "Health logs: $LOGS"
+              if [ "$STATUS" = "healthy" ]; then
+                echo "Chrome runner container health is healthy."
+                break
+              elif [ "$STATUS" = "unhealthy" ]; then
                 echo "ERROR: Chrome runner container is unhealthy!"
                 exit 1
+              elif [ "$STATUS" = "starting" ]; then
+                if [ $i -lt $MAX_RETRIES ]; then
+                  echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
+                  sleep $RETRY_INTERVAL
+                else
+                  echo "WARNING: Chrome runner container health is still 'starting' after $MAX_RETRIES retries."
+                  exit 1
+                fi
+              else
+                echo "Unknown health status: $STATUS"
+                exit 1
               fi
-            else
-              echo "Chrome runner container health is healthy."
-            fi
+            done
 
       - name: Set Chrome runner label using GitHub API
         env:
