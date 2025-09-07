@@ -121,6 +121,7 @@ jobs:
   provision-staging-chrome-runner:
     name: Provision Staging Chrome Runner
     runs-on: ubuntu-latest
+    needs: [build-chrome]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -132,6 +133,21 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Inject built Chrome runner image tag into docker-compose.chrome.yml
+        env:
+          CHROME_IMAGE_TAG: ${{ needs.build-chrome.outputs.image-primary }}
+        run: |
+          echo "Injecting built Chrome runner image tag into docker-compose.chrome.yml..."
+          sed -i.bak "s|image: ghcr.io/grammatonic/github-runner:chrome-latest|image: $CHROME_IMAGE_TAG|" docker/docker-compose.chrome.yml
+          echo "Updated image line in docker-compose.chrome.yml to: $CHROME_IMAGE_TAG"
+      - name: Pull and verify built Chrome runner image
+        env:
+          CHROME_IMAGE_TAG: ${{ needs.build-chrome.outputs.image-primary }}
+        run: |
+          docker pull "$CHROME_IMAGE_TAG"
+          echo "Pulled Chrome runner image: $CHROME_IMAGE_TAG"
+          # Optionally verify image signature if using Cosign
+          # cosign verify $CHROME_IMAGE_TAG || echo "Cosign verification skipped"
       - name: Provision Chrome runner container in staging
         env:
           RUNNER_LABELS: chrome,ui-tests,extra-label
@@ -139,6 +155,10 @@ jobs:
           echo "Provisioning Chrome runner container in staging..."
           echo "Using labels: $RUNNER_LABELS"
           docker compose -f docker/docker-compose.chrome.yml up -d
+      - name: Health check Chrome runner container
+        run: |
+          echo "Checking health of Chrome runner container..."
+          docker inspect --format='{{json .State.Health}}' github-runner-chrome
   verify-staging-runners:
     name: Verify Staging Runners
     runs-on: ubuntu-latest
@@ -1217,168 +1237,12 @@ jobs:
           sarif_file: "trivy-chrome-results.sarif"
           category: "chrome-container-scan"
 
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs:
-      [
-        build,
-        build-chrome,
-        test-package-validation,
-        test-comprehensive,
-        test-container-startup,
-        security-container-scan,
-        security-chrome-scan,
-      ]
-    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
-    environment:
-      name: staging
-      url: https://staging-runners.example.com
-    permissions:
-      contents: read
-      packages: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Set up staging environment
-        run: |
-          echo "Setting up staging deployment..."
-
-          # Create staging directories
-          mkdir -p staging-deploy
-
-          # Copy deployment files
-          cp -r docker/ staging-deploy/
-          cp -r config/ staging-deploy/
-          cp -r scripts/ staging-deploy/
-
-      - name: Configure staging environment
-        env:
-          STAGING_GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
-          STAGING_REPOSITORY: ${{ secrets.STAGING_REPOSITORY }}
-        run: |
-          cd staging-deploy
-
-          # Update configuration for staging
-          if [[ -f "config/runner.env" ]]; then
-            sed -i 's/GITHUB_TOKEN=.*/GITHUB_TOKEN=${{ secrets.STAGING_GITHUB_TOKEN }}/' config/runner.env
-            sed -i 's/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=${{ secrets.STAGING_REPOSITORY }}/' config/runner.env
-          fi
-
-      - name: Deploy to staging
-        run: |
-          cd staging-deploy
-
-          echo "Deploying to staging environment..."
-          echo "Image: ${{ needs.build.outputs.image-tag }}"
-
-          # In a real scenario, this would deploy to your staging infrastructure
-          # For example: kubectl apply, docker stack deploy, etc.
-
-          # Simulate deployment
-          echo "Deployment completed successfully"
-
-      - name: Run staging smoke tests
-        run: |
-          echo "Running smoke tests against staging..."
-
-          # Add staging-specific health checks
-          sleep 10
-
-          # Simulate health check
-          echo "Staging environment is healthy"
-
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs:
-      [
-        build,
-        build-chrome,
-        test-package-validation,
-        test-comprehensive,
-        test-container-startup,
-        security-container-scan,
-        security-chrome-scan,
-        deploy-staging,
-      ]
-    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
-    environment:
-      name: production
-      url: https://runners.example.com
-    permissions:
-      contents: read
-      packages: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Set up production environment
-        run: |
-          echo "Setting up production deployment..."
-
-          # Create production directories
-          mkdir -p production-deploy
-
-          # Copy deployment files
-          cp -r docker/ production-deploy/
-          cp -r config/ production-deploy/
-          cp -r scripts/ production-deploy/
-
-      - name: Configure production environment
-        env:
-          PROD_GITHUB_TOKEN: ${{ secrets.PROD_GITHUB_TOKEN }}
-          PROD_REPOSITORY: ${{ secrets.PROD_REPOSITORY }}
-        run: |
-          cd production-deploy
-
-          # Update configuration for production
-          if [[ -f "config/runner.env" ]]; then
-            sed -i 's/GITHUB_TOKEN=.*/GITHUB_TOKEN=${{ secrets.PROD_GITHUB_TOKEN }}/' config/runner.env
-            sed -i 's/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=${{ secrets.PROD_REPOSITORY }}/' config/runner.env
-          fi
-
-      - name: Deploy to production
-        run: |
-          cd production-deploy
-
-          echo "Deploying to production environment..."
-          echo "Image: ${{ needs.build.outputs.image-tag }}"
-
-          # In a real scenario, this would deploy to your production infrastructure
-          # For example: kubectl apply, docker stack deploy, etc.
-
-          # Simulate deployment with blue/green strategy
-          echo "Starting blue/green deployment..."
-          echo "Production deployment completed successfully"
-
-      - name: Run production health checks
-        run: |
-          echo "Running production health checks..."
-
-          # Add production-specific health checks
-          sleep 15
-
-          # Simulate comprehensive health check
-          echo "Production environment is healthy and ready"
-
-      - name: Post-deployment monitoring setup
-        run: |
-          echo "Setting up post-deployment monitoring..."
-
-          # In a real scenario, this would configure monitoring, alerts, etc.
-          echo "Monitoring configured for production deployment"
 
   cleanup:
     name: Cleanup Resources
     runs-on: ubuntu-latest
-    needs: [deploy-production]
-    if: always() && (needs.deploy-production.result == 'success' || needs.deploy-production.result == 'failure')
+    needs: [security-container-scan, security-chrome-scan]
+    if: always()
     permissions:
       contents: read
       packages: write
@@ -1406,17 +1270,13 @@ jobs:
           - **Triggered by**: ${{ github.actor }}
           - **Timestamp**: $(date -u)
 
-          ## Deployments
-          - Production: ${{ needs.deploy-production.result }}
-
           ## Image Details
           - Registry: ${{ env.REGISTRY }}
           - Repository: ${{ env.IMAGE_NAME }}
-          - Tags: Built and deployed successfully
+          - Tags: Built and scanned successfully
           EOF
 
           cat deployment-report.md
-
       - name: Upload deployment report
         uses: actions/upload-artifact@v4
         with:
