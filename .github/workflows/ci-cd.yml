@@ -1284,7 +1284,7 @@ jobs:
   cleanup:
     name: Cleanup Resources
     runs-on: ubuntu-latest
-    needs: [security-container-scan, security-chrome-scan]
+    needs: [teardown-self-hosted-runner]
     if: always()
     permissions:
       contents: read
