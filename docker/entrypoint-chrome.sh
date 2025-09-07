@@ -183,6 +183,14 @@ log_success "Runner registration token obtained"
 
 # Configure the runner
 log_info "Configuring runner..."
+# Create a temporary writable directory for runner configuration
+export RUNNER_CONFIG_DIR="/tmp/runner-config"
+mkdir -p "$RUNNER_CONFIG_DIR"
+cd "$RUNNER_CONFIG_DIR"
+
+# Copy necessary files to writable location
+cp -r /actions-runner/* "$RUNNER_CONFIG_DIR/" 2>/dev/null || true
+
 ./config.sh \
     --url "https://github.com/${GITHUB_REPOSITORY}" \
     --token "${RUNNER_TOKEN}" \

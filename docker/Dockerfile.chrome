@@ -191,10 +191,22 @@ RUN curl -o "actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
     && rm "actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
     && chown -R runner:runner /actions-runner
 
-# Create necessary directories
+# Create necessary directories with proper permissions
 RUN mkdir -p /home/runner/.cache \
     && mkdir -p /home/runner/workspace \
-    && chown -R runner:runner /home/runner
+    && mkdir -p /actions-runner/_work \
+    && mkdir -p /actions-runner/_diag \
+    && chown -R runner:runner /home/runner \
+    && chown -R runner:runner /actions-runner
+
+# Ensure runner user has write permissions to necessary directories
+RUN chmod -R 755 /actions-runner \
+    && chmod -R 755 /home/runner
+
+# Create a writable temp directory for the runner
+RUN mkdir -p /tmp/runner \
+    && chown runner:runner /tmp/runner \
+    && chmod 755 /tmp/runner
 
 # Chrome configuration for headless mode
 ENV CHROME_BIN=/usr/bin/google-chrome-stable
