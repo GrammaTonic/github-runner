@@ -188,17 +188,23 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
         run: |
-            echo "Verifying runner registration via GitHub API..."
-            RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-              "https://api.github.com/repos/${{ github.repository }}/actions/runners")
-            echo "$RESPONSE" | jq '.'
-            TOTAL_COUNT=$(echo "$RESPONSE" | jq '.total_count')
-            if [ "$TOTAL_COUNT" -eq 0 ]; then
-              echo "ERROR: No runners registered (total_count=0). Failing job."
-              exit 1
-            else
-              echo "Runners registered: $TOTAL_COUNT"
-            fi
+              echo "Verifying runner registration via GitHub API..."
+              RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+                "https://api.github.com/repos/${{ github.repository }}/actions/runners")
+              echo "--- Raw API Response ---"
+              echo "$RESPONSE" | jq '.'
+              TOTAL_COUNT=$(echo "$RESPONSE" | jq '.total_count')
+              echo "Total runners found: $TOTAL_COUNT"
+              if [ "$TOTAL_COUNT" -eq 0 ]; then
+                echo "ERROR: No runners registered (total_count=0). Failing job."
+                echo "Full API response for debugging:"
+                echo "$RESPONSE" | jq '.'
+                exit 1
+              else
+                echo "Listing all registered runners:"
+                echo "$RESPONSE" | jq -r '.runners[] | "- ID: \(.id), Name: \(.name), Status: \(.status), Labels: [\(.labels[].name)]"'
+                echo "Summary: $TOTAL_COUNT runner(s) registered."
+              fi
   test-self-hosted-matrix:
     name: Test Self-Hosted Runner (Matrix)
     runs-on: ${{ matrix.runner-os }}
