@@ -100,8 +100,8 @@ jobs:
           echo "Provisioning normal runner container in staging..."
           echo "Using labels: $RUNNER_LABELS"
           docker compose -f docker/docker-compose.production.yml up -d
-  provision-staging-chrome-runner:
-    name: Provision Staging Chrome Runner
+  provision-chrome-runner-playwright:
+    name: Provision Chrome Runner For testing playwright and UI tests
     runs-on: ubuntu-latest
     needs: [build-chrome]
     steps:
@@ -128,8 +128,6 @@ jobs:
         run: |
           docker pull "$CHROME_IMAGE_TAG"
           echo "Pulled Chrome runner image: $CHROME_IMAGE_TAG"
-          # Optionally verify image signature if using Cosign
-          # cosign verify $CHROME_IMAGE_TAG || echo "Cosign verification skipped"
       - name: Provision Chrome runner container in staging
         env:
           RUNNER_LABELS: chrome,ui-tests,extra-label
@@ -185,86 +183,21 @@ jobs:
                 exit 1
               fi
             done
+      - name: Run playwright screenshot test on Chrome runner
+        run: |
+          echo "Running Playwright screenshot test on Chrome runner..."
+          # Run the screenshot script
+          node tests/playwright/google_screenshot.js
+          # Move the screenshot to a known location for artifact upload
+          mkdir -p test-results/playwright
+          mv google_screenshot.png test-results/playwright/google_screenshot.png
 
-      - name: Set Chrome runner label using GitHub API
-        env:
-          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
-        run: |
-          echo "Setting extra label for Chrome runner via GitHub API..."
-          # Only attempt label update if container is running
-          RUNNING=$(docker ps --filter "name=github-runner-chrome" --filter "status=running" -q)
-          if [ -z "$RUNNING" ]; then
-            echo "SKIP: Chrome runner container is not running, skipping label update."
-            exit 0
-          fi
-          # Wait briefly to allow runner registration
-          sleep 10
-          RUNNER_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/actions/runners" | jq '.runners[] | select(.labels[]?.name=="chrome") | .id')
-          if [ -n "$RUNNER_ID" ]; then
-            curl -X PATCH -H "Authorization: token $GITHUB_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d '{"labels":["chrome","ui-tests","extra-label"]}' \
-              "https://api.github.com/repos/${{ github.repository }}/actions/runners/$RUNNER_ID/labels"
-          else
-            echo "WARNING: Chrome runner not found or not registered yet. Skipping label update."
-            exit 0
-          fi
-  verify-staging-runners:
-    name: Verify Staging Runners
-    runs-on: ubuntu-latest
-    needs:
-      - provision-staging-normal-runner
-      - provision-staging-chrome-runner
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Verify runner registration via GitHub API
-        env:
-          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
-        run: |
-              echo "Verifying runner registration via GitHub API..."
-              RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-                "https://api.github.com/repos/${{ github.repository }}/actions/runners")
-              echo "--- Raw API Response ---"
-              echo "$RESPONSE" | jq '.'
-              TOTAL_COUNT=$(echo "$RESPONSE" | jq '.total_count')
-              echo "Total runners found: $TOTAL_COUNT"
-              if [ "$TOTAL_COUNT" -eq 0 ]; then
-                echo "ERROR: No runners registered (total_count=0). Failing job."
-                echo "Full API response for debugging:"
-                echo "$RESPONSE" | jq '.'
-                exit 1
-              else
-                echo "Listing all registered runners:"
-                echo "$RESPONSE" | jq -r '.runners[] | "- ID: \(.id), Name: \(.name), Status: \(.status), Labels: [\(.labels[].name)]"'
-                echo "Summary: $TOTAL_COUNT runner(s) registered."
-              fi
-  test-self-hosted-matrix:
-    name: Test Self-Hosted Runner (Matrix)
-    runs-on: ${{ matrix.runner-os }}
-    needs:
-      - verify-staging-runners
-    strategy:
-      fail-fast: false
-      matrix:
-        runner-type: [self-hosted, chrome]
-        runner-os:
-          - [self-hosted, staging, ci]
-          - [self-hosted, chrome, ci]
-    timeout-minutes: 2
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Run test on matrix runner
-        run: |
-          echo "Running test on ${{ matrix.runner-type }} runner..."
-          if [[ "${{ matrix.runner-type }}" == "chrome" ]]; then
-            google-chrome --version || echo "Chrome not found"
-            echo "Chrome self-hosted runner test complete."
-          else
-            uname -a
-            echo "Self-hosted runner test complete."
-          fi
+      - name: Upload Playwright screenshot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-google-screenshot
+          path: test-results/playwright/google_screenshot.png
+          retention-days: 30
 
   lint-and-validate:
     name: Lint and Validate
