@@ -55,7 +55,7 @@ if [ "$STATUS" = "running" ]; then
     # Create Playwright screenshot script with detailed logging and correct module path
   TIMESTAMP=$(date +%Y%m%d_%H%M%S)
   SCREENSHOT_PATH="/tmp/google_screenshot_${TIMESTAMP}.png"
-  JS_SCRIPT_PATH="tests/docker/google_screenshot.js"
+  JS_SCRIPT_PATH="tests/playwright/google_screenshot.js"
 
   # Copy script into container
   docker cp "$JS_SCRIPT_PATH" "$CONTAINER_NAME":/tmp/google_screenshot.js

@@ -173,12 +173,9 @@ jobs:
             done
       - name: Run playwright screenshot test on Chrome runner
         run: |
-          echo "Running Playwright screenshot test on Chrome runner..."
-          # Run the screenshot script inside the container
-          docker exec github-runner-chrome node tests/playwright/google_screenshot.js
-          # Copy the screenshot from the container to the host
-          mkdir -p test-results/playwright
-          docker cp github-runner-chrome:/google_screenshot.png test-results/playwright/google_screenshot.png
+          echo "Running Playwright screenshot integration script..."
+          chmod +x tests/integration/playwright_screenshot_integration.sh
+          tests/integration/playwright_screenshot_integration.sh
 
       - name: Upload Playwright screenshot artifact
         uses: actions/upload-artifact@v4
