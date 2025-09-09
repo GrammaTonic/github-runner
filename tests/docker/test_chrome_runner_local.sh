@@ -3,41 +3,61 @@
 # Test script: Build and run Chrome runner container locally
 set -e
 
-IMAGE_NAME="github-runner-chrome:test-local"
-CONTAINER_NAME="chrome-runner-test"
-DOCKERFILE_PATH="docker/Dockerfile.chrome"
 
-echo "[INFO] Building Chrome runner Docker image (multi-arch amd64)..."
-docker build --platform=linux/amd64 -f "$DOCKERFILE_PATH" -t "$IMAGE_NAME" ./docker
 
-# Remove any previous test container
-if docker ps -a --format '{{.Names}}' | grep -q "^$CONTAINER_NAME$"; then
-    echo "[INFO] Removing previous test container..."
-    docker rm -f "$CONTAINER_NAME"
-fi
 
-# Run the container in detached mode (multi-arch amd64) with env file
-echo "[INFO] Starting Chrome runner container (multi-arch amd64, with env file)..."
-docker run --platform=linux/amd64 --name "$CONTAINER_NAME" \
-    --env-file tests/docker/chrome-runner.env \
-    -m 4g \
-    -d "$IMAGE_NAME"
+# Local build and override compose file usage
+COMPOSE_FILE="docker/docker-compose.chrome.yml"
+OVERRIDE_FILE="docker/docker-compose.chrome.override.yml"
+SERVICE_NAME="github-runner-chrome"
+ENV_FILE="tests/docker/chrome-runner.env"
+LOCAL_IMAGE="github-runner-chrome:test-local"
+
+echo "[INFO] Building Chrome runner Docker image locally..."
+docker build --platform=linux/amd64 -f docker/Dockerfile.chrome -t "$LOCAL_IMAGE" ./docker
+
+echo "[INFO] Creating Docker Compose override file for local image..."
+cat > "$OVERRIDE_FILE" <<EOF
+services:
+  $SERVICE_NAME:
+    image: $LOCAL_IMAGE
+EOF
+
+
+echo "[INFO] Removing any previous test container..."
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$OVERRIDE_FILE" down
+
+echo "[INFO] Starting Chrome runner container using Docker Compose (detached, override, env)..."
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$OVERRIDE_FILE" up -d "$SERVICE_NAME"
 
 # Wait a few seconds for startup
 sleep 5
+
+# Get container name from compose (default: service name)
+CONTAINER_NAME=$(docker ps --filter "name=${SERVICE_NAME}" --format "{{.Names}}" | head -n 1)
+
+if [ -z "$CONTAINER_NAME" ]; then
+  echo "[ERROR] Chrome runner container did not start."
+  docker compose -f "$COMPOSE_FILE" -f "$OVERRIDE_FILE" logs "$SERVICE_NAME"
+  rm -f "$OVERRIDE_FILE"
+  exit 1
+fi
 
 # Check container status
 STATUS=$(docker inspect -f '{{.State.Status}}' "$CONTAINER_NAME")
 
 if [ "$STATUS" = "running" ]; then
-    echo "[SUCCESS] Container is running and ready for diagnostics or manual jobs."
-    echo "[INFO] Container logs (last 20 lines):"
-    docker logs "$CONTAINER_NAME" | tail -20
+  echo "[SUCCESS] Container is running and ready for diagnostics or manual jobs."
+  echo "[INFO] Container logs (last 20 lines):"
+  docker logs "$CONTAINER_NAME" | tail -20
+
 
     # Create Playwright screenshot script with detailed logging and correct module path
-    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-    SCREENSHOT_PATH="/tmp/google_screenshot_${TIMESTAMP}.png"
-    cat > /tmp/google_screenshot.js <<EOF
+  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+  SCREENSHOT_PATH="/tmp/google_screenshot_${TIMESTAMP}.png"
+  JS_SCRIPT_PATH="test-results/docker/google_screenshot.js"
+  mkdir -p test-results/docker
+  cat > "$JS_SCRIPT_PATH" <<EOF
 const { chromium } = require('playwright');
 const fs = require('fs');
 
@@ -74,7 +94,7 @@ process.on('unhandledRejection', (reason, promise) => {
     
     // Check if page has content
     const title = await page.title();
-    console.log(\`[DEBUG] Page title: \${title}\`);
+    console.log(`[DEBUG] Page title: ${title}`);
     
     console.log('[DEBUG] Taking screenshot...');
     await page.screenshot({ path: '${SCREENSHOT_PATH}', fullPage: true });
@@ -83,7 +103,7 @@ process.on('unhandledRejection', (reason, promise) => {
     // Verify file was created
     if (fs.existsSync('${SCREENSHOT_PATH}')) {
       const stats = fs.statSync('${SCREENSHOT_PATH}');
-      console.log(\`[DEBUG] Screenshot file created: \${stats.size} bytes at ${SCREENSHOT_PATH}\`);
+      console.log(`[DEBUG] Screenshot file created: ${stats.size} bytes at ${SCREENSHOT_PATH}`);
     } else {
       console.log('[ERROR] Screenshot file was not created!');
       process.exit(1);
@@ -105,8 +125,8 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 EOF
 
-    # Copy script into container
-    docker cp /tmp/google_screenshot.js "$CONTAINER_NAME":/tmp/google_screenshot.js
+  # Copy script into container
+  docker cp "$JS_SCRIPT_PATH" "$CONTAINER_NAME":/tmp/google_screenshot.js
     
     # Verify playwright module is available before running
     echo "[INFO] Verifying Playwright module availability..."
@@ -163,11 +183,14 @@ EOF
         SCRIPT_EXIT_CODE=1
     fi
 
-    echo "[INFO] The container will remain running for workflow jobs or manual debugging."
-    echo "[INFO] To stop and remove the container manually, run:"
-    echo "  docker rm -f $CONTAINER_NAME"
+
+  echo "[INFO] The container will remain running for workflow jobs or manual debugging."
+  echo "[INFO] To stop and remove the container manually, run:"
+  echo "  docker compose --env-file $ENV_FILE -f $COMPOSE_FILE -f $OVERRIDE_FILE down"
+  rm -f "$OVERRIDE_FILE"
 else
-    echo "[ERROR] Container failed to start. Status: $STATUS"
-    docker logs "$CONTAINER_NAME"
-    exit 1
+  echo "[ERROR] Container failed to start. Status: $STATUS"
+  docker logs "$CONTAINER_NAME"
+  rm -f "$OVERRIDE_FILE"
+  exit 1
 fi
