@@ -4,7 +4,7 @@ FROM ubuntu:22.04 AS base
 # --- METADATA EN ARGUMENTEN ---
 LABEL maintainer="GrammaTonic"
 LABEL description="Optimized GitHub Actions Self-Hosted Runner for Chrome and web UI testing"
-LABEL version="2.0.4"
+LABEL version="2.0.6"
 
 # Argumenten bovenaan definiëren voor eenvoudig beheer
 ARG TARGETARCH
@@ -19,15 +19,17 @@ ENV DISPLAY=:99
 ENV PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/sbin:/bin:/opt/chrome-linux64:/actions-runner:/home/runner/.npm-global/bin:$PATH"
 ENV NODE_PATH="/home/runner/.npm-global/lib/node_modules"
 
+# Stel SHELL in om pipe-fouten correct af te handelen
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# --- SETUP ALS ROOT GEBRUIKER ---
+
 # --- ARCHITECTUUR CONTROLE ---
-# Zorgt ervoor dat de build faalt op niet-ondersteunde architecturen
 RUN if [ "$TARGETARCH" != "amd64" ]; then \
       echo "ERROR: Chrome runner image only supports linux/amd64 (x86_64)." && exit 1; \
     fi
 
-# --- SYSTEEM- EN CHROME-AFHANKELIJKHEDEN INSTALLEREN ---
-# Combineer alle 'apt-get' installaties in één RUN-laag om de image-grootte te minimaliseren
-# Verwijder de apt-cache in dezelfde laag om de grootte te reduceren
+# --- SYSTEEM, NODE.JS, PYTHON, CHROME EN DRIVERS INSTALLEREN ---
 RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg \
     && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
     && apt-get install -y --no-install-recommends \
@@ -36,106 +38,47 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
     lsb-release \
     git \
     jq \
+    libicu-dev \
     # Chrome & UI testing dependencies
-    libnss3 \
-    libnss3-dev \
-    libx11-6 \
-    libx11-xcb1 \
-    libxcb1 \
-    libxcomposite1 \
-    libxcursor1 \
-    libxdamage1 \
-    libxext6 \
-    libxfixes3 \
-    libxi6 \
-    libxtst6 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libdrm2 \
-    libgbm1 \
-    libasound2-dev \
-    libatspi2.0-0 \
-    libgtk-3-0 \
-    libpangocairo-1.0-0 \
-    libcairo2 \
-    libgdk-pixbuf2.0-0 \
-    fonts-liberation \
-    fonts-noto-color-emoji \
-    fonts-noto-cjk \
-    xvfb \
-    procps \
-    # Node.js & Python dependencies
-    nodejs \
-    python3 \
-    python3-pip \
-    python3-venv \
-    # Tools om te downloaden (worden later opgeruimd)
-    wget \
-    unzip \
-    # Ruim de apt cache op in dezelfde RUN instructie
+    libnss3 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxtst6 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgbm1 libasound2-dev libatspi2.0-0 libgtk-3-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf2.0-0 fonts-liberation fonts-noto-color-emoji fonts-noto-cjk xvfb procps \
+    # Node.js & Python
+    nodejs python3 python3-pip python3-venv \
+    # Download tools
+    wget unzip \
+    # Download en installeer Chrome
+    && CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
+    && curl -fSL -o /tmp/chrome.zip "$CHROME_URL" \
+    && unzip -o /tmp/chrome.zip -d /opt/ \
+    && ln -sf /opt/chrome-linux64/chrome /usr/bin/google-chrome \
+    # Download en installeer ChromeDriver
+    && CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" \
+    && curl -fSL -o /tmp/chromedriver.zip "$CHROMEDRIVER_URL" \
+    && unzip -o /tmp/chromedriver.zip -d /tmp/ \
+    && mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
+    # Ruim op
+    && rm -rf /tmp/*.zip /tmp/chromedriver-linux64 \
     && rm -rf /var/lib/apt/lists/*
 
 # --- GEBRUIKER EN DIRECTORIES AANMAKEN ---
-# Creëer de 'runner' gebruiker en de benodigde mappen in één laag
 RUN useradd -m -s /bin/bash runner \
     && usermod -aG sudo runner \
     && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
-    && mkdir -p /home/runner/.cache \
-                /home/runner/workspace \
-                /actions-runner \
-                /tmp/runner \
-                /home/runner/.npm-global \
-    && chown -R runner:runner /home/runner /actions-runner /tmp/runner \
-    && chmod -R 755 /actions-runner /home/runner /tmp/runner
+    && mkdir -p /home/runner/workspace /actions-runner /home/runner/.npm-global \
+    && chown -R runner:runner /home/runner /actions-runner
 
-# Switch naar de runner gebruiker
+# --- SETUP ALS RUNNER GEBRUIKER ---
 USER runner
 WORKDIR /home/runner
 
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-# --- TOOLS INSTALLEREN (ALS RUNNER GEBRUIKER) ---
-
-# Installeer Google Chrome
-RUN CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
-    && echo "Downloading Chrome from: $CHROME_URL" \
-    && curl -fSL -o /tmp/chrome-linux64.zip "$CHROME_URL" \
-    && sudo unzip -o /tmp/chrome-linux64.zip -d /opt/ \
-    && sudo chmod +x /opt/chrome-linux64/chrome \
-    && sudo ln -sf /opt/chrome-linux64/chrome /usr/bin/google-chrome \
-    && sudo ln -sf /opt/chrome-linux64/chrome /usr/bin/chromium-browser \
-    && rm -rf /tmp/chrome-linux64.zip
-
-# Verifieer Chrome-installatie
-RUN google-chrome --version || (echo "ERROR: Chrome version check failed" && exit 1)
-
-# Installeer de bijbehorende ChromeDriver
-RUN CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" \
-    && echo "Downloading ChromeDriver from: $CHROMEDRIVER_URL" \
-    && curl -fSL -o /tmp/chromedriver-linux64.zip "$CHROMEDRIVER_URL" \
-    && unzip -o /tmp/chromedriver-linux64.zip -d /tmp/ \
-    && sudo mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
-    && sudo chmod +x /usr/local/bin/chromedriver \
-    && rm -rf /tmp/chromedriver-linux64.zip /tmp/chromedriver-linux64
-
-# Verifieer ChromeDriver-installatie
-RUN chromedriver --version || (echo "ERROR: ChromeDriver version check failed" && exit 1)
-
-# Configureer NPM en installeer globale packages
+# --- NPM, PIP EN PLAYWRIGHT PACKAGES INSTALLEREN ---
 RUN npm config set prefix /home/runner/.npm-global \
     && npm install -g playwright cypress @playwright/test \
-    # Ruim npm cache op om de image-grootte te verkleinen
-    && npm cache clean --force
-
-# Installeer Python packages
-RUN pip3 install --upgrade pip \
-    && pip3 install selenium pytest pytest-selenium webdriver-manager --no-cache-dir
-
-# Installeer Playwright browsers
-RUN npx playwright install chromium
+    && npm cache clean --force \
+    && pip3 install --no-cache-dir --upgrade pip \
+    && pip3 install --no-cache-dir selenium pytest pytest-selenium webdriver-manager \
+    && npx playwright install chromium
 
 # --- GITHUB ACTIONS RUNNER (MULTI-STAGE) ---
-# Gebruik een aparte 'builder' stage om de runner te downloaden
 FROM base AS builder
 USER root
 ARG RUNNER_VERSION
@@ -143,18 +86,22 @@ WORKDIR /tmp
 RUN curl -o "actions-runner.tar.gz" -L "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
     && tar xzf "./actions-runner.tar.gz" \
     && rm "./actions-runner.tar.gz"
+# Voorkom 'Last USER should not be root' waarschuwing
+USER runner
 
-# Kopieer de runner van de builder stage naar de final image
+# --- FINALE IMAGE SAMENSTELLEN ---
 FROM base
-COPY --from=builder /tmp /actions-runner
-RUN sudo chown -R runner:runner /actions-runner
-
-# --- ENTRYPOINT EN HEALTHCHECK ---
-WORKDIR /home/runner
+# Schakel naar root om bestanden te kopiëren en permissies te zetten
+USER root
+COPY --from=builder --chown=runner:runner /tmp /actions-runner
 COPY --chown=runner:runner entrypoint-chrome.sh /entrypoint.sh
-RUN sudo chmod +x /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Verifieer de installatie van alle tools
+# Schakel terug naar de runner voor de uiteindelijke image
+USER runner
+WORKDIR /home/runner
+
+# --- VERIFICATIE, HEALTHCHECK EN ENTRYPOINT ---
 RUN echo "Final PATH: $PATH" \
     && node --version \
     && npm --version \
