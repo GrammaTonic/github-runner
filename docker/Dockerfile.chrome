@@ -1,54 +1,44 @@
-FROM ubuntu:22.04
-# --- ARCHITECTURE ENFORCEMENT ---
-# This image is ONLY supported on linux/amd64 (x86_64) due to Chrome/ChromeDriver binary compatibility.
-# If you attempt to build on ARM (Apple Silicon, etc.), the build will fail.
-ARG TARGETARCH
-RUN if [ "$TARGETARCH" != "amd64" ]; then echo "ERROR: Chrome runner image only supports linux/amd64 (x86_64)." && exit 1; fi
+# Gebruik een specifieke versie voor reproduceerbare builds
+FROM ubuntu:22.04 AS base
 
-# Metadata
+# --- METADATA EN ARGUMENTEN ---
 LABEL maintainer="GrammaTonic"
-LABEL description="GitHub Actions Self-Hosted Runner optimized for Chrome and web UI testing"
-LABEL version="1.0.4"
+LABEL description="Optimized GitHub Actions Self-Hosted Runner for Chrome and web UI testing"
+LABEL version="2.0.4"
 
-# Avoid prompts from apt
+# Argumenten bovenaan definiëren voor eenvoudig beheer
+ARG TARGETARCH
+ARG RUNNER_VERSION="2.328.0"
+ARG CHROME_VERSION="140.0.7339.80"
+ARG NODE_VERSION="20"
+
+# Omgevingsvariabelen
 ENV DEBIAN_FRONTEND=noninteractive
+ENV CHROME_BIN=/usr/bin/google-chrome
+ENV DISPLAY=:99
+ENV PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/sbin:/bin:/opt/chrome-linux64:/actions-runner:/home/runner/.npm-global/bin:$PATH"
+ENV NODE_PATH="/home/runner/.npm-global/lib/node_modules"
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    wget \
-    unzip \
-    tar \
-    ca-certificates \
-    gnupg \
-    lsb-release \
+# --- ARCHITECTUUR CONTROLE ---
+# Zorgt ervoor dat de build faalt op niet-ondersteunde architecturen
+RUN if [ "$TARGETARCH" != "amd64" ]; then \
+      echo "ERROR: Chrome runner image only supports linux/amd64 (x86_64)." && exit 1; \
+    fi
+
+# --- SYSTEEM- EN CHROME-AFHANKELIJKHEDEN INSTALLEREN ---
+# Combineer alle 'apt-get' installaties in één RUN-laag om de image-grootte te minimaliseren
+# Verwijder de apt-cache in dezelfde laag om de grootte te reduceren
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+    && apt-get install -y --no-install-recommends \
+    # Systeem utilities
     sudo \
-    build-essential \
+    lsb-release \
     git \
     jq \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libnss3-dev \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libxrandr2 \
-    libxss1 \
-    libasound2-dev \
-    libatspi2.0-0 \
-    libgtk-3-0 \
-    libpangocairo-1.0-0 \
-    libcairo-gobject2 \
-    libgdk-pixbuf2.0-0 \
-    fonts-liberation \
-    fonts-noto-color-emoji \
-    fonts-noto-cjk \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install system dependencies and Chrome dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libglib2.0-0 \
+    # Chrome & UI testing dependencies
     libnss3 \
+    libnss3-dev \
     libx11-6 \
     libx11-xcb1 \
     libxcb1 \
@@ -63,221 +53,118 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libatk-bridge2.0-0 \
     libdrm2 \
     libgbm1 \
+    libasound2-dev \
+    libatspi2.0-0 \
+    libgtk-3-0 \
     libpangocairo-1.0-0 \
     libcairo2 \
     libgdk-pixbuf2.0-0 \
-    libgtk-3-0 \
     fonts-liberation \
     fonts-noto-color-emoji \
     fonts-noto-cjk \
     xvfb \
     procps \
-    wget \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-# Install Google Chrome (architecture-aware)
-RUN set -e \
-    && echo "Installing Chrome version 140.0.7339.80..." \
-    && CHROME_VERSION="140.0.7339.80" \
-    && CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
-    && echo "Downloading Chrome from: $CHROME_URL" \
-    && curl -fSL -o /tmp/chrome-linux64.zip "$CHROME_URL" \
-    && echo "Download completed, extracting..." \
-    && unzip -o /tmp/chrome-linux64.zip -d /opt/ \
-    && echo "Extraction completed, setting up symlinks..." \
-    && chmod +x /opt/chrome-linux64/chrome \
-    && ln -sf /opt/chrome-linux64/chrome /usr/bin/google-chrome \
-    && ln -sf /opt/chrome-linux64/chrome /usr/bin/chromium-browser \
-    && echo "Symlinks created, cleaning up..." \
-    && rm -rf /tmp/chrome-linux64.zip \
-    && echo "Cleanup completed, verifying installation..." \
-    && echo "Chrome binary location:" \
-    && ls -la /opt/chrome-linux64/chrome \
-    && echo "Symlink verification:" \
-    && ls -la /usr/bin/google-chrome \
-    && echo "Testing Chrome version:" \
-    && /usr/bin/google-chrome --version || (echo "ERROR: Chrome version check failed" && exit 1) \
-    && echo "Chrome installed successfully"
-
-# Verify Chrome installation with detailed diagnostics
-RUN echo "=== Chrome Installation Verification ===" \
-    && echo "Checking Chrome binary existence..." \
-    && if [ ! -f /opt/chrome-linux64/chrome ]; then \
-         echo "ERROR: Chrome binary not found at /opt/chrome-linux64/chrome" \
-         && ls -la /opt/ \
-         && exit 1; \
-       fi \
-    && echo "✅ Chrome binary exists" \
-    && echo "Checking Chrome symlink..." \
-    && if [ ! -L /usr/bin/google-chrome ]; then \
-         echo "ERROR: Chrome symlink not found at /usr/bin/google-chrome" \
-         && ls -la /usr/bin/google-chrome \
-         && exit 1; \
-       fi \
-    && echo "✅ Chrome symlink exists" \
-    && echo "Testing Chrome execution..." \
-    && if ! /usr/bin/google-chrome --version > /tmp/chrome_version.txt 2>&1; then \
-         echo "ERROR: Chrome execution failed" \
-         && cat /tmp/chrome_version.txt \
-         && exit 1; \
-       fi \
-    && CHROME_VERSION_OUTPUT=$(cat /tmp/chrome_version.txt) \
-    && echo "✅ Chrome execution successful: $CHROME_VERSION_OUTPUT" \
-    && rm -f /tmp/chrome_version.txt \
-    && echo "=== Chrome Verification Complete ==="
-
-# Install ChromeDriver using dedicated script
-COPY --chown=runner:runner install-chromedriver.sh /tmp/install-chromedriver.sh
-RUN chmod +x /tmp/install-chromedriver.sh \
-    && /tmp/install-chromedriver.sh \
-    && rm /tmp/install-chromedriver.sh
-
-# Install Node.js (for npm-based testing tools)
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y --no-install-recommends nodejs \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Python (for Selenium testing)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Node.js & Python dependencies
+    nodejs \
     python3 \
     python3-pip \
     python3-venv \
-    python3-setuptools \
-    python3-wheel \
+    # Tools om te downloaden (worden later opgeruimd)
+    wget \
+    unzip \
+    # Ruim de apt cache op in dezelfde RUN instructie
     && rm -rf /var/lib/apt/lists/*
 
-# Install npm packages for testing (before PATH setup)
-RUN npm install -g playwright cypress @playwright/test npm flat sha.js ws --force \
-    && echo "Applying comprehensive security fixes for known vulnerabilities..." \
-    && echo "Cleaning npm cache and temporary files..." \
-    && npm cache clean --force \
-    && rm -rf /tmp/* /var/tmp/* /root/.npm /home/*/.npm 2>/dev/null || true
-
-# Pin Python package versions
-RUN pip3 install --upgrade pip setuptools wheel --no-cache-dir \
-    && pip3 install selenium pytest pytest-selenium webdriver-manager --no-cache-dir
-
-# Create runner user
+# --- GEBRUIKER EN DIRECTORIES AANMAKEN ---
+# Creëer de 'runner' gebruiker en de benodigde mappen in één laag
 RUN useradd -m -s /bin/bash runner \
     && usermod -aG sudo runner \
-    && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+    && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
+    && mkdir -p /home/runner/.cache \
+                /home/runner/workspace \
+                /actions-runner \
+                /tmp/runner \
+                /home/runner/.npm-global \
+    && chown -R runner:runner /home/runner /actions-runner /tmp/runner \
+    && chmod -R 755 /actions-runner /home/runner /tmp/runner
 
-# Set PATH environment variable for all installed tools
-ENV PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/sbin:/bin:/opt/chrome-linux64:/actions-runner:/home/runner/.npm-global/bin:$PATH"
-
-# Ensure npm global bin directory exists and is in PATH
-RUN mkdir -p /home/runner/.npm-global \
-    && npm config set prefix /home/runner/.npm-global \
-    && chown -R runner:runner /home/runner/.npm-global
-
-# Install Playwright browsers as runner user with correct PATH
+# Switch naar de runner gebruiker
 USER runner
 WORKDIR /home/runner
-RUN echo "Installing Playwright browsers..." \
-    && npx playwright install chromium \
-    && echo "Playwright browsers installed successfully"
 
-# Switch back to root for final setup
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# --- TOOLS INSTALLEREN (ALS RUNNER GEBRUIKER) ---
+
+# Installeer Google Chrome
+RUN CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
+    && echo "Downloading Chrome from: $CHROME_URL" \
+    && curl -fSL -o /tmp/chrome-linux64.zip "$CHROME_URL" \
+    && sudo unzip -o /tmp/chrome-linux64.zip -d /opt/ \
+    && sudo chmod +x /opt/chrome-linux64/chrome \
+    && sudo ln -sf /opt/chrome-linux64/chrome /usr/bin/google-chrome \
+    && sudo ln -sf /opt/chrome-linux64/chrome /usr/bin/chromium-browser \
+    && rm -rf /tmp/chrome-linux64.zip
+
+# Verifieer Chrome-installatie
+RUN google-chrome --version || (echo "ERROR: Chrome version check failed" && exit 1)
+
+# Installeer de bijbehorende ChromeDriver
+RUN CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" \
+    && echo "Downloading ChromeDriver from: $CHROMEDRIVER_URL" \
+    && curl -fSL -o /tmp/chromedriver-linux64.zip "$CHROMEDRIVER_URL" \
+    && unzip -o /tmp/chromedriver-linux64.zip -d /tmp/ \
+    && sudo mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
+    && sudo chmod +x /usr/local/bin/chromedriver \
+    && rm -rf /tmp/chromedriver-linux64.zip /tmp/chromedriver-linux64
+
+# Verifieer ChromeDriver-installatie
+RUN chromedriver --version || (echo "ERROR: ChromeDriver version check failed" && exit 1)
+
+# Configureer NPM en installeer globale packages
+RUN npm config set prefix /home/runner/.npm-global \
+    && npm install -g playwright cypress @playwright/test \
+    # Ruim npm cache op om de image-grootte te verkleinen
+    && npm cache clean --force
+
+# Installeer Python packages
+RUN pip3 install --upgrade pip \
+    && pip3 install selenium pytest pytest-selenium webdriver-manager --no-cache-dir
+
+# Installeer Playwright browsers
+RUN npx playwright install chromium
+
+# --- GITHUB ACTIONS RUNNER (MULTI-STAGE) ---
+# Gebruik een aparte 'builder' stage om de runner te downloaden
+FROM base AS builder
 USER root
+ARG RUNNER_VERSION
+WORKDIR /tmp
+RUN curl -o "actions-runner.tar.gz" -L "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
+    && tar xzf "./actions-runner.tar.gz" \
+    && rm "./actions-runner.tar.gz"
 
-# Final cleanup to minimize image size (before switching to runner user)
-RUN echo "Final cleanup to minimize image size..." \
-    && apt-get autoremove -y \
-    && apt-get autoclean \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* /var/tmp/* \
-    && rm -rf /var/log/* \
-    && rm -rf /root/.cache \
-    && find /usr/share/doc -type f -delete 2>/dev/null || true \
-    && find /usr/share/man -type f -delete 2>/dev/null || true
+# Kopieer de runner van de builder stage naar de final image
+FROM base
+COPY --from=builder /tmp /actions-runner
+RUN sudo chown -R runner:runner /actions-runner
 
-# Verify PATH and tool accessibility (before runner installation)
-RUN echo "=== PATH and Tool Verification ===" \
-    && echo "Current PATH: $PATH" \
-    && echo "Node.js version:" \
-    && node --version \
-    && echo "npm version:" \
-    && npm --version \
-    && echo "Python version:" \
-    && python3 --version \
-    && echo "Chrome version:" \
-    && google-chrome --version \
-    && echo "Playwright version:" \
-    && npx playwright --version \
-    && echo "=== Pre-Runner Verification Complete ==="
-
-# Download and install GitHub Actions runner
-ARG RUNNER_VERSION="2.328.0"
-ARG TARGETPLATFORM
-
-WORKDIR /actions-runner
-
-
-# Download the GitHub Actions runner for x64 only
-RUN curl -o "actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
-    -L "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
-    && tar xzf "actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
-    && rm "actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
-    && chown -R runner:runner /actions-runner
-
-# Verify GitHub Actions runner installation
-RUN echo "=== GitHub Actions Runner Verification ===" \
-    && echo "Runner files:" \
-    && ls -la /actions-runner/ \
-    && echo "Runner version:" \
-    && /actions-runner/run.sh --version \
-    && echo "=== Runner Verification Complete ==="
-
-# Create necessary directories with proper permissions
-RUN mkdir -p /home/runner/.cache \
-    && mkdir -p /home/runner/workspace \
-    && mkdir -p /actions-runner/_work \
-    && mkdir -p /actions-runner/_diag \
-    && chown -R runner:runner /home/runner \
-    && chown -R runner:runner /actions-runner
-
-# Ensure runner user has write permissions to necessary directories
-RUN chmod -R 755 /actions-runner \
-    && chmod -R 755 /home/runner
-
-# Create a writable temp directory for the runner
-RUN mkdir -p /tmp/runner \
-    && chown runner:runner /tmp/runner \
-    && chmod 755 /tmp/runner
-
-# Chrome configuration for headless mode
-ENV CHROME_BIN=/usr/bin/google-chrome-stable
-ENV DISPLAY=:99
-
-# Copy entrypoint script
+# --- ENTRYPOINT EN HEALTHCHECK ---
+WORKDIR /home/runner
 COPY --chown=runner:runner entrypoint-chrome.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sudo chmod +x /entrypoint.sh
 
-# Set up working directory and user
-WORKDIR /actions-runner
-USER runner
-
-# Final verification as runner user
-RUN echo "=== Final Verification as Runner User ===" \
-    && echo "Current user: $(whoami)" \
-    && echo "Current PATH: $PATH" \
-    && echo "Node.js accessible:" \
+# Verifieer de installatie van alle tools
+RUN echo "Final PATH: $PATH" \
     && node --version \
-    && echo "npm accessible:" \
     && npm --version \
-    && echo "Playwright accessible:" \
     && npx playwright --version \
-    && echo "Chrome accessible:" \
     && google-chrome --version \
-    && echo "GitHub Runner accessible:" \
-    && /actions-runner/run.sh --version \
-    && echo "=== Final Verification Complete ==="
+    && chromedriver --version \
+    && /actions-runner/run.sh --version
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD pgrep -f "Runner.Listener" > /dev/null || exit 1
+  CMD pgrep -f "Runner.Listener" > /dev/null || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
+

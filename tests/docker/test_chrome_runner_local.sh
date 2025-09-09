@@ -110,17 +110,17 @@ EOF
     
     # Verify playwright module is available before running
     echo "[INFO] Verifying Playwright module availability..."
-    if ! docker exec "$CONTAINER_NAME" env NODE_PATH=/usr/lib/node_modules /usr/bin/node -e "require('playwright')" 2>/dev/null; then
+    if ! docker exec "$CONTAINER_NAME" node -e "require('playwright')" 2>/dev/null; then
         echo "[ERROR] Playwright module not found in container"
         echo "[INFO] Attempting to install Playwright browsers..."
-        docker exec "$CONTAINER_NAME" env NODE_PATH=/usr/lib/node_modules /usr/bin/npx playwright install chromium --yes
+        docker exec "$CONTAINER_NAME" /usr/bin/npx playwright install chromium --yes
     fi
 
     # Run the script inside the container using node and capture output with live display
     echo "[INFO] Running Playwright screenshot script inside container..."
     echo "[INFO] Live output from Playwright script:"
     mkdir -p test-results/docker
-    docker exec "$CONTAINER_NAME" env NODE_PATH=/usr/lib/node_modules /usr/bin/node /tmp/google_screenshot.js 2>&1 | tee test-results/docker/playwright_output_${TIMESTAMP}.log
+    docker exec "$CONTAINER_NAME" node /tmp/google_screenshot.js 2>&1 | tee test-results/docker/playwright_output_${TIMESTAMP}.log
     
     # Check if the script exited successfully and also check for error messages in the log
     SCRIPT_EXIT_CODE=$?
