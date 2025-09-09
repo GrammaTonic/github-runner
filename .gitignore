@@ -1,5 +1,6 @@
 # Ignore local test env file for Chrome runner
 tests/docker/chrome-runner.env
+docker/docker-compose.chrome.override.yml
 # GitHub Actions Self-Hosted Runner - .gitignore
 
 # ===============================

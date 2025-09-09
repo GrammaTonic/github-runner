@@ -88,6 +88,16 @@ jobs:
           echo "Provisioning normal runner container in staging..."
           echo "Using labels: $RUNNER_LABELS"
           docker compose -f docker/docker-compose.production.yml up -d
+      - name: Check normal runner container for GitHub connection
+        run: |
+          echo "Checking normal runner container logs for GitHub connection..."
+          if docker logs github-runner | grep -q " Connected to GitHub"; then
+            echo "✅ Normal runner successfully connected to GitHub."
+          else
+            echo "❌ Normal runner did NOT connect to GitHub. Printing logs for diagnostics:"
+            docker logs github-runner
+            exit 1
+          fi
   provision-chrome-runner-playwright:
     name: Provision Chrome Runner For testing playwright and UI tests
     runs-on: ubuntu-latest
@@ -171,6 +181,16 @@ jobs:
                 exit 1
               fi
             done
+      - name: Check Chrome runner container for GitHub connection
+        run: |
+          echo "Checking Chrome runner container logs for GitHub connection..."
+          if docker logs github-runner-chrome | grep -q "Connected to GitHub"; then
+            echo "✅ Chrome runner successfully connected to GitHub."
+          else
+            echo "❌ Chrome runner did NOT connect to GitHub. Printing logs for diagnostics:"
+            docker logs github-runner-chrome
+            exit 1
+          fi
       - name: Run playwright screenshot test on Chrome runner
         run: |
           echo "Running Playwright screenshot integration script..."
@@ -1199,6 +1219,8 @@ jobs:
     name: Cleanup Resources
     runs-on: ubuntu-latest
     needs:
+      - provision-staging-normal-runner
+      - provision-chrome-runner-playwright
       - security-container-scan
       - security-chrome-scan
       - test-container-startup
