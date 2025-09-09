@@ -201,8 +201,8 @@ cd "$RUNNER_CONFIG_DIR"
 cp -rp /actions-runner/* "$RUNNER_CONFIG_DIR/" 2>/dev/null || true
 
 # Debug: Show what was copied
-log_info "Contents of $RUNNER_CONFIG_DIR after copy:"
-ls -la "$RUNNER_CONFIG_DIR/" | head -10
+log_info "Contents of $RUNNER_CONFIG_DIR after copy (first 10 files):"
+find "$RUNNER_CONFIG_DIR/" -maxdepth 1 -print | head -10
 
 # Ensure config.sh has execute permissions (multiple approaches for robustness)
 if [ -f "$RUNNER_CONFIG_DIR/config.sh" ]; then
@@ -229,11 +229,11 @@ if [ -f "$RUNNER_CONFIG_DIR/config.sh" ]; then
     # Verify permissions with multiple checks
     if [ -x "$RUNNER_CONFIG_DIR/config.sh" ]; then
         log_success "config.sh execute permissions set successfully"
-    elif ls -l "$RUNNER_CONFIG_DIR/config.sh" | grep -q "x"; then
-        log_success "config.sh has execute permissions (verified via ls)"
+    elif [ -e "$RUNNER_CONFIG_DIR/config.sh" ] && [ "$(stat -c "%A" "$RUNNER_CONFIG_DIR/config.sh" | grep -c "x")" -gt 0 ]; then
+        log_success "config.sh has execute permissions (verified via stat)"
     else
         log_error "Failed to set execute permissions on config.sh"
-        ls -la "$RUNNER_CONFIG_DIR/config.sh"
+        find "$RUNNER_CONFIG_DIR/" -name config.sh -ls
         # Don't exit here, try to continue anyway
         log_warning "Attempting to continue despite permission issues..."
     fi
@@ -273,8 +273,9 @@ else
         --replace; then
         log_success "Runner configured successfully with bash"
     else
-        log_error "All attempts to execute config.sh failed"
-        exit 1
+    log_error "All attempts to execute config.sh failed"
+    echo "[WARNING] Keeping container alive for diagnostics."
+    while true; do sleep 300; done
     fi
 fi
 
@@ -298,6 +299,7 @@ trap cleanup SIGTERM SIGINT
 
 # Start the runner
 log_info "Starting runner listener..."
+
 log_success "Chrome Runner is ready for UI testing workloads!"
 
 ./run.sh &
@@ -305,3 +307,5 @@ RUNNER_PID=$!
 
 # Wait for the runner process
 wait $RUNNER_PID
+echo "[WARNING] Runner process exited. Keeping container alive for diagnostics."
+while true; do sleep 300; done

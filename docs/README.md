@@ -47,28 +47,13 @@ docs/
 
 ### File Organization Rules
 
-- **Keep root directory clean** - Only essential files (README.md, LICENSE)
-- **All documentation goes in `/docs/` subdirectories**
-- **Community files**: `/docs/community/`
-- **Feature docs**: `/docs/features/`
-- **Release notes**: `/docs/releases/`
-- **Archive old files**: `/docs/archive/`
-- **GitHub templates**: `.github/` directory only
 
 ### Naming Conventions
 
 - Use descriptive filenames
-- Follow existing patterns
-- Include version numbers for release notes
-- Use UPPERCASE for community standards files
-
 ### Content Guidelines
 
 - Include clear headings and navigation
-- Add links between related documents
-- Keep documentation up to date
-- Include examples where helpful
-
 ---
 
 **📋 Note**: This structure helps maintain a clean root directory while keeping documentation organized and easily discoverable.

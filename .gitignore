@@ -1,3 +1,5 @@
+# Ignore local test env file for Chrome runner
+tests/docker/chrome-runner.env
 # GitHub Actions Self-Hosted Runner - .gitignore
 
 # ===============================
