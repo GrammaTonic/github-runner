@@ -175,8 +175,8 @@ RUN mkdir -p /home/runner/.npm-global \
 
 # Install Playwright browsers as runner user with correct PATH
 USER runner
+WORKDIR /home/runner
 RUN echo "Installing Playwright browsers..." \
-    && cd /home/runner \
     && npx playwright install chromium \
     && echo "Playwright browsers installed successfully"
 
