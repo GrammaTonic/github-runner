@@ -1,8 +1,6 @@
-
 #!/usr/bin/env bash
 # playwright_screenshot_integration.sh
 # Runs Playwright screenshot test inside Chrome runner container and copies result to host
-
 set -euo pipefail
 
 CONTAINER_NAME="github-runner-chrome"
@@ -25,7 +23,7 @@ fi
 echo "[INFO] Running Playwright screenshot script inside container..."
 mkdir -p "$HOST_RESULTS_DIR"
 docker exec -e SCREENSHOT_PATH="$SCREENSHOT_PATH" "$CONTAINER_NAME" node /tmp/google_screenshot.js 2>&1 | tee "$LOG_PATH"
-SCRIPT_EXIT_CODE=${PIPESTATUS[0]}
+SCRIPT_EXIT_CODE="${PIPESTATUS[0]}"
 echo "[INFO] Playwright script exit code: $SCRIPT_EXIT_CODE"
 
 # Check for error messages in the log
@@ -34,7 +32,7 @@ if grep -q "ERROR\|Error\|error\|Cannot find module\|MODULE_NOT_FOUND" "$LOG_PAT
 	SCRIPT_EXIT_CODE=1
 fi
 
-if [ $SCRIPT_EXIT_CODE -eq 0 ]; then
+if [ "$SCRIPT_EXIT_CODE" -eq 0 ]; then
 	echo "[SUCCESS] Playwright script completed successfully"
 	echo "[INFO] Test results saved in $HOST_RESULTS_DIR:"
 	echo "  - Screenshot: $(basename "$HOST_SCREENSHOT_PATH")"
@@ -44,13 +42,4 @@ else
 	echo "[INFO] Check the log file: $LOG_PATH"
 fi
 
-docker cp "$CONTAINER_NAME":"$SCREENSHOT_PATH" "$HOST_SCREENSHOT_PATH" 2>/dev/null || true
-
-if [ -f "$HOST_SCREENSHOT_PATH" ] && [ -s "$HOST_SCREENSHOT_PATH" ]; then
-	echo "[SUCCESS] Screenshot saved as $HOST_SCREENSHOT_PATH"
-else
-	echo "[ERROR] Screenshot was not generated or is empty."
-	SCRIPT_EXIT_CODE=1
-fi
-
-exit $SCRIPT_EXIT_CODE
+exit "$SCRIPT_EXIT_CODE"
