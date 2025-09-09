@@ -181,7 +181,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-google-screenshot
-          path: test-results/playwright/google_screenshot.png
+          path: test-results/playwright/google_screenshot_*.png
           retention-days: 30
 
   lint-and-validate:
