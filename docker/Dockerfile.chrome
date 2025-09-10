@@ -71,8 +71,10 @@ USER runner
 WORKDIR /home/runner
 
 # --- INSTALL NPM, PIP AND PLAYWRIGHT PACKAGES ---
+
 RUN npm config set prefix /home/runner/.npm-global \
-    && npm install -g playwright cypress @playwright/test \
+    && npm install -g playwright cypress@15.1.0 @playwright/test \
+    && npm install -g flat@5.0.2 --force \
     && npm cache clean --force \
     # Create Python virtual environment for runner user
     && python3 -m venv /home/runner/venv \
