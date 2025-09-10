@@ -17,7 +17,7 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 - **Status**: ✅ Production Ready - All 10/10 CI/CD checks passing
 - **Performance**: 60% faster web UI tests with resource isolation
 - **Latest Versions**: Playwright 1.55.0, Cypress 15.1.0 with security patches
-- **Documentation**: [Chrome Runner Guide](Chrome-Runner)
+- **Documentation**: [Chrome Runner Guide](Chrome-Runner.md)
 
 ## 📊 **Current Versions**
 
