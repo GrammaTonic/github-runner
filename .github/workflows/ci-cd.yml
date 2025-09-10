@@ -106,6 +106,17 @@ jobs:
             docker logs github-runner || echo "No logs available."
             exit 1
           fi
+          wait 30
+          docker ps -a
+          echo "Checking if normal runner container is running after wait..."
+          if [ "$(docker ps -q -f name=github-runner)" ]; then
+            echo "Normal runner container is running."
+          else
+            echo "Normal runner container is not running! Printing status and logs for diagnostics:"
+            docker ps -a
+            docker logs github-runner || echo "No logs available."
+            exit 1
+          fi
       - name: Health check normal runner container
         run: |
             echo "Checking health of normal runner container..."
