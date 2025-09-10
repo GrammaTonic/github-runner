@@ -582,6 +582,7 @@ jobs:
             fi
           done
 
+
       - name: Validate Docker configurations
         run: |
           echo "Validating Docker configurations..."
@@ -590,15 +591,23 @@ jobs:
           for dockerfile in docker/Dockerfile docker/Dockerfile.chrome; do
             if [[ -f "$dockerfile" ]]; then
               echo "Validating $dockerfile..."
-              
+
               # Check for version pinning
               if grep -q "FROM.*:latest" "$dockerfile"; then
                 echo "::warning::$dockerfile uses :latest tag"
               fi
-              
+
               # Check for security patches
               if grep -q "flat@5.0.2" "$dockerfile"; then
                 echo "✅ $dockerfile has flat security patch"
+              fi
+
+              # Check final USER statement
+              final_user=$(grep -E '^USER ' "$dockerfile" | tail -1 | awk '{print $2}')
+              if [[ "$final_user" == "root" ]]; then
+                echo "::warning::$dockerfile: Final USER is root (should be non-root for best practice)"
+              else
+                echo "✅ $dockerfile: Final USER is $final_user (non-root, best practice)"
               fi
             fi
           done
