@@ -4,7 +4,7 @@
 
 ### Architecture Enforcement
 
-If you see an error about unsupported architecture, ensure you are building and running the Chrome runner image on an `amd64` (x86_64) host. ARM builds are not supported.
+If you see an error about unsupported architecture, ensure you are building and running the Chrome runner image on an `amd64` (x86_64) host. ARM builds are not supported. The base OS is Ubuntu 24.04 LTS.
 
 # Chrome Runner Documentation
 
@@ -41,26 +41,13 @@ The Chrome Runner is a specialized GitHub Actions self-hosted runner optimized f
 ### 1. Build the Chrome Runner Image
 
 ```bash
-# Build locally
-./scripts/build-chrome.sh
-
-# Build and push to registry
-./scripts/build-chrome.sh --push
 
 # Build multi-architecture
 ./scripts/build-chrome.sh --multi-arch --push
-```
-
-### 2. Configure Environment
-
-```bash
-# Copy example configuration
-cp config/chrome-runner.env.example config/chrome-runner.env
+ 
 
 # Edit configuration
 vi config/chrome-runner.env
-```
-
 Required environment variables:
 
 - `GITHUB_TOKEN` - Personal access token with repo permissions

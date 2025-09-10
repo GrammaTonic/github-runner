@@ -33,11 +33,12 @@
 ### Modified Files
 - `docker/Dockerfile`: Ubuntu 22.04 → 24.04
 - `docker/Dockerfile.chrome`: Ubuntu 22.04 → 24.04
-- Updated version labels to 1.0.1
+Updated version labels to v2.0.2 (Standard Runner and Chrome Runner)
 
 ### Compatibility
-- ✅ Backward compatible
-- ✅ All existing features preserved
+✅ Backward compatible (Standard Runner)
+✅ Chrome Runner now enforces amd64-only architecture
+✅ All existing features preserved
 - ✅ No breaking changes
 - ✅ Same GitHub Actions runner version (2.328.0)
 

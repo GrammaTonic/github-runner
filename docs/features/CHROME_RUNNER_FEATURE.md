@@ -126,18 +126,9 @@ docker run -d --shm-size=2g \
 
 ```yaml
 jobs:
-  ui-tests:
-    runs-on: [self-hosted, chrome, ui-tests]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run Playwright tests
         run: npx playwright test
 ```
-
-## 📊 Testing Results
-
-### Automated Tests Added
-
+ 
 - ✅ **Chrome Dockerfile validation** - Docker build syntax checks
 - ✅ **Docker Compose validation** - Configuration file validation
 - ✅ **Build script testing** - Shell script syntax validation
