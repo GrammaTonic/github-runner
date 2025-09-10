@@ -3,6 +3,8 @@
 # Test script: Build and run Chrome runner container locally
 set -e
 
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
 
 
 
@@ -15,6 +17,19 @@ LOCAL_IMAGE="github-runner-chrome:test-local"
 
 echo "[INFO] Building Chrome runner Docker image locally..."
 docker build --platform=linux/amd64 -f docker/Dockerfile.chrome -t "$LOCAL_IMAGE" ./docker
+
+echo "[INFO] Running Trivy security scan on the built image..."
+if command -v trivy &> /dev/null; then
+    trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_${TIMESTAMP}.txt
+    echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
+elif docker --version &> /dev/null; then
+    echo "[INFO] Running Trivy via Docker..."
+    mkdir -p test-results/docker
+    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)/test-results/docker:/output" aquasec/trivy:latest image "$LOCAL_IMAGE" --format table --output /output/trivy_scan_${TIMESTAMP}.txt
+    echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
+else
+    echo "[WARNING] Trivy not available. Skipping security scan."
+fi
 
 echo "[INFO] Creating Docker Compose override file for local image..."
 cat > "$OVERRIDE_FILE" <<EOF
@@ -53,7 +68,6 @@ if [ "$STATUS" = "running" ]; then
 
 
     # Create Playwright screenshot script with detailed logging and correct module path
-  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
   SCREENSHOT_PATH="/tmp/google_screenshot_${TIMESTAMP}.png"
   JS_SCRIPT_PATH="tests/playwright/google_screenshot.js"
 
