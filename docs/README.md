@@ -1,6 +1,6 @@
 # GitHub Runner Documentation
 
-This directory contains all project documentation organized by category.
+This directory contains all project documentation organized by category. All documentation blocks, examples, and API docs are now synced with the latest code and workflow changes (as of 2025-09-10).
 
 ## 📁 Directory Structure
 
@@ -47,13 +47,23 @@ docs/
 
 ### File Organization Rules
 
+- All documentation must be placed in `/docs/` subdirectories (never in root)
+- Feature specs: `/docs/features/`
+- Community files: `/docs/community/`
+- Release notes: `/docs/releases/`
+- Archive: `/docs/archive/`
+- API docs: `/docs/API.md`
+- Main README: `/README.md` (root)
 
 ### Naming Conventions
 
 - Use descriptive filenames
+- Follow feature or page-based naming for test and example files
+
 ### Content Guidelines
 
 - Include clear headings and navigation
----
+- Sync documentation blocks and examples with code changes
+- Document all major workflow, runner, and CI/CD improvements
 
 **📋 Note**: This structure helps maintain a clean root directory while keeping documentation organized and easily discoverable.
