@@ -51,7 +51,7 @@ RUN case "${TARGETPLATFORM}" in \
 FROM base
 COPY --from=builder --chown=runner:runner /tmp /actions-runner
 
-# Install Docker and other general-purpose tools as root
+## Switch to root for setup/permissions only; final image runs as unprivileged runner user.
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
         docker.io \

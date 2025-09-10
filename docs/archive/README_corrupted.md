@@ -298,11 +298,11 @@ docker compose logs -f runner
 
 - **Issues**: [GitHub Issues](https://github.com/GrammaTonic/github-runner/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/GrammaTonic/github-runner/discussions)
-- **Documentation**: [docs/](./docs/)
+- **Documentation**: [docs/](../docs/)
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](../community/CONTRIBUTING.md) for details.
 
 ### Development Setup
 
@@ -322,7 +322,7 @@ make test
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 

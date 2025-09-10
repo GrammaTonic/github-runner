@@ -102,7 +102,7 @@ USER runner
 
 # --- FINAL IMAGE ASSEMBLY ---
 FROM base
-# Switch to root to copy files and set permissions
+## Switch to root for setup/permissions only; final image runs as unprivileged runner user.
 USER root
 COPY --from=builder --chown=runner:runner /tmp /actions-runner
 COPY --chown=runner:runner entrypoint-chrome.sh /entrypoint.sh
