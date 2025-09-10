@@ -81,8 +81,8 @@ jobs:
 
 ### **Base Image**
 
-- **OS**: Ubuntu 22.04 LTS
-- **Architecture**: AMD64 and ARM64 support
+**OS**: Ubuntu 24.04 LTS
+**Architecture**: AMD64 only (ARM builds blocked for Chrome Runner)
 - **Size**: ~2.5GB (optimized layers)
 
 ### **Installed Software**
@@ -98,7 +98,7 @@ jobs:
 - ✅ **Playwright v1.55.0** - Microsoft's modern browser automation (latest stable)
 - ✅ **Cypress v15.1.0** - JavaScript end-to-end testing (security patched)
 - ✅ **Selenium** - Industry standard web automation with webdriver-manager
-- ✅ **Node.js 20** - For npm-based testing tools (LTS version)
+✅ **Node.js 24.7.0** - For npm-based testing tools (Chrome Runner only)
 - ✅ **Python 3** - For Python-based testing frameworks
 
 #### **Security Patches Applied** 🔒
@@ -111,8 +111,8 @@ jobs:
 #### **GitHub Actions Runner**
 
 - ✅ **Version**: 2.328.0 (Latest stable)
-- ✅ **Image Version**: v1.0.4 (Chrome Runner)
-- ✅ **Multi-architecture**: AMD64 and ARM64
+✅ **Image Version**: v2.0.2 (Chrome Runner)
+✅ **Architecture**: AMD64 only
 - ✅ **Auto-registration**: Automatic GitHub registration and cleanup
 - ✅ **Security**: Container hardening with non-root execution
 

@@ -7,7 +7,7 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 ### 🔒 **Critical Security Improvements** (January 15, 2025)
 
 - **Security Patches**: ✅ VDB-216777/CVE-2020-36632, CVE-2025-9288, CVE-2024-37890 resolved
-- **Version Updates**: Standard Runner v1.0.1, Chrome Runner v1.0.4 with latest security fixes
+**Version Updates**: Standard Runner v2.0.2, Chrome Runner v2.0.2 with latest security fixes
 - **Performance**: Optimized Docker images with comprehensive cache cleaning
 - **CI/CD**: Enhanced pipeline reliability with standardized Docker build contexts
 - **Monitoring**: Weekly Trivy security scans with automated SARIF reporting
@@ -23,9 +23,9 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 
 | Component                 | Standard Runner | Chrome Runner | Security Status   |
 | ------------------------- | --------------- | ------------- | ----------------- |
-| **Image Version**         | v1.0.1          | v1.0.4        | ✅ Latest         |
+| **Image Version**         | v2.0.2          | v2.0.2        | ✅ Latest         |
 | **GitHub Actions Runner** | v2.328.0        | v2.328.0      | ✅ Latest         |
-| **Node.js**               | 20.x LTS        | 20.x LTS      | ✅ Supported      |
+| **Node.js**               | -               | 24.7.0        | ✅ Chrome Runner Only |
 | **Playwright**            | -               | v1.55.0       | ✅ Latest         |
 | **Cypress**               | -               | v15.1.0       | ✅ Security Fixed |
 
