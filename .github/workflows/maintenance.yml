@@ -745,6 +745,7 @@ jobs:
           echo "## Job Results" >> maintenance-summary.md
           echo "" >> maintenance-summary.md
 
+          set +e
           for status in "${jobs_status[@]}"; do
             echo "- $status" >> maintenance-summary.md
             if [[ "$status" == *"success"* ]]; then
@@ -753,6 +754,7 @@ jobs:
               ((failed_count++))
             fi
           done
+          set -e
 
           echo "" >> maintenance-summary.md
           echo "## Summary" >> maintenance-summary.md
@@ -771,6 +773,8 @@ jobs:
           echo "- Review security scan results" >> maintenance-summary.md
           echo "- Check for available updates" >> maintenance-summary.md
           echo "- Continue regular maintenance schedule" >> maintenance-summary.md
+
+          exit 0
 
       - name: Upload maintenance summary
         uses: actions/upload-artifact@v4
