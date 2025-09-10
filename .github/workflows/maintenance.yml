@@ -718,6 +718,7 @@ jobs:
     if: always()
     steps:
       - name: Generate maintenance summary
+        shell: bash
         run: |
           echo "Generating maintenance workflow summary..."
 
