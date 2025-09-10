@@ -101,7 +101,9 @@ jobs:
           if [ "$(docker ps -q -f name=github-runner)" ]; then
             echo "Normal runner container is running."
           else
-            echo "Normal runner container is not running."
+            echo "Normal runner container is not running! Printing status and logs for diagnostics:"
+            docker ps -a
+            docker logs github-runner || echo "No logs available."
             exit 1
           fi
       - name: Health check normal runner container
