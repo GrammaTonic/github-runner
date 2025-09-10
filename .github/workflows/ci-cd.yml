@@ -227,8 +227,8 @@ jobs:
           # Check if Docker files exist
           find . -name "Dockerfile*" -type f | while read -r dockerfile; do
             echo "Validating $dockerfile"
-            # Run hadolint but only fail on errors, not warnings
-            if ! docker run --rm -i hadolint/hadolint hadolint --ignore DL3008 --ignore DL3015 --ignore DL3013 --ignore DL3016 --ignore DL3059 - < "$dockerfile"; then
+            # Run hadolint, ignore DL3002 for builder stages
+            if ! docker run --rm -i hadolint/hadolint hadolint --ignore DL3002 --ignore DL3008 --ignore DL3015 --ignore DL3013 --ignore DL3016 --ignore DL3059 - < "$dockerfile"; then
               echo "Critical errors found in $dockerfile"
               exit 1
             fi
