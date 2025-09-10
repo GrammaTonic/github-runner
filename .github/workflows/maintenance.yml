@@ -721,6 +721,15 @@ jobs:
         shell: bash
         run: |
           echo "Generating maintenance workflow summary..."
+          echo "PWD: $(pwd)"
+          echo "Listing docs directory before mkdir:"
+          ls -l docs || true
+          mkdir -p docs/maintenance
+          echo "Listing docs/maintenance after mkdir:"
+          ls -l docs/maintenance || true
+          echo "Testing write access to docs/maintenance..."
+          echo "test" > docs/maintenance/test.txt || { echo "ERROR: Cannot write to docs/maintenance/"; exit 1; }
+          echo "Test file written successfully."
 
           # Collect job results
           jobs_status=()
@@ -735,7 +744,6 @@ jobs:
           success_count=0
           failed_count=0
 
-          mkdir -p docs/maintenance
           cat > docs/maintenance/maintenance-summary.md << 'EOF'
           # Maintenance Workflow Summary
 
