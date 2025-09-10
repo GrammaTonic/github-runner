@@ -112,7 +112,7 @@ jobs:
             docker logs github-runner || echo "No logs available."
             exit 1
           fi
-          wait 30
+          sleep 30
           docker ps -a
           echo "Checking if normal runner container is running after wait..."
           if [ "$(docker ps -q -f name=github-runner)" ]; then
