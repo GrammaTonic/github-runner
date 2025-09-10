@@ -18,8 +18,8 @@ Note: Documentation workflows and repo prompts were recently improved — see
 | ------------------------- | ---------------- | ---------------- | ----------------- |
 | **Image Version**         | v2.0.2           | v2.0.2           | ✅ Latest         |
 | **GitHub Actions Runner** | v2.328.0         | v2.328.0         | ✅ Latest         |
-| **Base OS**               | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS | ✅ Supported      |
-| **Node.js**               | 20.x             | 20.x             | ✅ Latest LTS     |
+| **Base OS**               | Ubuntu 24.04 LTS | Ubuntu 24.04 LTS | ✅ Supported      |
+| **Node.js**               |                  | 24.7.0           | ✅ Chrome Only    |
 | **Python**                | 3.10+            | 3.10+            | ✅ Latest         |
 | **Playwright**            | -                | v1.55.0          | ✅ Latest         |
 | **Cypress**               | -                | v15.1.0          | ✅ Security Fixed |
