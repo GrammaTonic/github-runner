@@ -435,11 +435,9 @@ docker inspect runner | jq '.[0].HostConfig.CpuQuota'
 - Chrome runner and standard runner documentation blocks synced with main docs
 - All troubleshooting and architecture diagrams reflect latest code and deployment best practices
 
-See [Home](Home) and [Chrome Runner Guide](Chrome-Runner) for full details.
+See [Home](Home.md) and [Chrome Runner Guide](Chrome-Runner.md) for full details.
 
 ## 🔄 Next Steps
 
-- **[Production Deployment](Production-Deployment)** - Production readiness
-- **[Health Monitoring](Health-Monitoring)** - Monitoring setup
-- **[Scaling and Load Balancing](Scaling-and-Load-Balancing)** - Scaling strategies
-- **[Security Configuration](Security-Configuration)** - Security hardening
+- **[Production Deployment](Production-Deployment.md)** - Production readiness
+- *(Health Monitoring, Scaling and Load Balancing, Security Configuration documentation not found)*
