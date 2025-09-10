@@ -104,12 +104,13 @@ newgrp docker
 docker system prune -a -f
 ```
 
+
 ## 🎯 What's Next?
 
-- **[Production Setup](Production-Deployment)** - Scale for production use
-- **[Monitoring](Health-Monitoring)** - Add health checks and metrics
-- **[Security](Security-Configuration)** - Secure your runners
-- **[Troubleshooting](Common-Issues)** - Fix common problems
+- **[Production Setup](Production-Deployment.md)** - Scale for production use
+- **[Monitoring]([missing doc])** - Add health checks and metrics
+- **[Security]([missing doc])** - Secure your runners
+- **[Troubleshooting](Common-Issues.md)** - Fix common problems
 
 ## 💡 Quick Tips
 
@@ -118,10 +119,11 @@ docker system prune -a -f
 - **Enable monitoring** for production deployments
 - **Regular cleanup** prevents disk space issues
 
+
 ## 📞 Need Help?
 
-- **[Common Issues](Common-Issues)** - Quick fixes
-- **[Installation Guide](Installation-Guide)** - Detailed setup
+- **[Common Issues](Common-Issues.md)** - Quick fixes
+- **[Installation Guide](Installation-Guide.md)** - Detailed setup
 - **[GitHub Issues](https://github.com/GrammaTonic/github-runner/issues)** - Report problems
 
 ---
@@ -132,7 +134,8 @@ docker system prune -a -f
 - Chrome runner and standard runner setup updated for diagnostics and health checks
 - All workflow and test examples reflect current best practices
 
-See [Home](Home) and [Chrome Runner Guide](Chrome-Runner) for full details.
+
+See [Home](Home.md) and [Chrome Runner Guide](Chrome-Runner.md) for full details.
 
 **⏱️ Total setup time: ~5 minutes**
 **🎉 You're ready to run workflows on your self-hosted runner!**

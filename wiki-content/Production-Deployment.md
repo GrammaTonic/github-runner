@@ -38,7 +38,7 @@ docker exec <chrome-container> ps aux | grep chrome
 docker logs -f --tail 100 <chrome-container>
 ```
 
-📚 **Full Documentation**: [Chrome Runner Guide](Chrome-Runner)
+📚 **Full Documentation**: [Chrome Runner Guide](Chrome-Runner.md)
 
 ---
 
@@ -622,14 +622,14 @@ if __name__ == '__main__':
 
 ## 🔄 Next Steps
 
-- **[Health Monitoring](Health-Monitoring)** - Set up comprehensive monitoring
-- **[Security Configuration](Security-Configuration)** - Advanced security measures
-- **[Performance Tuning](Performance-Tuning)** - Optimize performance
-- **[Backup and Recovery](Backup-and-Recovery)** - Data protection strategies
+- **[Health Monitoring]([missing doc])** - Set up comprehensive monitoring
+- **[Security Configuration]([missing doc])** - Advanced security measures
+- **[Performance Tuning]([missing doc])** - Optimize performance
+- **[Backup and Recovery]([missing doc])** - Data protection strategies
 
 ## 📝 Documentation Parity & Recent Improvements (2025-09-10)
 
 - Chrome runner production deployment, scaling, and health checks synced with latest code and documentation
 - All monitoring, resource requirements, and troubleshooting reflect current best practices
 
-See [Home](Home) and [Chrome Runner Guide](Chrome-Runner) for full details.
+See [Home](Home.md) and [Chrome Runner Guide](Chrome-Runner.md) for full details.

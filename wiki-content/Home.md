@@ -35,19 +35,19 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 
 ### Getting Started
 
-- [Home](Home) - Overview and quick start
-- [Installation Guide](Installation-Guide) - Step-by-step installation
-- [Quick Start](Quick-Start) - Get up and running in 5 minutes
+- [Home](Home.md) - Overview and quick start
+- [Installation Guide](Installation-Guide.md) - Step-by-step installation
+- [Quick Start](Quick-Start.md) - Get up and running in 5 minutes
 
 ### Specialized Runners
 
-- **[Chrome Runner](Chrome-Runner) 🆕** - Web UI testing and browser automation
-- [Docker Configuration](Docker-Configuration) - General Docker setup
+- **[Chrome Runner](Chrome-Runner.md) 🆕** - Web UI testing and browser automation
+- [Docker Configuration](Docker-Configuration.md) - General Docker setup
 
 ### Configuration
 
-- [Production Deployment](Production-Deployment) - Production-ready deployment
-- [Common Issues](Common-Issues) - Troubleshooting and solutions
+- [Production Deployment](Production-Deployment.md) - Production-ready deployment
+- [Common Issues](Common-Issues.md) - Troubleshooting and solutions
 
 ## 🚀 Quick Start Options
 
@@ -71,22 +71,22 @@ docker-compose up -d
 
 | Component             | Status              | Documentation                                  |
 | --------------------- | ------------------- | ---------------------------------------------- |
-| **Chrome Runner**     | ✅ Production Ready | [Chrome Runner Guide](Chrome-Runner)           |
-| **Standard Runner**   | ✅ Stable           | [Installation Guide](Installation-Guide)       |
-| **CI/CD Pipeline**    | ✅ Passing          | [Production Deployment](Production-Deployment) |
-| **Security Scanning** | ✅ Clean            | [Common Issues](Common-Issues)                 |
+| **Chrome Runner**     | ✅ Production Ready | [Chrome Runner Guide](Chrome-Runner.md)           |
+| **Standard Runner**   | ✅ Stable           | [Installation Guide](Installation-Guide.md)       |
+| **CI/CD Pipeline**    | ✅ Passing          | [Production Deployment](Production-Deployment.md) |
+| **Security Scanning** | ✅ Clean            | [Common Issues](Common-Issues.md)                 |
 
-- [Contributing](Contributing) - How to contribute to the project
-- [Development Workflow](Development-Workflow) - Development processes and standards
-- [Testing Strategy](Testing-Strategy) - Testing approaches and frameworks
-- [Release Process](Release-Process) - Version management and releases
+- [Contributing]([missing doc]) - How to contribute to the project
+- [Development Workflow]([missing doc]) - Development processes and standards
+- [Testing Strategy]([missing doc]) - Testing approaches and frameworks
+- [Release Process]([missing doc]) - Version management and releases
 
 ## 🚀 Quick Links
 
-- **[Installation Guide](Installation-Guide)** - Start here for first-time setup
-- **[Docker Configuration](Docker-Configuration)** - Essential Docker setup
-- **[Production Deployment](Production-Deployment)** - Production checklist
-- **[Common Issues](Common-Issues)** - Troubleshooting help
+- **[Installation Guide](Installation-Guide.md)** - Start here for first-time setup
+- **[Docker Configuration](Docker-Configuration.md)** - Essential Docker setup
+- **[Production Deployment](Production-Deployment.md)** - Production checklist
+- **[Common Issues](Common-Issues.md)** - Troubleshooting help
 
 ## 🔗 External Resources
 
@@ -104,7 +104,7 @@ docker-compose up -d
 - Normal runner Dockerfile and entrypoint improved for diagnostics and healthcheck reliability
 - All documentation blocks, examples, and API docs synced with latest code and workflow changes
 
-See [Chrome Runner Guide](Chrome-Runner) and [Version Overview](../docs/VERSION_OVERVIEW.md) for full details.
+See [Chrome Runner Guide](Chrome-Runner.md) and [Version Overview](../docs/VERSION_OVERVIEW.md) for full details.
 
 ## 📝 Contributing to Documentation
 
