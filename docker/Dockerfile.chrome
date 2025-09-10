@@ -4,13 +4,13 @@ FROM ubuntu:24.04 AS base
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"
 LABEL description="Optimized GitHub Actions Self-Hosted Runner for Chrome and web UI testing"
-LABEL version="2.0.6"
+LABEL version="2.0.9"
 
 # Define arguments at the top for easy management
 ARG TARGETARCH
 ARG RUNNER_VERSION="2.328.0"
 ARG CHROME_VERSION="140.0.7339.80"
-ARG NODE_VERSION="20"
+ARG NODE_VERSION="24.7.0"
 
 # Environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -30,9 +30,9 @@ RUN if [ "$TARGETARCH" != "amd64" ]; then \
     fi
 
 # --- INSTALL SYSTEM, NODE.JS, PYTHON, CHROME AND DRIVERS ---
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg \
-    && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
-    && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Essential tools
+    curl ca-certificates gnupg wget unzip xz-utils \
     # System utilities
     sudo \
     lsb-release \
@@ -41,12 +41,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
     libicu-dev \
     # Chrome & UI testing dependencies (existing)
     libnss3 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxtst6 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgbm1 libasound2-dev libatspi2.0-0 libgtk-3-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf2.0-0 fonts-liberation fonts-noto-color-emoji fonts-noto-cjk xvfb procps \
-    # Node.js & Python
-    nodejs python3 python3-pip python3-venv \
-    # Download tools
-    wget unzip \
-    # Playwright/Chromium/Chrome required libraries (missing)
-    libgstreamer1.0-0 libgtk-4-1 libgraphene-1.0-0 libatomic1 libxslt1.1 libwoff1 libwoff2-0 libvpx9 libevent-2.1-7 libopus0 libgstallocators-1.0-0 libgstapp-1.0-0 libgstbase-1.0-0 libgstpbutils-1.0-0 libgstaudio-1.0-0 libgsttag-1.0-0 libgstvideo-1.0-0 libgstgl-1.0-0 libgstcodecparsers-1.0-0 libgstfft-1.0-0 libflite1 libflite1-plugins libwebpdemux2 libavif16 libharfbuzz-icu0 libwebpmux3 libenchant-2-2 libsecret-1-0 libhyphen0 libmanette-0.2-0 libgles2 libx264-164 \
+    # Python
+    python3 python3-pip python3-venv \
+    # Playwright/Chromium/Chrome required libraries (Ubuntu 24.04 compatible)
+    libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libgstreamer-plugins-good1.0-0 libgstreamer-plugins-bad1.0-0 gstreamer1.0-plugins-ugly libgtk-4-1 libgraphene-1.0-0 libatomic1 libxslt1.1 libwoff1 libvpx9 libevent-2.1-7 libopus0 libwebpdemux2 libavif16 libharfbuzz-icu0 libwebpmux3 libenchant-2-2 libsecret-1-0 libhyphen0 libmanette-0.2-0 libgles2 libx264-164 flite \
+    # Download and install specific Node.js version
+    && curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" -o /tmp/node.tar.xz \
+    && tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 --no-same-owner \
     # Download and install Chrome
     && CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
     && curl -fSL -o /tmp/chrome.zip "$CHROME_URL" \
@@ -58,7 +59,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
     && unzip -o /tmp/chromedriver.zip -d /tmp/ \
     && mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
     # Clean up
-    && rm -rf /tmp/*.zip /tmp/chromedriver-linux64 \
+    && rm -rf /tmp/*.zip /tmp/*.tar.xz /tmp/chromedriver-linux64 \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # --- CREATE USER AND DIRECTORIES ---
@@ -73,8 +75,6 @@ USER runner
 WORKDIR /home/runner
 
 # --- INSTALL NPM, PIP AND PLAYWRIGHT PACKAGES ---
-
-
 RUN npm config set prefix /home/runner/.npm-global \
     && npm install -g playwright@1.55.0 cypress@15.1.0 @playwright/test@1.55.0 \
     && npm install -g flat@5.0.2 --force \
@@ -86,7 +86,7 @@ RUN npm config set prefix /home/runner/.npm-global \
     && npx playwright install --only-shell
 
 # Add venv bin to PATH for all subsequent steps
-ENV PATH="/home/runner/venv/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/sbin:/bin:/opt/chrome-linux64:/actions-runner:/home/runner/.npm-global/bin:$PATH"
+ENV PATH="/home/runner/venv/bin:$PATH"
 
 # --- GITHUB ACTIONS RUNNER (MULTI-STAGE) ---
 FROM base AS builder
