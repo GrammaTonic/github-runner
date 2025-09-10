@@ -103,7 +103,6 @@ jobs:
 
 📚 **Full Chrome Runner Guide**: [Chrome Runner Documentation](Chrome-Runner)
 
----
 
 ## 🔧 Runner Registration Issues
 
@@ -486,7 +485,7 @@ gh api repos/OWNER/REPO/actions/runs --jq '.workflow_runs[] | select(.status=="q
 - Playwright screenshot artifact upload and diagnostics improved for CI/CD
 - All troubleshooting, resource configuration, and quick fixes synced with main documentation
 
-See [Home](Home) and [Chrome Runner Guide](Chrome-Runner) for full details.
+See [Home](Home.md) and [Chrome Runner Guide](Chrome-Runner.md) for full details.
 
 ## 🔍 Debugging Tools
 
@@ -582,7 +581,7 @@ journalctl -u docker.service --since "1 hour ago"
 
 ## 🔄 Related Pages
 
-- **[Debugging Guide](Debugging-Guide)** - Advanced debugging techniques
-- **[Performance Tuning](Performance-Tuning)** - Optimization strategies
-- **[Installation Guide](Installation-Guide)** - Setup instructions
-- **[Docker Configuration](Docker-Configuration)** - Docker setup
+- *(Debugging Guide documentation not found)*
+- *(Performance Tuning documentation not found)*
+- **[Installation Guide](Installation-Guide.md)** - Setup instructions
+- **[Docker Configuration](Docker-Configuration.md)** - Docker setup
