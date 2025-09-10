@@ -16,7 +16,7 @@ Note: Documentation workflows and repo prompts were recently improved — see
 
 | Component                 | Standard Runner  | Chrome Runner    | Status            |
 | ------------------------- | ---------------- | ---------------- | ----------------- |
-| **Image Version**         | v2.0.1           | v2.0.1           | ✅ Latest         |
+| **Image Version**         | v2.0.2           | v2.0.2           | ✅ Latest         |
 | **GitHub Actions Runner** | v2.328.0         | v2.328.0         | ✅ Latest         |
 | **Base OS**               | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS | ✅ Supported      |
 | **Node.js**               | 20.x             | 20.x             | ✅ Latest LTS     |
@@ -79,9 +79,9 @@ cd github-runner
 ### Using Release Archive
 
 ```bash
-wget https://github.com/GrammaTonic/github-runner/archive/v2.0.1.tar.gz
-tar -xzf v2.0.1.tar.gz
-cd github-runner-1.0.1
+wget https://github.com/GrammaTonic/github-runner/archive/v2.0.2.tar.gz
+tar -xzf v2.0.2.tar.gz
+cd github-runner-2.0.2
 ```
 
 ### Using Docker Images
@@ -90,19 +90,19 @@ Pre-built Docker images are available for each release:
 
 ```bash
 # Standard Runner (latest)
-docker pull ghcr.io/grammatonic/github-runner:v2.0.1
+docker pull ghcr.io/grammatonic/github-runner:v2.0.2
 
 # Chrome Runner (latest)
-docker pull ghcr.io/grammatonic/github-runner-chrome:v2.0.1
+docker pull ghcr.io/grammatonic/github-runner-chrome:v2.0.2
 
 # Development versions
 docker pull ghcr.io/grammatonic/github-runner:develop
 docker pull ghcr.io/grammatonic/github-runner-chrome:develop
 
 # Semantic versioning
-docker pull ghcr.io/grammatonic/github-runner:1.0.1
-docker pull ghcr.io/grammatonic/github-runner:1.0
-docker pull ghcr.io/grammatonic/github-runner:1
+docker pull ghcr.io/grammatonic/github-runner:2.0.2
+docker pull ghcr.io/grammatonic/github-runner:2.0
+docker pull ghcr.io/grammatonic/github-runner:2
 ```
 
 ## 📋 Prerequisites
