@@ -2,7 +2,7 @@
 # --- BASE IMAGE ---
 # This is the common base for all runner types.
 # It includes system setup, user creation, and the GitHub Actions runner installation.
-FROM ubuntu:22.04 AS base
+FROM ubuntu:24.04 AS base
 
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"

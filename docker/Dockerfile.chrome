@@ -1,5 +1,5 @@
 # Use a specific version for reproducible builds
-FROM ubuntu:22.04 AS base
+FROM ubuntu:24.04 AS base
 
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"
@@ -74,9 +74,14 @@ WORKDIR /home/runner
 RUN npm config set prefix /home/runner/.npm-global \
     && npm install -g playwright cypress @playwright/test \
     && npm cache clean --force \
-    && pip3 install --no-cache-dir --upgrade pip \
-    && pip3 install --no-cache-dir selenium pytest pytest-selenium webdriver-manager \
+    # Create Python virtual environment for runner user
+    && python3 -m venv /home/runner/venv \
+    && /home/runner/venv/bin/pip install --upgrade pip \
+    && /home/runner/venv/bin/pip install --no-cache-dir selenium pytest pytest-selenium webdriver-manager \
     && npx playwright install chromium
+
+# Add venv bin to PATH for all subsequent steps
+ENV PATH="/home/runner/venv/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/sbin:/bin:/opt/chrome-linux64:/actions-runner:/home/runner/.npm-global/bin:$PATH"
 
 # --- GITHUB ACTIONS RUNNER (MULTI-STAGE) ---
 FROM base AS builder
