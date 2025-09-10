@@ -591,11 +591,6 @@ jobs:
             if [[ -f "$dockerfile" ]]; then
               echo "Validating $dockerfile..."
               
-              # Check for security best practices
-              if grep -q "USER.*root" "$dockerfile"; then
-                echo "::warning::$dockerfile may be running as root user"
-              fi
-              
               # Check for version pinning
               if grep -q "FROM.*:latest" "$dockerfile"; then
                 echo "::warning::$dockerfile uses :latest tag"
