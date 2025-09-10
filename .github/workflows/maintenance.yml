@@ -722,14 +722,6 @@ jobs:
         run: |
           echo "Generating maintenance workflow summary..."
           echo "PWD: $(pwd)"
-          echo "Listing docs directory before mkdir:"
-          ls -l docs || true
-          mkdir -p docs/maintenance
-          echo "Listing docs/maintenance after mkdir:"
-          ls -l docs/maintenance || true
-          echo "Testing write access to docs/maintenance..."
-          echo "test" > docs/maintenance/test.txt || { echo "ERROR: Cannot write to docs/maintenance/"; exit 1; }
-          echo "Test file written successfully."
 
           # Collect job results
           jobs_status=()
@@ -744,7 +736,7 @@ jobs:
           success_count=0
           failed_count=0
 
-          cat > docs/maintenance/maintenance-summary.md << 'EOF'
+          cat > maintenance-summary.md << 'EOF'
           # Maintenance Workflow Summary
 
           **Run Date**: $(date -u)
@@ -756,7 +748,7 @@ jobs:
           EOF
 
           for status in "${jobs_status[@]}"; do
-            echo "- $status" >> docs/maintenance/maintenance-summary.md
+            echo "- $status" >> maintenance-summary.md
             if [[ "$status" == *"success"* ]]; then
               ((success_count++))
             elif [[ "$status" == *"failure"* ]]; then
@@ -764,7 +756,7 @@ jobs:
             fi
           done
 
-          cat >> docs/maintenance/maintenance-summary.md << EOF
+          cat >> maintenance-summary.md << EOF
 
           ## Summary
           - ✅ Successful jobs: $success_count
@@ -788,5 +780,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: maintenance-summary
-          path: docs/maintenance/maintenance-summary.md
+          path: maintenance-summary.md
           retention-days: 90
