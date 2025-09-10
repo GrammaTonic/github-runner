@@ -71,7 +71,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --chown=runner:runner entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# --- SETUP AS RUNNER USER ---
+
 USER runner
 WORKDIR /home/runner
 
