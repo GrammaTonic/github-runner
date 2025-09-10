@@ -735,7 +735,8 @@ jobs:
           success_count=0
           failed_count=0
 
-          cat > maintenance-summary.md << 'EOF'
+          mkdir -p docs/maintenance
+          cat > docs/maintenance/maintenance-summary.md << 'EOF'
           # Maintenance Workflow Summary
 
           **Run Date**: $(date -u)
@@ -747,7 +748,7 @@ jobs:
           EOF
 
           for status in "${jobs_status[@]}"; do
-            echo "- $status" >> maintenance-summary.md
+            echo "- $status" >> docs/maintenance/maintenance-summary.md
             if [[ "$status" == *"success"* ]]; then
               ((success_count++))
             elif [[ "$status" == *"failure"* ]]; then
@@ -755,7 +756,7 @@ jobs:
             fi
           done
 
-          cat >> maintenance-summary.md << EOF
+          cat >> docs/maintenance/maintenance-summary.md << EOF
 
           ## Summary
           - ✅ Successful jobs: $success_count
@@ -779,5 +780,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: maintenance-summary
-          path: maintenance-summary.md
+          path: docs/maintenance/maintenance-summary.md
           retention-days: 90
