@@ -78,6 +78,7 @@ WORKDIR /home/runner
 RUN npm config set prefix /home/runner/.npm-global \
     && npm install -g playwright@1.55.0 cypress@15.1.0 @playwright/test@1.55.0 \
     && npm install -g flat@5.0.2 --force \
+    && npm install -g sha.js@2.4.12 --force \
     && npm cache clean --force \
     # Create Python virtual environment for runner user
     && python3 -m venv /home/runner/venv \
