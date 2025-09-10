@@ -210,7 +210,8 @@ After successful installation:
 
 1. **[Quick Start Guide](Quick-Start.md)** - Run your first workflow
 2. **[Docker Configuration](Docker-Configuration.md)** - Customize Docker setup
-3. **[Security Configuration]([missing doc])** - Secure your runners
+
+<!-- Security Configuration doc not available. Link removed for CI/CD compliance. -->
 4. **[Production Deployment](Production-Deployment.md)** - Production checklist
 
 ## 📞 Getting Help

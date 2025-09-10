@@ -108,8 +108,8 @@ docker system prune -a -f
 ## 🎯 What's Next?
 
 - **[Production Setup](Production-Deployment.md)** - Scale for production use
-- **[Monitoring]([missing doc])** - Add health checks and metrics
-- **[Security]([missing doc])** - Secure your runners
+
+<!-- Monitoring and Security docs not available. Links removed for CI/CD compliance. -->
 - **[Troubleshooting](Common-Issues.md)** - Fix common problems
 
 ## 💡 Quick Tips

@@ -622,10 +622,8 @@ if __name__ == '__main__':
 
 ## 🔄 Next Steps
 
-- **[Health Monitoring]([missing doc])** - Set up comprehensive monitoring
-- **[Security Configuration]([missing doc])** - Advanced security measures
-- **[Performance Tuning]([missing doc])** - Optimize performance
-- **[Backup and Recovery]([missing doc])** - Data protection strategies
+
+<!-- The following docs are not yet available. Remove links to missing documentation for CI/CD compliance. -->
 
 ## 📝 Documentation Parity & Recent Improvements (2025-09-10)
 

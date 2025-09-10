@@ -76,10 +76,8 @@ docker-compose up -d
 | **CI/CD Pipeline**    | ✅ Passing          | [Production Deployment](Production-Deployment.md) |
 | **Security Scanning** | ✅ Clean            | [Common Issues](Common-Issues.md)                 |
 
-- [Contributing]([missing doc]) - How to contribute to the project
-- [Development Workflow]([missing doc]) - Development processes and standards
-- [Testing Strategy]([missing doc]) - Testing approaches and frameworks
-- [Release Process]([missing doc]) - Version management and releases
+
+<!-- Links to missing docs removed for CI/CD compliance. -->
 
 ## 🚀 Quick Links
 

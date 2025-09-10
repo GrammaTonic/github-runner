@@ -101,7 +101,7 @@ jobs:
 - ✅ Optimized Chrome configuration
 - ✅ Parallel test execution capability
 
-📚 **Full Chrome Runner Guide**: [Chrome Runner Documentation](Chrome-Runner)
+📚 **Full Chrome Runner Guide**: [Chrome Runner Documentation](Chrome-Runner.md)
 
 
 ## 🔧 Runner Registration Issues
@@ -577,7 +577,7 @@ journalctl -u docker.service --since "1 hour ago"
 
 - **GitHub Issues**: [Report bugs](https://github.com/GrammaTonic/github-runner/issues)
 - **Discussions**: [Community support](https://github.com/GrammaTonic/github-runner/discussions)
-- **Documentation**: [Wiki home](Home)
+- **Documentation**: [Wiki home](Home.md)
 
 ## 🔄 Related Pages
 
