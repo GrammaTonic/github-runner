@@ -88,6 +88,12 @@ jobs:
           echo "Injecting built normal runner image tag into docker-compose.production.yml..."
           sed -i.bak "s|image: ghcr.io/grammatonic/github-runner:latest|image: $NORMAL_IMAGE_TAG|" docker/docker-compose.production.yml
           echo "Updated image line in docker-compose.production.yml to: $NORMAL_IMAGE_TAG"
+      - name: Pull and verify built normal runner image
+        env:
+          NORMAL_IMAGE_TAG: ${{ needs.build.outputs.image-primary }}
+        run: |
+          docker pull "$NORMAL_IMAGE_TAG"
+          echo "Pulled normal runner image: $NORMAL_IMAGE_TAG"
       - name: Provision normal runner container in staging
         env:
           RUNNER_LABELS: staging,ci,self-hosted
