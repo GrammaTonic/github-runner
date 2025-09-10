@@ -1,3 +1,5 @@
+- **Note:** Chrome runner image is only supported on `linux/amd64`. Ensure your build and deployment targets this architecture.
+
 # Branch Protection Setup Summary
 
 ## ✅ Successfully Completed

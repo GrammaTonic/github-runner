@@ -126,5 +126,13 @@ docker system prune -a -f
 
 ---
 
+## 📝 Documentation Parity & Recent Improvements (2025-09-10)
+
+- Quick start instructions, runner configuration, and troubleshooting synced with latest code and documentation
+- Chrome runner and standard runner setup updated for diagnostics and health checks
+- All workflow and test examples reflect current best practices
+
+See [Home](Home) and [Chrome Runner Guide](Chrome-Runner) for full details.
+
 **⏱️ Total setup time: ~5 minutes**
 **🎉 You're ready to run workflows on your self-hosted runner!**

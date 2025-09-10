@@ -480,6 +480,14 @@ docker ps --filter "name=runner"
 gh api repos/OWNER/REPO/actions/runs --jq '.workflow_runs[] | select(.status=="queued")'
 ```
 
+## 📝 Documentation Parity & Recent Improvements (2025-09-10)
+
+- ChromeDriver installation now uses Chrome for Testing API for version compatibility
+- Playwright screenshot artifact upload and diagnostics improved for CI/CD
+- All troubleshooting, resource configuration, and quick fixes synced with main documentation
+
+See [Home](Home) and [Chrome Runner Guide](Chrome-Runner) for full details.
+
 ## 🔍 Debugging Tools
 
 ### Container Debugging

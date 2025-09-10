@@ -1,3 +1,5 @@
+- **Architecture Enforcement**: Chrome runner image only supports `linux/amd64` (x86_64). ARM builds are blocked at build time.
+
 # Chrome Runner Feature Branch
 
 ## 🚀 Feature Overview

@@ -1,187 +1,117 @@
-# GitHub Actions Self-Hosted Chrome Runner Docker Image
-# Specialized for web UI testing with browser automation tools
+# Use a specific version for reproducible builds
+FROM ubuntu:22.04 AS base
 
-FROM ubuntu:24.04
-
-# Metadata
+# --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"
-LABEL description="GitHub Actions Self-Hosted Runner optimized for Chrome and web UI testing"
-LABEL version="1.0.4"
+LABEL description="Optimized GitHub Actions Self-Hosted Runner for Chrome and web UI testing"
+LABEL version="2.0.6"
 
-# Avoid prompts from apt
+# Define arguments at the top for easy management
+ARG TARGETARCH
+ARG RUNNER_VERSION="2.328.0"
+ARG CHROME_VERSION="140.0.7339.80"
+ARG NODE_VERSION="20"
+
+# Environment variables
 ENV DEBIAN_FRONTEND=noninteractive
+ENV CHROME_BIN=/usr/bin/google-chrome
+ENV DISPLAY=:99
+ENV PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/sbin:/bin:/opt/chrome-linux64:/actions-runner:/home/runner/.npm-global/bin:$PATH"
+ENV NODE_PATH="/home/runner/.npm-global/lib/node_modules"
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Basic system tools
-    curl \
-    wget \
-    unzip \
-    tar \
-    ca-certificates \
-    gnupg \
-    lsb-release \
-    sudo \
-    # Build tools
-    build-essential \
-    git \
-    jq \
-    # Chrome dependencies
-    libnss3 \
-    libnss3-dev \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libdrm2 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    libgbm1 \
-    libxss1 \
-    libasound2t64 \
-    libasound2-dev \
-    libatspi2.0-0 \
-    libgtk-3-0 \
-    libx11-6 \
-    libx11-xcb1 \
-    libxcb1 \
-    libxcursor1 \
-    libxi6 \
-    libxtst6 \
-    libpangocairo-1.0-0 \
-    libcairo-gobject2 \
-    libgdk-pixbuf2.0-0 \
-    # Fonts for proper rendering
-    fonts-liberation \
-    fonts-noto-color-emoji \
-    fonts-noto-cjk \
-    # Virtual display
-    xvfb \
-    # Process management
-    procps \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install software-properties-common separately (renamed package handling)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-software-properties \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set shell options for better error handling
+# Set SHELL to handle pipe errors correctly
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Install Google Chrome (architecture-aware)
-RUN ARCH=$(dpkg --print-architecture) && \
-    if [ "$ARCH" = "amd64" ]; then \
-    curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
-    > /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get update && \
-    apt-get install -y google-chrome-stable && \
-    rm -rf /var/lib/apt/lists/*; \
-    else \
-    echo "Google Chrome not available for architecture $ARCH, using Chromium instead" && \
-    apt-get update && \
-    apt-get install -y chromium-browser && \
-    ln -sf /usr/bin/chromium-browser /usr/bin/google-chrome && \
-    rm -rf /var/lib/apt/lists/*; \
+# --- SETUP AS ROOT USER ---
+
+# --- ARCHITECTURE CHECK ---
+RUN if [ "$TARGETARCH" != "amd64" ]; then \
+      echo "ERROR: Chrome runner image only supports linux/amd64 (x86_64)." && exit 1; \
     fi
 
-# Install ChromeDriver using dedicated script
-COPY install-chromedriver.sh /tmp/install-chromedriver.sh
-RUN chmod +x /tmp/install-chromedriver.sh \
-    && /tmp/install-chromedriver.sh \
-    && rm /tmp/install-chromedriver.sh
-
-# Install Node.js (for npm-based testing tools)
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
+# --- INSTALL SYSTEM, NODE.JS, PYTHON, CHROME AND DRIVERS ---
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+    && apt-get install -y --no-install-recommends \
+    # System utilities
+    sudo \
+    lsb-release \
+    git \
+    jq \
+    libicu-dev \
+    # Chrome & UI testing dependencies
+    libnss3 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxtst6 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgbm1 libasound2-dev libatspi2.0-0 libgtk-3-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf2.0-0 fonts-liberation fonts-noto-color-emoji fonts-noto-cjk xvfb procps \
+    # Node.js & Python
+    nodejs python3 python3-pip python3-venv \
+    # Download tools
+    wget unzip \
+    # Download and install Chrome
+    && CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
+    && curl -fSL -o /tmp/chrome.zip "$CHROME_URL" \
+    && unzip -o /tmp/chrome.zip -d /opt/ \
+    && ln -sf /opt/chrome-linux64/chrome /usr/bin/google-chrome \
+    # Download and install ChromeDriver
+    && CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" \
+    && curl -fSL -o /tmp/chromedriver.zip "$CHROMEDRIVER_URL" \
+    && unzip -o /tmp/chromedriver.zip -d /tmp/ \
+    && mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
+    # Clean up
+    && rm -rf /tmp/*.zip /tmp/chromedriver-linux64 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python (for Selenium testing)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
-    python3-venv \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install common testing frameworks with comprehensive security fixes
-# Strategy: Use latest versions + manual security package updates
-# CVE-2025-9288: sha.js vulnerability - fixed in Cypress 15.1.0+
-# CVE-2020-36632: flat package vulnerability - manual override after install
-# CVE-2024-37890: ws (WebSocket) DoS vulnerability - force update to secure version
-RUN npm install -g \
-    playwright@1.55.0 \
-    cypress@15.1.0 \
-    @playwright/test@1.55.0 \
-    && npx playwright install chromium \
-    && echo "Applying comprehensive security fixes for known vulnerabilities..." \
-    && npm install -g npm@latest \
-    && npm install -g flat@5.0.2 --force 2>/dev/null || true \
-    && npm install -g sha.js@2.4.12 --force 2>/dev/null || true \
-    && npm install -g ws@8.17.1 --force 2>/dev/null || true \
-    && echo "Cleaning npm cache and temporary files..." \
-    && npm cache clean --force \
-    && rm -rf /tmp/* /var/tmp/* /root/.npm /home/*/.npm 2>/dev/null || true
-
-# Install Python testing packages
-RUN pip3 install --no-cache-dir --break-system-packages \
-    selenium \
-    pytest \
-    pytest-selenium \
-    webdriver-manager
-
-# Create runner user
+# --- CREATE USER AND DIRECTORIES ---
 RUN useradd -m -s /bin/bash runner \
     && usermod -aG sudo runner \
-    && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+    && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
+    && mkdir -p /home/runner/workspace /actions-runner /home/runner/.npm-global \
+    && chown -R runner:runner /home/runner /actions-runner
 
-# Final cleanup to minimize image size (before switching to runner user)
-RUN echo "Final cleanup to minimize image size..." \
-    && apt-get autoremove -y \
-    && apt-get autoclean \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* /var/tmp/* \
-    && rm -rf /var/log/* \
-    && rm -rf /root/.cache \
-    && find /usr/share/doc -type f -delete 2>/dev/null || true \
-    && find /usr/share/man -type f -delete 2>/dev/null || true
+# --- SETUP AS RUNNER USER ---
+USER runner
+WORKDIR /home/runner
 
-# Download and install GitHub Actions runner
-ARG RUNNER_VERSION="2.328.0"
-ARG TARGETPLATFORM
+# --- INSTALL NPM, PIP AND PLAYWRIGHT PACKAGES ---
+RUN npm config set prefix /home/runner/.npm-global \
+    && npm install -g playwright cypress @playwright/test \
+    && npm cache clean --force \
+    && pip3 install --no-cache-dir --upgrade pip \
+    && pip3 install --no-cache-dir selenium pytest pytest-selenium webdriver-manager \
+    && npx playwright install chromium
 
-WORKDIR /actions-runner
-
-# Download the appropriate runner based on architecture
-RUN case "${TARGETPLATFORM}" in \
-    "linux/amd64") RUNNER_ARCH="x64" ;; \
-    "linux/arm64") RUNNER_ARCH="arm64" ;; \
-    *) echo "Unsupported platform: ${TARGETPLATFORM}" && exit 1 ;; \
-    esac \
-    && curl -o "actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
-    -L "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
-    && tar xzf "actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
-    && rm "actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
-    && chown -R runner:runner /actions-runner
-
-# Create necessary directories
-RUN mkdir -p /home/runner/.cache \
-    && mkdir -p /home/runner/workspace \
-    && chown -R runner:runner /home/runner
-
-# Chrome configuration for headless mode
-ENV CHROME_BIN=/usr/bin/google-chrome-stable
-ENV DISPLAY=:99
-
-# Copy entrypoint script
-COPY entrypoint-chrome.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-# Set up working directory and user
-WORKDIR /actions-runner
+# --- GITHUB ACTIONS RUNNER (MULTI-STAGE) ---
+FROM base AS builder
+USER root
+ARG RUNNER_VERSION
+WORKDIR /tmp
+RUN curl -o "actions-runner.tar.gz" -L "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
+    && tar xzf "./actions-runner.tar.gz" \
+    && rm "./actions-runner.tar.gz"
+# Prevent 'Last USER should not be root' warning
 USER runner
 
-# Health check
+# --- FINAL IMAGE ASSEMBLY ---
+FROM base
+# Switch to root to copy files and set permissions
+USER root
+COPY --from=builder --chown=runner:runner /tmp /actions-runner
+COPY --chown=runner:runner entrypoint-chrome.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Switch back to runner for the final image
+USER runner
+WORKDIR /home/runner
+
+# --- VERIFICATION, HEALTHCHECK AND ENTRYPOINT ---
+RUN echo "Final PATH: $PATH" \
+    && node --version \
+    && npm --version \
+    && npx playwright --version \
+    && google-chrome --version \
+    && chromedriver --version \
+    && /actions-runner/run.sh --version
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD pgrep -f "Runner.Listener" > /dev/null || exit 1
+  CMD pgrep -f "Runner.Listener" > /dev/null || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
+

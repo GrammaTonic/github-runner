@@ -3,7 +3,7 @@
 # GitHub Runner Quick Start Script
 # This script helps users deploy GitHub self-hosted runners quickly and safely
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'

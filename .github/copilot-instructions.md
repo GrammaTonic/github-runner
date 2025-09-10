@@ -342,6 +342,13 @@ This project is built entirely on Docker technology:
 
 ## Development Guidelines
 
+## Development Guidelines
+ 
+Test runner configurations in isolated environments before production deployment
+Implement comprehensive logging for troubleshooting runner issues
+Use version pinning for runner software to ensure consistency
+Document environment-specific setup requirements clearly
+Use the dedicated Chrome runner for web UI tests requiring browser automation
 - Test runner configurations in isolated environments before production deployment
 - Implement comprehensive logging for troubleshooting runner issues
 - Use version pinning for runner software to ensure consistency

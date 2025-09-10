@@ -95,6 +95,17 @@ docker-compose up -d
 - [Docker Documentation](https://docs.docker.com/)
 - [Docker Compose Reference](https://docs.docker.com/compose/)
 
+## 📝 Documentation Parity & Recent Improvements (2025-09-10)
+
+- Playwright screenshot artifact upload now copies from container to host for reliable CI/CD artifact collection
+- Image verification added for both Chrome and normal runners in CI/CD workflows
+- Diagnostics and health checks improved for runner startup and container validation
+- Chrome runner documentation updated for Playwright, Cypress, Selenium, and browser automation best practices
+- Normal runner Dockerfile and entrypoint improved for diagnostics and healthcheck reliability
+- All documentation blocks, examples, and API docs synced with latest code and workflow changes
+
+See [Chrome Runner Guide](Chrome-Runner) and [Version Overview](../docs/VERSION_OVERVIEW.md) for full details.
+
 ## 📝 Contributing to Documentation
 
 Found something missing or incorrect? We welcome contributions to improve this documentation:

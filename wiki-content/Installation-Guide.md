@@ -196,6 +196,14 @@ docker compose logs runner
 curl -s https://api.github.com/user
 ```
 
+## 📝 Documentation Parity & Recent Improvements (2025-09-10)
+
+- Installation guide, environment configuration, and runner setup synced with latest code and documentation
+- Chrome runner and standard runner quick start instructions updated for diagnostics and health checks
+- All troubleshooting and setup steps reflect current best practices
+
+See [Home](Home) and [Chrome Runner Guide](Chrome-Runner) for full details.
+
 ## 🔄 Next Steps
 
 After successful installation:

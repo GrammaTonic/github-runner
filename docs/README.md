@@ -1,6 +1,6 @@
 # GitHub Runner Documentation
 
-This directory contains all project documentation organized by category.
+This directory contains all project documentation organized by category. All documentation blocks, examples, and API docs are now synced with the latest code and workflow changes (as of 2025-09-10).
 
 ## 📁 Directory Structure
 
@@ -41,33 +41,29 @@ docs/
 - [Setup Guide](../docs/SETUP_SUMMARY.md) - Quick setup instructions
 - [API Documentation](API.md) - API reference
 - [Deployment Guide](DEPLOYMENT.md) - Production deployment instructions
+- [Chrome Runner Architecture Enforcement](features/CHROME_RUNNER_FEATURE.md) - Details on amd64-only support
 
 ## 📝 Documentation Guidelines
 
 ### File Organization Rules
 
-- **Keep root directory clean** - Only essential files (README.md, LICENSE)
-- **All documentation goes in `/docs/` subdirectories**
-- **Community files**: `/docs/community/`
-- **Feature docs**: `/docs/features/`
-- **Release notes**: `/docs/releases/`
-- **Archive old files**: `/docs/archive/`
-- **GitHub templates**: `.github/` directory only
+- All documentation must be placed in `/docs/` subdirectories (never in root)
+- Feature specs: `/docs/features/`
+- Community files: `/docs/community/`
+- Release notes: `/docs/releases/`
+- Archive: `/docs/archive/`
+- API docs: `/docs/API.md`
+- Main README: `/README.md` (root)
 
 ### Naming Conventions
 
 - Use descriptive filenames
-- Follow existing patterns
-- Include version numbers for release notes
-- Use UPPERCASE for community standards files
+- Follow feature or page-based naming for test and example files
 
 ### Content Guidelines
 
 - Include clear headings and navigation
-- Add links between related documents
-- Keep documentation up to date
-- Include examples where helpful
-
----
+- Sync documentation blocks and examples with code changes
+- Document all major workflow, runner, and CI/CD improvements
 
 **📋 Note**: This structure helps maintain a clean root directory while keeping documentation organized and easily discoverable.

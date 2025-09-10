@@ -1,3 +1,11 @@
+# Architecture Enforcement
+
+> **Note:** The Chrome runner image is only supported on `linux/amd64` (x86_64). Builds on ARM (Apple Silicon) will fail.
+
+### Architecture Enforcement
+
+If you see an error about unsupported architecture, ensure you are building and running the Chrome runner image on an `amd64` (x86_64) host. ARM builds are not supported.
+
 # Chrome Runner Documentation
 
 ## Overview

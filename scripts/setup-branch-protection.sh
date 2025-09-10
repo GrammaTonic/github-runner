@@ -63,15 +63,15 @@ setup_develop_protection() {
     log_info "Setting up branch protection for 'develop' branch (create if missing)..."
 
     # Check if develop branch exists
-    if ! gh api repos/$REPO_OWNER/$REPO_NAME/branches/develop >/dev/null 2>&1; then
+    if ! gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/develop >/dev/null 2>&1; then
         log_warning "The 'develop' branch does not exist. Creating it from the repository default..."
 
         # Create develop branch from the default branch
         DEFAULT_BRANCH=$(gh repo view --json defaultBranch --jq .defaultBranch)
-        gh api repos/$REPO_OWNER/$REPO_NAME/git/refs \
+        gh api repos/"$REPO_OWNER"/"$REPO_NAME"/git/refs \
             --method POST \
             --field ref="refs/heads/develop" \
-            --field sha="$(gh api repos/$REPO_OWNER/$REPO_NAME/git/refs/heads/$DEFAULT_BRANCH --jq .object.sha)"
+            --field sha="$(gh api repos/"$REPO_OWNER"/"$REPO_NAME"/git/refs/heads/"$DEFAULT_BRANCH" --jq .object.sha)"
 
         log_success "Created 'develop' branch from '$DEFAULT_BRANCH'"
     fi
@@ -79,7 +79,7 @@ setup_develop_protection() {
     # Set up branch protection rules for develop
     if [ "$COPILOT_AUTO_MERGE" = true ]; then
         # Copilot-friendly configuration (no review requirement)
-        cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection --method PUT --input -
+        cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/develop/protection --method PUT --input -
 {
   "required_status_checks": {
     "strict": true,
@@ -98,18 +98,18 @@ setup_develop_protection() {
 EOF
     else
         # Standard configuration with review requirement
-        cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection --method PUT --input -
+        if ! cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/develop/protection --method PUT --input -
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": ["CI/CD Pipeline"]
+    "contexts": ["lint-and-validate", "security-scan"]
   },
-  "enforce_admins": false,
+  "enforce_admins": null,
   "required_pull_request_reviews": {
-    "required_approving_review_count": $REVIEW_COUNT,
+    "required_approving_review_count": 1,
     "dismiss_stale_reviews": true,
     "require_code_owner_reviews": false,
-    "require_last_push_approval": false
+    "dismissal_restrictions": {}
   },
   "restrictions": null,
   "allow_force_pushes": false,
@@ -120,22 +120,20 @@ EOF
   "allow_fork_syncing": true
 }
 EOF
-    fi
-    
-    if [ $? -ne 0 ]; then
-        log_warning "Failed to set full protection rules. Trying with minimal protection..."
-        
-        # Fallback to minimal protection
-        if [ "$COPILOT_AUTO_MERGE" = true ]; then
-            cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection --method PUT --input -
+        then
+            log_warning "Failed to set full protection rules. Trying with minimal protection..."
+            
+            # Fallback to minimal protection
+            if [ "$COPILOT_AUTO_MERGE" = true ]; then
+                cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/develop/protection --method PUT --input -
 {
   "required_pull_request_reviews": null,
   "enforce_admins": false,
   "restrictions": null
 }
 EOF
-        else
-            cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection --method PUT --input -
+            else
+                cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/develop/protection --method PUT --input -
 {
   "required_pull_request_reviews": {
     "required_approving_review_count": $REVIEW_COUNT
@@ -144,6 +142,7 @@ EOF
   "restrictions": null
 }
 EOF
+            fi
         fi
     fi
     
@@ -157,7 +156,7 @@ setup_main_protection() {
     # Set up branch protection rules for main
     if [ "$COPILOT_AUTO_MERGE" = true ]; then
         # Copilot-friendly configuration (no review requirement)
-        cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/main/protection --method PUT --input -
+        cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/main/protection --method PUT --input -
 {
   "required_status_checks": {
     "strict": true,
@@ -176,7 +175,7 @@ setup_main_protection() {
 EOF
     else
         # Standard configuration with review requirement
-        cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/main/protection --method PUT --input -
+        cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/main/protection --method PUT --input -
 {
   "required_status_checks": {
     "strict": true,
@@ -198,22 +197,20 @@ EOF
   "allow_fork_syncing": true
 }
 EOF
-    fi
-    
-    if [ $? -ne 0 ]; then
-        log_warning "Failed to set full protection rules. Trying with minimal protection..."
-        
-        # Fallback to minimal protection
-        if [ "$COPILOT_AUTO_MERGE" = true ]; then
-            cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/main/protection --method PUT --input -
+        if [ $? -ne 0 ]; then
+            log_warning "Failed to set full protection rules. Trying with minimal protection..."
+            
+            # Fallback to minimal protection
+            if [ "$COPILOT_AUTO_MERGE" = true ]; then
+                cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/main/protection --method PUT --input -
 {
   "required_pull_request_reviews": null,
   "enforce_admins": false,
   "restrictions": null
 }
 EOF
-        else
-            cat << EOF | gh api repos/$REPO_OWNER/$REPO_NAME/branches/main/protection --method PUT --input -
+            else
+                cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/main/protection --method PUT --input -
 {
   "required_pull_request_reviews": {
     "required_approving_review_count": $REVIEW_COUNT
@@ -222,6 +219,7 @@ EOF
   "restrictions": null
 }
 EOF
+            fi
         fi
     fi
     
@@ -234,7 +232,7 @@ show_protection_status() {
     
     echo ""
     echo "=== Main Branch Protection ==="
-    gh api repos/$REPO_OWNER/$REPO_NAME/branches/main/protection 2>/dev/null | jq '{
+    gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/main/protection 2>/dev/null | jq '{
         required_status_checks: .required_status_checks,
         required_pull_request_reviews: .required_pull_request_reviews,
         enforce_admins: .enforce_admins,
@@ -244,7 +242,7 @@ show_protection_status() {
     
     echo ""
     echo "=== Develop Branch Protection ==="
-    gh api repos/$REPO_OWNER/$REPO_NAME/branches/develop/protection 2>/dev/null | jq '{
+    gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/develop/protection 2>/dev/null | jq '{
         required_status_checks: .required_status_checks,
         required_pull_request_reviews: .required_pull_request_reviews,
         enforce_admins: .enforce_admins,

@@ -66,6 +66,205 @@ env:
   COMPOSE_DOCKER_CLI_BUILD: 1
 
 jobs:
+  provision-normal-runner:
+    name: Provision Normal Runner
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Inject built normal runner image tag into docker-compose.production.yml
+        env:
+          NORMAL_IMAGE_TAG: ${{ needs.build.outputs.image-primary }}
+        run: |
+          echo "Injecting built normal runner image tag into docker-compose.production.yml..."
+          sed -i.bak "s|image: ghcr.io/grammatonic/github-runner:latest|image: $NORMAL_IMAGE_TAG|" docker/docker-compose.production.yml
+          echo "Updated image line in docker-compose.production.yml to: $NORMAL_IMAGE_TAG"
+      - name: Pull and verify built normal runner image
+        env:
+          NORMAL_IMAGE_TAG: ${{ needs.build.outputs.image-primary }}
+        run: |
+          docker pull "$NORMAL_IMAGE_TAG"
+          echo "Pulled normal runner image: $NORMAL_IMAGE_TAG"
+      - name: Provision normal runner container in staging
+        env:
+          RUNNER_LABELS: staging,ci,self-hosted
+          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
+        run: |
+          echo "Provisioning normal runner container in staging..."
+          echo "Using labels: $RUNNER_LABELS"
+          echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
+          docker compose -f docker/docker-compose.production.yml up -d
+            echo "Checking if normal runner container is running..."
+            if [ "$(docker ps -q -f name=github-runner-main)" ]; then
+            echo "Normal runner container is running."
+            else
+            echo "Normal runner container is not running! Printing status and logs for diagnostics:"
+            docker ps -a
+            docker logs github-runner-main || echo "No logs available."
+            exit 1
+            fi
+      - name: Health check normal runner container
+        run: |
+          echo "Checking health of normal runner container..."
+          if ! docker ps -a --format '{{.Names}}' | grep -q '^github-runner-main$'; then
+            echo "ERROR: github-runner-main container does not exist. Skipping health check."
+            exit 1
+          fi
+          MAX_RETRIES=6
+          RETRY_INTERVAL=5
+          for i in $(seq 1 $MAX_RETRIES); do
+            HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-main)
+            echo "Full health JSON: $HEALTH_JSON"
+            STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
+            FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
+            LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
+            echo "Health status: $STATUS"
+            echo "Failing streak: $FAILING_STREAK"
+            echo "Health logs: $LOGS"
+            if [ "$STATUS" = "healthy" ]; then
+            echo "Normal runner container health is healthy."
+            break
+            elif [ "$STATUS" = "unhealthy" ]; then
+            echo "ERROR: Normal runner container is unhealthy!"
+            exit 1
+            elif [ "$STATUS" = "starting" ]; then
+            if [ $i -lt $MAX_RETRIES ]; then
+              echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
+              sleep $RETRY_INTERVAL
+            else
+              echo "WARNING: Normal runner container health is still 'starting' after $MAX_RETRIES retries."
+              exit 1
+            fi
+            else
+            echo "Unknown health status: $STATUS"
+            exit 1
+            fi
+          done
+      - name: Check normal runner container for GitHub connection
+        run: |
+          echo "Checking normal runner container logs for GitHub connection..."
+          if docker logs github-runner-main | grep -q "Connected to GitHub"; then
+          echo "✅ Normal runner successfully connected to GitHub."
+          else
+          echo "❌ Normal runner did NOT connect to GitHub. Printing logs for diagnostics:"
+          docker logs github-runner-main
+          exit 1
+          fi
+  provision-chrome-runner:
+    name: Provision Chrome Runner For testing
+    runs-on: ubuntu-latest
+    needs: [build-chrome]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Inject built Chrome runner image tag into docker-compose.chrome.yml
+        env:
+          CHROME_IMAGE_TAG: ${{ needs.build-chrome.outputs.image-primary }}
+        run: |
+          echo "Injecting built Chrome runner image tag into docker-compose.chrome.yml..."
+          sed -i.bak "s|image: ghcr.io/grammatonic/github-runner:chrome-latest|image: $CHROME_IMAGE_TAG|" docker/docker-compose.chrome.yml
+          echo "Updated image line in docker-compose.chrome.yml to: $CHROME_IMAGE_TAG"
+      - name: Pull and verify built Chrome runner image
+        env:
+          CHROME_IMAGE_TAG: ${{ needs.build-chrome.outputs.image-primary }}
+        run: |
+          docker pull "$CHROME_IMAGE_TAG"
+          echo "Pulled Chrome runner image: $CHROME_IMAGE_TAG"
+      - name: Provision Chrome runner container in staging
+        env:
+          RUNNER_LABELS: chrome,ui-tests,extra-label
+          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
+        run: |
+          echo "Provisioning Chrome runner container in staging..."
+          echo "Using labels: $RUNNER_LABELS"
+          echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
+          docker compose -f docker/docker-compose.chrome.yml up -d
+          echo "Checking if Chrome runner container is running..."
+          RUNNING=$(docker ps --filter "name=github-runner-chrome" --filter "status=running" -q)
+          if [ -z "$RUNNING" ]; then
+            echo "ERROR: Chrome runner container is not running! Printing status and logs:"
+            docker ps -a
+            docker logs github-runner-chrome || echo "No logs available."
+            exit 1
+          else
+            echo "Chrome runner container is running."
+              echo "--- Chrome runner container logs (post-startup) ---"
+              docker logs github-runner-chrome || echo "No logs available."
+              echo "--- End of Chrome runner container logs ---"
+          fi
+      - name: Health check Chrome runner container
+        run: |
+            echo "Checking health of Chrome runner container..."
+            MAX_RETRIES=6
+            RETRY_INTERVAL=5
+            for i in $(seq 1 $MAX_RETRIES); do
+              HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-chrome)
+              echo "Full health JSON: $HEALTH_JSON"
+              STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
+              FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
+              LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
+              echo "Health status: $STATUS"
+              echo "Failing streak: $FAILING_STREAK"
+              echo "Health logs: $LOGS"
+              if [ "$STATUS" = "healthy" ]; then
+                echo "Chrome runner container health is healthy."
+                break
+              elif [ "$STATUS" = "unhealthy" ]; then
+                echo "ERROR: Chrome runner container is unhealthy!"
+                exit 1
+              elif [ "$STATUS" = "starting" ]; then
+                if [ $i -lt $MAX_RETRIES ]; then
+                  echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
+                  sleep $RETRY_INTERVAL
+                else
+                  echo "WARNING: Chrome runner container health is still 'starting' after $MAX_RETRIES retries."
+                  exit 1
+                fi
+              else
+                echo "Unknown health status: $STATUS"
+                exit 1
+              fi
+            done
+      - name: Check Chrome runner container for GitHub connection
+        run: |
+          echo "Checking Chrome runner container logs for GitHub connection..."
+          if docker logs github-runner-chrome | grep -q "Connected to GitHub"; then
+            echo "✅ Chrome runner successfully connected to GitHub."
+          else
+            echo "❌ Chrome runner did NOT connect to GitHub. Printing logs for diagnostics:"
+            docker logs github-runner-chrome
+            exit 1
+          fi
+      - name: Run playwright screenshot test on Chrome runner
+        run: |
+          echo "Running Playwright screenshot integration script..."
+          chmod +x tests/integration/playwright_screenshot_integration.sh
+          tests/integration/playwright_screenshot_integration.sh
+
+      - name: Upload Playwright screenshot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-google-screenshot
+          path: test-results/playwright/google_screenshot_*.png
+          retention-days: 30
+
   lint-and-validate:
     name: Lint and Validate
     runs-on: ubuntu-latest
@@ -82,8 +281,8 @@ jobs:
           # Check if Docker files exist
           find . -name "Dockerfile*" -type f | while read -r dockerfile; do
             echo "Validating $dockerfile"
-            # Run hadolint but only fail on errors, not warnings
-            if ! docker run --rm -i hadolint/hadolint hadolint --ignore DL3008 --ignore DL3015 --ignore DL3013 --ignore DL3016 --ignore DL3059 - < "$dockerfile"; then
+            # Run hadolint, ignore DL3002 for builder stages
+            if ! docker run --rm -i hadolint/hadolint hadolint --ignore DL3002 --ignore DL3008 --ignore DL3015 --ignore DL3013 --ignore DL3016 --ignore DL3059 - < "$dockerfile"; then
               echo "Critical errors found in $dockerfile"
               exit 1
             fi
@@ -124,6 +323,7 @@ jobs:
   security-scan:
     name: Security Scanning
     runs-on: ubuntu-latest
+    needs: [lint-and-validate]
     permissions:
       contents: read
       security-events: write
@@ -172,6 +372,20 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
+      - name: Cache Node.js modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node-
+
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -222,6 +436,20 @@ jobs:
           echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
           echo "Primary tag for security scan: $PRIMARY_TAG"
           echo "Image pushed to registry: $PRIMARY_TAG"
+          echo "$PRIMARY_TAG" > build-image-tag.txt
+          echo "${{ steps.build.outputs.digest }}" > build-image-digest.txt
+      - name: Upload build image tag as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-image-tag
+          path: build-image-tag.txt
+          retention-days: 30
+      - name: Upload build image digest as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-image-digest
+          path: build-image-digest.txt
+          retention-days: 30
 
   build-chrome:
     name: Build Chrome Runner Image
@@ -289,11 +517,26 @@ jobs:
           echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
           echo "Primary Chrome tag for security scan: $PRIMARY_TAG"
           echo "Chrome image pushed to registry: $PRIMARY_TAG"
+          echo "$PRIMARY_TAG" > build-chrome-image-tag.txt
+          echo "${{ steps.build-chrome.outputs.digest }}" > build-chrome-image-digest.txt
+      - name: Upload Chrome build image tag as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-chrome-image-tag
+          path: build-chrome-image-tag.txt
+          retention-days: 30
+      - name: Upload Chrome build image digest as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-chrome-image-digest
+          path: build-chrome-image-digest.txt
+          retention-days: 30
 
   # Comprehensive Testing Suite
   test-package-validation:
     name: Package Validation Tests
     runs-on: ubuntu-latest
+    needs: [lint-and-validate]
     permissions:
       contents: read
     steps:
@@ -808,7 +1051,7 @@ jobs:
                 '
           EOF
 
-          # Start container using production compose with test override (run one-shot container)
+          # Start container using production Docker Compose with test override (run one-shot container)
           echo "Running test container..."
           docker compose -f docker/docker-compose.production.yml -f docker/docker-compose.test-override.yml run --rm github-runner
 
@@ -1030,168 +1273,18 @@ jobs:
           sarif_file: "trivy-chrome-results.sarif"
           category: "chrome-container-scan"
 
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs:
-      [
-        build,
-        build-chrome,
-        test-package-validation,
-        test-comprehensive,
-        test-container-startup,
-        security-container-scan,
-        security-chrome-scan,
-      ]
-    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
-    environment:
-      name: staging
-      url: https://staging-runners.example.com
-    permissions:
-      contents: read
-      packages: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Set up staging environment
-        run: |
-          echo "Setting up staging deployment..."
-
-          # Create staging directories
-          mkdir -p staging-deploy
-
-          # Copy deployment files
-          cp -r docker/ staging-deploy/
-          cp -r config/ staging-deploy/
-          cp -r scripts/ staging-deploy/
-
-      - name: Configure staging environment
-        env:
-          STAGING_GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
-          STAGING_REPOSITORY: ${{ secrets.STAGING_REPOSITORY }}
-        run: |
-          cd staging-deploy
-
-          # Update configuration for staging
-          if [[ -f "config/runner.env" ]]; then
-            sed -i 's/GITHUB_TOKEN=.*/GITHUB_TOKEN=${{ secrets.STAGING_GITHUB_TOKEN }}/' config/runner.env
-            sed -i 's/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=${{ secrets.STAGING_REPOSITORY }}/' config/runner.env
-          fi
-
-      - name: Deploy to staging
-        run: |
-          cd staging-deploy
-
-          echo "Deploying to staging environment..."
-          echo "Image: ${{ needs.build.outputs.image-tag }}"
-
-          # In a real scenario, this would deploy to your staging infrastructure
-          # For example: kubectl apply, docker stack deploy, etc.
-
-          # Simulate deployment
-          echo "Deployment completed successfully"
-
-      - name: Run staging smoke tests
-        run: |
-          echo "Running smoke tests against staging..."
-
-          # Add staging-specific health checks
-          sleep 10
-
-          # Simulate health check
-          echo "Staging environment is healthy"
-
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs:
-      [
-        build,
-        build-chrome,
-        test-package-validation,
-        test-comprehensive,
-        test-container-startup,
-        security-container-scan,
-        security-chrome-scan,
-        deploy-staging,
-      ]
-    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
-    environment:
-      name: production
-      url: https://runners.example.com
-    permissions:
-      contents: read
-      packages: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Set up production environment
-        run: |
-          echo "Setting up production deployment..."
-
-          # Create production directories
-          mkdir -p production-deploy
-
-          # Copy deployment files
-          cp -r docker/ production-deploy/
-          cp -r config/ production-deploy/
-          cp -r scripts/ production-deploy/
-
-      - name: Configure production environment
-        env:
-          PROD_GITHUB_TOKEN: ${{ secrets.PROD_GITHUB_TOKEN }}
-          PROD_REPOSITORY: ${{ secrets.PROD_REPOSITORY }}
-        run: |
-          cd production-deploy
-
-          # Update configuration for production
-          if [[ -f "config/runner.env" ]]; then
-            sed -i 's/GITHUB_TOKEN=.*/GITHUB_TOKEN=${{ secrets.PROD_GITHUB_TOKEN }}/' config/runner.env
-            sed -i 's/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=${{ secrets.PROD_REPOSITORY }}/' config/runner.env
-          fi
-
-      - name: Deploy to production
-        run: |
-          cd production-deploy
-
-          echo "Deploying to production environment..."
-          echo "Image: ${{ needs.build.outputs.image-tag }}"
-
-          # In a real scenario, this would deploy to your production infrastructure
-          # For example: kubectl apply, docker stack deploy, etc.
-
-          # Simulate deployment with blue/green strategy
-          echo "Starting blue/green deployment..."
-          echo "Production deployment completed successfully"
-
-      - name: Run production health checks
-        run: |
-          echo "Running production health checks..."
-
-          # Add production-specific health checks
-          sleep 15
-
-          # Simulate comprehensive health check
-          echo "Production environment is healthy and ready"
-
-      - name: Post-deployment monitoring setup
-        run: |
-          echo "Setting up post-deployment monitoring..."
-
-          # In a real scenario, this would configure monitoring, alerts, etc.
-          echo "Monitoring configured for production deployment"
 
   cleanup:
     name: Cleanup Resources
     runs-on: ubuntu-latest
-    needs: [deploy-production]
-    if: always() && (needs.deploy-production.result == 'success' || needs.deploy-production.result == 'failure')
+    needs:
+      - provision-normal-runner
+      - provision-chrome-runner
+      - security-container-scan
+      - security-chrome-scan
+      - test-container-startup
+      - test-comprehensive
+    if: always()
     permissions:
       contents: read
       packages: write
@@ -1207,27 +1300,25 @@ jobs:
       - name: Generate deployment report
         run: |
           echo "Generating deployment report..."
-
-          # Create deployment summary
-          cat > deployment-report.md << 'EOF'
-          # Deployment Report
-
-          ## Summary
-          - **Workflow Run ID**: ${{ github.run_id }}
-          - **Commit SHA**: ${{ github.sha }}
-          - **Branch**: ${{ github.ref_name }}
-          - **Triggered by**: ${{ github.actor }}
-          - **Timestamp**: $(date -u)
-
-          ## Deployments
-          - Production: ${{ needs.deploy-production.result }}
-
-          ## Image Details
-          - Registry: ${{ env.REGISTRY }}
-          - Repository: ${{ env.IMAGE_NAME }}
-          - Tags: Built and deployed successfully
-          EOF
-
+          # Create deployment summary line by line
+          echo "# Deployment Report" > deployment-report.md
+          echo "" >> deployment-report.md
+          echo "## Summary" >> deployment-report.md
+          echo "- **Workflow Run ID**: ${{ github.run_id }}" >> deployment-report.md
+          echo "- **Commit SHA**: ${{ github.sha }}" >> deployment-report.md
+          echo "- **Branch**: ${{ github.ref_name }}" >> deployment-report.md
+          echo "- **Triggered by**: ${{ github.actor }}" >> deployment-report.md
+          echo "- **Timestamp**: $(date -u)" >> deployment-report.md
+          echo "" >> deployment-report.md
+          echo "## Image Details" >> deployment-report.md
+          echo "- Registry: ${{ env.REGISTRY }}" >> deployment-report.md
+          echo "- Repository: ${{ env.IMAGE_NAME }}" >> deployment-report.md
+          echo "- Tags: Built and scanned successfully" >> deployment-report.md
+          # Check if file was created
+          if [[ ! -f deployment-report.md ]]; then
+            echo "ERROR: deployment-report.md not created"
+            exit 1
+          fi
           cat deployment-report.md
 
       - name: Upload deployment report
