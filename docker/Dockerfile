@@ -37,6 +37,7 @@ RUN useradd -m -s /bin/bash runner \
 
 # --- GITHUB ACTIONS RUNNER (MULTI-STAGE) ---
 FROM base AS builder
+## hadolint ignore=DL3002
 USER root
 WORKDIR /tmp
 
@@ -50,33 +51,30 @@ RUN case "${TARGETPLATFORM}" in \
     && tar xzf "./actions-runner.tar.gz" \
     && rm "./actions-runner.tar.gz"
 
+
 # --- FINAL BASE IMAGE CONSTRUCTION ---
 FROM base
-USER root
 COPY --from=builder --chown=runner:runner /tmp /actions-runner
 
-
-# --- SETUP AS ROOT USER ---
+# Install Docker and other general-purpose tools as root
 USER root
-
-# Install Docker and other general-purpose tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    docker.io \
-    build-essential \
-    iputils-ping \
-    && usermod -aG docker runner \
-    && rm -rf /var/lib/apt/lists/*
+        docker.io \
+        build-essential \
+        iputils-ping \
+        && usermod -aG docker runner \
+        && rm -rf /var/lib/apt/lists/*
 
 # Copy the dedicated entrypoint
 COPY --chown=runner:runner entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-
+# Switch to runner for final image
 USER runner
 WORKDIR /home/runner
 
 # --- HEALTHCHECK AND ENTRYPOINT ---
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD pgrep -f "Runner.Listener" > /dev/null || exit 1
+    CMD pgrep -f "Runner.Listener" > /dev/null || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
