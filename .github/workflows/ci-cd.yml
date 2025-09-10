@@ -112,53 +112,53 @@ jobs:
             docker logs github-runner-main || echo "No logs available."
             exit 1
             fi
-          - name: Health check normal runner container
-          run: |
-            echo "Checking health of normal runner container..."
-            if ! docker ps -a --format '{{.Names}}' | grep -q '^github-runner-main$'; then
-              echo "ERROR: github-runner-main container does not exist. Skipping health check."
+      - name: Health check normal runner container
+        run: |
+          echo "Checking health of normal runner container..."
+          if ! docker ps -a --format '{{.Names}}' | grep -q '^github-runner-main$'; then
+            echo "ERROR: github-runner-main container does not exist. Skipping health check."
+            exit 1
+          fi
+          MAX_RETRIES=6
+          RETRY_INTERVAL=5
+          for i in $(seq 1 $MAX_RETRIES); do
+            HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-main)
+            echo "Full health JSON: $HEALTH_JSON"
+            STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
+            FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
+            LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
+            echo "Health status: $STATUS"
+            echo "Failing streak: $FAILING_STREAK"
+            echo "Health logs: $LOGS"
+            if [ "$STATUS" = "healthy" ]; then
+            echo "Normal runner container health is healthy."
+            break
+            elif [ "$STATUS" = "unhealthy" ]; then
+            echo "ERROR: Normal runner container is unhealthy!"
+            exit 1
+            elif [ "$STATUS" = "starting" ]; then
+            if [ $i -lt $MAX_RETRIES ]; then
+              echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
+              sleep $RETRY_INTERVAL
+            else
+              echo "WARNING: Normal runner container health is still 'starting' after $MAX_RETRIES retries."
               exit 1
             fi
-            MAX_RETRIES=6
-            RETRY_INTERVAL=5
-            for i in $(seq 1 $MAX_RETRIES); do
-              HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-main)
-              echo "Full health JSON: $HEALTH_JSON"
-              STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
-              FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
-              LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
-              echo "Health status: $STATUS"
-              echo "Failing streak: $FAILING_STREAK"
-              echo "Health logs: $LOGS"
-              if [ "$STATUS" = "healthy" ]; then
-              echo "Normal runner container health is healthy."
-              break
-              elif [ "$STATUS" = "unhealthy" ]; then
-              echo "ERROR: Normal runner container is unhealthy!"
-              exit 1
-              elif [ "$STATUS" = "starting" ]; then
-              if [ $i -lt $MAX_RETRIES ]; then
-                echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
-                sleep $RETRY_INTERVAL
-              else
-                echo "WARNING: Normal runner container health is still 'starting' after $MAX_RETRIES retries."
-                exit 1
-              fi
-              else
-              echo "Unknown health status: $STATUS"
-              exit 1
-              fi
-            done
-          - name: Check normal runner container for GitHub connection
-          run: |
-            echo "Checking normal runner container logs for GitHub connection..."
-            if docker logs github-runner-main | grep -q "Connected to GitHub"; then
-            echo "✅ Normal runner successfully connected to GitHub."
             else
-            echo "❌ Normal runner did NOT connect to GitHub. Printing logs for diagnostics:"
-            docker logs github-runner-main
+            echo "Unknown health status: $STATUS"
             exit 1
             fi
+          done
+      - name: Check normal runner container for GitHub connection
+        run: |
+          echo "Checking normal runner container logs for GitHub connection..."
+          if docker logs github-runner-main | grep -q "Connected to GitHub"; then
+          echo "✅ Normal runner successfully connected to GitHub."
+          else
+          echo "❌ Normal runner did NOT connect to GitHub. Printing logs for diagnostics:"
+          docker logs github-runner-main
+          exit 1
+          fi
   provision-chrome-runner:
     name: Provision Chrome Runner For testing
     runs-on: ubuntu-latest
