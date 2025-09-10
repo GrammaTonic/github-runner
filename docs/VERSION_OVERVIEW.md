@@ -42,9 +42,9 @@ This document provides a comprehensive overview of all software versions, depend
 
 | Package           | Version                            | Purpose                |
 | ----------------- | ---------------------------------- | ---------------------- |
-| `nodejs`          | System default (Node.js ecosystem) | JavaScript runtime     |
+| `nodejs`          | 24.7.0 (Chrome Runner only)        | JavaScript runtime     |
 | `npm`             | Latest available                   | Package manager        |
-| `python3`         | 3.10+ (Ubuntu 22.04 default)       | Python runtime         |
+| `python3`         | 3.12+ (Ubuntu 24.04 default)       | Python runtime         |
 | `python3-pip`     | Latest available                   | Python package manager |
 | `git`             | Latest available                   | Version control        |
 | `git-lfs`         | Latest available                   | Large file support     |
@@ -76,6 +76,7 @@ This document provides a comprehensive overview of all software versions, depend
 | `flat`             | **5.0.2**  | ✅ **Security Fix** (VDB-216777, CVE-2020-36632) |
 | `sha.js`           | **2.4.12** | ✅ **Security Fix** (CVE-2025-9288)              |
 | `ws`               | **8.17.1** | ✅ **Security Fix** (CVE-2024-37890)             |
+| `nodejs`           | **24.7.0** | ✅ Latest LTS for Chrome Runner                  |
 
 ### Python Ecosystem
 
@@ -256,6 +257,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 ### Recent Changes
 
+- **2025-09-10**: Extensive documentation update for Ubuntu 24.04 LTS, image version v2.0.2, Node.js 24.7.0 (Chrome Runner only), and architecture enforcement (amd64 only)
 - **2025-01-15**: Applied VDB-216777/CVE-2020-36632 flat package security fix
 - **2025-01-15**: Added comprehensive security patches for Chrome Runner
 - **2025-01-15**: Implemented comprehensive cache cleaning strategy
@@ -267,41 +269,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 - Regular security scanning with Trivy
 - Dependency updates based on security advisories
 - Performance optimization based on usage patterns
-
-## Verification Commands
-
-### Check Installed Versions
-
-```bash
-# GitHub Actions Runner version
-cd /actions-runner && cat .runner
-
-# Node.js and NPM versions
-node --version && npm --version
-
-# Python version
-python3 --version && pip3 --version
-
-# Chrome version (Chrome Runner only)
-google-chrome-stable --version
-
-# Testing framework versions (Chrome Runner only)
-npx playwright --version
-npx cypress --version
-```
-
-### Security Audit
-
-```bash
-# NPM security audit
-npm audit
-
-# Python security check
-pip3 list --outdated
-
-# System package status
-apt list --upgradable
-```
 
 ---
 
