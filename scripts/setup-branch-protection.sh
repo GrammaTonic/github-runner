@@ -123,26 +123,18 @@ EOF
         then
             log_warning "Failed to set full protection rules. Trying with minimal protection..."
             
-            # Fallback to minimal protection
-            if [ "$COPILOT_AUTO_MERGE" = true ]; then
-                cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/develop/protection --method PUT --input -
+            # Fallback to minimal protection (always include required_status_checks)
+            cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/develop/protection --method PUT --input -
 {
-  "required_pull_request_reviews": null,
-  "enforce_admins": false,
-  "restrictions": null
-}
-EOF
-            else
-                cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/develop/protection --method PUT --input -
-{
-  "required_pull_request_reviews": {
-    "required_approving_review_count": $REVIEW_COUNT
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["CI/CD Pipeline"]
   },
+  "required_pull_request_reviews": $(if [ "$COPILOT_AUTO_MERGE" = true ]; then echo null; else echo "{\"required_approving_review_count\": $REVIEW_COUNT}"; fi),
   "enforce_admins": false,
   "restrictions": null
 }
 EOF
-            fi
         fi
     fi
     
@@ -200,26 +192,18 @@ EOF
         if [ $? -ne 0 ]; then
             log_warning "Failed to set full protection rules. Trying with minimal protection..."
             
-            # Fallback to minimal protection
-            if [ "$COPILOT_AUTO_MERGE" = true ]; then
-                cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/main/protection --method PUT --input -
+            # Fallback to minimal protection (always include required_status_checks)
+            cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/main/protection --method PUT --input -
 {
-  "required_pull_request_reviews": null,
-  "enforce_admins": false,
-  "restrictions": null
-}
-EOF
-            else
-                cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/main/protection --method PUT --input -
-{
-  "required_pull_request_reviews": {
-    "required_approving_review_count": $REVIEW_COUNT
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["CI/CD Pipeline"]
   },
+  "required_pull_request_reviews": $(if [ "$COPILOT_AUTO_MERGE" = true ]; then echo null; else echo "{\"required_approving_review_count\": $REVIEW_COUNT}"; fi),
   "enforce_admins": false,
   "restrictions": null
 }
 EOF
-            fi
         fi
     fi
     
