@@ -108,7 +108,8 @@ COPY --from=builder --chown=runner:runner /tmp /actions-runner
 COPY --chown=runner:runner entrypoint-chrome.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Switch back to runner for the final image
+
+# Final image runs as unprivileged runner user.
 USER runner
 WORKDIR /home/runner
 

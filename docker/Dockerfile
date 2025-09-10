@@ -64,7 +64,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --chown=runner:runner entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Switch to runner for final image
+
+# Final image runs as unprivileged runner user.
 USER runner
 WORKDIR /home/runner
 
