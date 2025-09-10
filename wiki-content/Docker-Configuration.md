@@ -429,6 +429,14 @@ docker inspect runner | jq '.[0].HostConfig.Memory'
 docker inspect runner | jq '.[0].HostConfig.CpuQuota'
 ```
 
+## 📝 Documentation Parity & Recent Improvements (2025-09-10)
+
+- Docker Compose and runner configuration updated for diagnostics, health checks, and image verification
+- Chrome runner and standard runner documentation blocks synced with main docs
+- All troubleshooting and architecture diagrams reflect latest code and deployment best practices
+
+See [Home](Home) and [Chrome Runner Guide](Chrome-Runner) for full details.
+
 ## 🔄 Next Steps
 
 - **[Production Deployment](Production-Deployment)** - Production readiness

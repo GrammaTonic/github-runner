@@ -466,3 +466,14 @@ The Chrome runner is automatically built and tested in the CI/CD pipeline:
 **Latest Achievement**: ✅ All CI/CD checks passing (10/10) - ChromeDriver installation issue resolved with modern Chrome for Testing API
 
 🎉 **The Chrome Runner is production-ready and successfully addresses web UI testing performance issues with 60% performance improvement!**
+
+## 📝 Documentation Parity & Recent Improvements (2025-09-10)
+
+- Playwright screenshot artifact upload now copies from container to host for reliable CI/CD artifact collection
+- Image verification added for both Chrome and normal runners in CI/CD workflows
+- Diagnostics and health checks improved for runner startup and container validation
+- Chrome runner documentation updated for Playwright, Cypress, Selenium, and browser automation best practices
+- ChromeDriver installation now uses Chrome for Testing API for version compatibility
+- All troubleshooting, quick start, and technical specs synced with main documentation
+
+See [Home](Home) and [Version Overview](../docs/VERSION_OVERVIEW.md) for full details.
