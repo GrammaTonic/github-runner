@@ -11,29 +11,23 @@ LABEL description="Base image for GitHub Actions Self-Hosted Runners"
 # Use TARGETPLATFORM which contains the full OS/architecture string (e.g., linux/amd64)
 ARG TARGETPLATFORM
 ARG RUNNER_VERSION="2.328.0"
-ARG NODE_VERSION="20"
 
 # --- ENVIRONMENT VARIABLES ---
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/sbin:/bin:/actions-runner:/home/runner/.npm-global/bin:$PATH"
-ENV NODE_PATH="/home/runner/.npm-global/lib/node_modules"
 
 # Set SHELL to handle pipe errors correctly
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # --- SETUP AS ROOT USER ---
 
-# Install base system dependencies and Node.js
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg git jq libicu-dev \
-    && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
-    && apt-get install -y --no-install-recommends nodejs python3 python3-pip python3-venv \
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg git jq libicu-dev python3 python3-pip python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 # --- USER AND DIRECTORIES ---
 RUN useradd -m -s /bin/bash runner \
     && usermod -aG sudo runner \
     && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
-    && mkdir -p /home/runner/workspace /actions-runner /home/runner/.npm-global \
+    && mkdir -p /home/runner/workspace /actions-runner \
     && chown -R runner:runner /home/runner /actions-runner
 
 # --- GITHUB ACTIONS RUNNER (MULTI-STAGE) ---

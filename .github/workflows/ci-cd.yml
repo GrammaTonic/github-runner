@@ -91,9 +91,11 @@ jobs:
       - name: Provision normal runner container in staging
         env:
           RUNNER_LABELS: staging,ci,self-hosted
+          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
         run: |
           echo "Provisioning normal runner container in staging..."
           echo "Using labels: $RUNNER_LABELS"
+          echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
           docker compose -f docker/docker-compose.production.yml up -d
       - name: Check normal runner container for GitHub connection
         run: |
