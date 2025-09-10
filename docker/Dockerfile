@@ -1,3 +1,4 @@
+# hadolint ignore=DL3002
 # --- BASE IMAGE ---
 # This is the common base for all runner types.
 # It includes system setup, user creation, and the GitHub Actions runner installation.
