@@ -8,17 +8,17 @@ This document provides a comprehensive overview of all software versions, depend
 
 ### 1. Standard Runner (`docker/Dockerfile`)
 
-- **Image Version**: 1.0.1
-- **Base Image**: `ubuntu:22.04`
-- **Purpose**: General-purpose GitHub Actions runner with development tools
-- **Target Architectures**: `linux/amd64` only (ARM builds are blocked for Chrome runner)
+**Image Version**: v2.0.2
+**Base Image**: `ubuntu:24.04`
+**Purpose**: General-purpose GitHub Actions runner with development tools
+**Target Architectures**: `linux/amd64` only
 
 ### 2. Chrome Runner (`docker/Dockerfile.chrome`)
 
-- **Image Version**: 1.0.4
-- **Base Image**: `ubuntu:22.04`
-- **Purpose**: Chrome-optimized runner for web UI testing and browser automation
-- **Target Architectures**: `linux/amd64`, `linux/arm64`
+**Image Version**: v2.0.2
+**Base Image**: `ubuntu:24.04`
+**Purpose**: Chrome-optimized runner for web UI testing and browser automation
+**Target Architectures**: `linux/amd64` only (ARM builds are blocked for Chrome runner)
 
 ## Core Components
 
@@ -31,9 +31,9 @@ This document provides a comprehensive overview of all software versions, depend
 
 ### Operating System
 
-- **Base OS**: Ubuntu 22.04 LTS (Jammy Jellyfish)
-- **Architecture Support**: Multi-architecture (amd64, arm64)
-- **Kernel Version**: Linux kernel 5.15+
+**Base OS**: Ubuntu 24.04 LTS (Noble Numbat)
+**Architecture Support**: amd64 only for Chrome Runner; Standard Runner is amd64
+**Kernel Version**: Linux kernel 6.8+
 - **Security Updates**: Applied via `apt-get update` during build
 
 ## Runtime Dependencies
@@ -88,6 +88,7 @@ This document provides a comprehensive overview of all software versions, depend
 | `boto3`                | Latest  | AWS SDK          |
 | `azure-cli`            | Latest  | Azure CLI        |
 | `google-cloud-storage` | Latest  | Google Cloud SDK |
+| `python3`              | 3.12+   | Python runtime   |
 
 #### Chrome Runner
 
@@ -123,7 +124,7 @@ This document provides a comprehensive overview of all software versions, depend
 | `libxcomposite1`     | X11 Composite extension    |
 | `libgbm1`            | Generic Buffer Management  |
 | `libxss1`            | X11 Screen Saver extension |
-| `libasound2t64`      | ALSA sound library         |
+| `libasound2t64`      | ALSA sound library (Ubuntu 24.04) |
 | `libgtk-3-0`         | GTK+ 3.0 GUI toolkit       |
 
 ### Fonts and Display
@@ -133,7 +134,7 @@ This document provides a comprehensive overview of all software versions, depend
 | `fonts-liberation`       | Liberation fonts                    |
 | `fonts-noto-color-emoji` | Color emoji support                 |
 | `fonts-noto-cjk`         | CJK (Chinese/Japanese/Korean) fonts |
-| `xvfb`                   | Virtual display server              |
+| `xvfb`                   | Virtual display server (Ubuntu 24.04) |
 
 ## Security Patches Applied
 
@@ -304,6 +305,6 @@ apt list --upgradable
 
 ---
 
-**Last Updated**: January 15, 2025  
-**Document Version**: 1.0  
+**Last Updated**: September 10, 2025  
+**Document Version**: 2.0  
 **Maintainer**: GrammaTonic
