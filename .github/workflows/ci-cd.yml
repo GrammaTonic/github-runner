@@ -66,20 +66,8 @@ env:
   COMPOSE_DOCKER_CLI_BUILD: 1
 
 jobs:
-  teardown-self-hosted-runner:
-    name: Teardown Self-Hosted Runner
-    runs-on: ubuntu-latest
-    needs:
-      - test-self-hosted-matrix
-    if: always()
-    steps:
-      - name: Teardown self-hosted runner containers
-        run: |
-          echo "Tearing down self-hosted runner containers..."
-          docker compose -f docker/docker-compose.production.yml down || true
-          docker compose -f docker/docker-compose.chrome.yml down || true
-  provision-staging-normal-runner:
-    name: Provision Staging Normal Runner
+  provision-normal-runner:
+    name: Provision Normal Runner
     runs-on: ubuntu-latest
     needs: [build]
     steps:
@@ -93,15 +81,86 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Inject built normal runner image tag into docker-compose.production.yml
+        env:
+          NORMAL_IMAGE_TAG: ${{ needs.build.outputs.image-primary }}
+        run: |
+          echo "Injecting built normal runner image tag into docker-compose.production.yml..."
+          sed -i.bak "s|image: ghcr.io/grammatonic/github-runner:latest|image: $NORMAL_IMAGE_TAG|" docker/docker-compose.production.yml
+          echo "Updated image line in docker-compose.production.yml to: $NORMAL_IMAGE_TAG"
+      - name: Pull and verify built normal runner image
+        env:
+          NORMAL_IMAGE_TAG: ${{ needs.build.outputs.image-primary }}
+        run: |
+          docker pull "$NORMAL_IMAGE_TAG"
+          echo "Pulled normal runner image: $NORMAL_IMAGE_TAG"
       - name: Provision normal runner container in staging
         env:
           RUNNER_LABELS: staging,ci,self-hosted
+          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
         run: |
           echo "Provisioning normal runner container in staging..."
           echo "Using labels: $RUNNER_LABELS"
+          echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
           docker compose -f docker/docker-compose.production.yml up -d
-  provision-staging-chrome-runner:
-    name: Provision Staging Chrome Runner
+            echo "Checking if normal runner container is running..."
+            if [ "$(docker ps -q -f name=github-runner-main)" ]; then
+            echo "Normal runner container is running."
+            else
+            echo "Normal runner container is not running! Printing status and logs for diagnostics:"
+            docker ps -a
+            docker logs github-runner-main || echo "No logs available."
+            exit 1
+            fi
+      - name: Health check normal runner container
+        run: |
+          echo "Checking health of normal runner container..."
+          if ! docker ps -a --format '{{.Names}}' | grep -q '^github-runner-main$'; then
+            echo "ERROR: github-runner-main container does not exist. Skipping health check."
+            exit 1
+          fi
+          MAX_RETRIES=6
+          RETRY_INTERVAL=5
+          for i in $(seq 1 $MAX_RETRIES); do
+            HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-main)
+            echo "Full health JSON: $HEALTH_JSON"
+            STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
+            FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
+            LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
+            echo "Health status: $STATUS"
+            echo "Failing streak: $FAILING_STREAK"
+            echo "Health logs: $LOGS"
+            if [ "$STATUS" = "healthy" ]; then
+            echo "Normal runner container health is healthy."
+            break
+            elif [ "$STATUS" = "unhealthy" ]; then
+            echo "ERROR: Normal runner container is unhealthy!"
+            exit 1
+            elif [ "$STATUS" = "starting" ]; then
+            if [ $i -lt $MAX_RETRIES ]; then
+              echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
+              sleep $RETRY_INTERVAL
+            else
+              echo "WARNING: Normal runner container health is still 'starting' after $MAX_RETRIES retries."
+              exit 1
+            fi
+            else
+            echo "Unknown health status: $STATUS"
+            exit 1
+            fi
+          done
+      - name: Check normal runner container for GitHub connection
+        run: |
+          echo "Checking normal runner container logs for GitHub connection..."
+          if docker logs github-runner-main | grep -q "Connected to GitHub"; then
+          echo "✅ Normal runner successfully connected to GitHub."
+          else
+          echo "❌ Normal runner did NOT connect to GitHub. Printing logs for diagnostics:"
+          docker logs github-runner-main
+          exit 1
+          fi
+  provision-chrome-runner:
+    name: Provision Chrome Runner For testing
     runs-on: ubuntu-latest
     needs: [build-chrome]
     steps:
@@ -128,8 +187,6 @@ jobs:
         run: |
           docker pull "$CHROME_IMAGE_TAG"
           echo "Pulled Chrome runner image: $CHROME_IMAGE_TAG"
-          # Optionally verify image signature if using Cosign
-          # cosign verify $CHROME_IMAGE_TAG || echo "Cosign verification skipped"
       - name: Provision Chrome runner container in staging
         env:
           RUNNER_LABELS: chrome,ui-tests,extra-label
@@ -138,7 +195,7 @@ jobs:
           echo "Provisioning Chrome runner container in staging..."
           echo "Using labels: $RUNNER_LABELS"
           echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
-          docker compose -f docker/docker-compose.chrome.yml up
+          docker compose -f docker/docker-compose.chrome.yml up -d
           echo "Checking if Chrome runner container is running..."
           RUNNING=$(docker ps --filter "name=github-runner-chrome" --filter "status=running" -q)
           if [ -z "$RUNNING" ]; then
@@ -185,86 +242,28 @@ jobs:
                 exit 1
               fi
             done
+      - name: Check Chrome runner container for GitHub connection
+        run: |
+          echo "Checking Chrome runner container logs for GitHub connection..."
+          if docker logs github-runner-chrome | grep -q "Connected to GitHub"; then
+            echo "✅ Chrome runner successfully connected to GitHub."
+          else
+            echo "❌ Chrome runner did NOT connect to GitHub. Printing logs for diagnostics:"
+            docker logs github-runner-chrome
+            exit 1
+          fi
+      - name: Run playwright screenshot test on Chrome runner
+        run: |
+          echo "Running Playwright screenshot integration script..."
+          chmod +x tests/integration/playwright_screenshot_integration.sh
+          tests/integration/playwright_screenshot_integration.sh
 
-      - name: Set Chrome runner label using GitHub API
-        env:
-          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
-        run: |
-          echo "Setting extra label for Chrome runner via GitHub API..."
-          # Only attempt label update if container is running
-          RUNNING=$(docker ps --filter "name=github-runner-chrome" --filter "status=running" -q)
-          if [ -z "$RUNNING" ]; then
-            echo "SKIP: Chrome runner container is not running, skipping label update."
-            exit 0
-          fi
-          # Wait briefly to allow runner registration
-          sleep 10
-          RUNNER_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/actions/runners" | jq '.runners[] | select(.labels[]?.name=="chrome") | .id')
-          if [ -n "$RUNNER_ID" ]; then
-            curl -X PATCH -H "Authorization: token $GITHUB_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d '{"labels":["chrome","ui-tests","extra-label"]}' \
-              "https://api.github.com/repos/${{ github.repository }}/actions/runners/$RUNNER_ID/labels"
-          else
-            echo "WARNING: Chrome runner not found or not registered yet. Skipping label update."
-            exit 0
-          fi
-  verify-staging-runners:
-    name: Verify Staging Runners
-    runs-on: ubuntu-latest
-    needs:
-      - provision-staging-normal-runner
-      - provision-staging-chrome-runner
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Verify runner registration via GitHub API
-        env:
-          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
-        run: |
-              echo "Verifying runner registration via GitHub API..."
-              RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-                "https://api.github.com/repos/${{ github.repository }}/actions/runners")
-              echo "--- Raw API Response ---"
-              echo "$RESPONSE" | jq '.'
-              TOTAL_COUNT=$(echo "$RESPONSE" | jq '.total_count')
-              echo "Total runners found: $TOTAL_COUNT"
-              if [ "$TOTAL_COUNT" -eq 0 ]; then
-                echo "ERROR: No runners registered (total_count=0). Failing job."
-                echo "Full API response for debugging:"
-                echo "$RESPONSE" | jq '.'
-                exit 1
-              else
-                echo "Listing all registered runners:"
-                echo "$RESPONSE" | jq -r '.runners[] | "- ID: \(.id), Name: \(.name), Status: \(.status), Labels: [\(.labels[].name)]"'
-                echo "Summary: $TOTAL_COUNT runner(s) registered."
-              fi
-  test-self-hosted-matrix:
-    name: Test Self-Hosted Runner (Matrix)
-    runs-on: ${{ matrix.runner-os }}
-    needs:
-      - verify-staging-runners
-    strategy:
-      fail-fast: false
-      matrix:
-        runner-type: [self-hosted, chrome]
-        runner-os:
-          - [self-hosted, staging, ci]
-          - [self-hosted, chrome, ci]
-    timeout-minutes: 2
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Run test on matrix runner
-        run: |
-          echo "Running test on ${{ matrix.runner-type }} runner..."
-          if [[ "${{ matrix.runner-type }}" == "chrome" ]]; then
-            google-chrome --version || echo "Chrome not found"
-            echo "Chrome self-hosted runner test complete."
-          else
-            uname -a
-            echo "Self-hosted runner test complete."
-          fi
+      - name: Upload Playwright screenshot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-google-screenshot
+          path: test-results/playwright/google_screenshot_*.png
+          retention-days: 30
 
   lint-and-validate:
     name: Lint and Validate
@@ -282,8 +281,8 @@ jobs:
           # Check if Docker files exist
           find . -name "Dockerfile*" -type f | while read -r dockerfile; do
             echo "Validating $dockerfile"
-            # Run hadolint but only fail on errors, not warnings
-            if ! docker run --rm -i hadolint/hadolint hadolint --ignore DL3008 --ignore DL3015 --ignore DL3013 --ignore DL3016 --ignore DL3059 - < "$dockerfile"; then
+            # Run hadolint, ignore DL3002 for builder stages
+            if ! docker run --rm -i hadolint/hadolint hadolint --ignore DL3002 --ignore DL3008 --ignore DL3015 --ignore DL3013 --ignore DL3016 --ignore DL3059 - < "$dockerfile"; then
               echo "Critical errors found in $dockerfile"
               exit 1
             fi
@@ -1220,8 +1219,6 @@ jobs:
           path: test-results/container-startup/${{ matrix.container-type }}
           retention-days: 30
 
-
-
   security-container-scan:
     name: Container Security Scan
     runs-on: ubuntu-latest
@@ -1281,7 +1278,8 @@ jobs:
     name: Cleanup Resources
     runs-on: ubuntu-latest
     needs:
-      - teardown-self-hosted-runner
+      - provision-normal-runner
+      - provision-chrome-runner
       - security-container-scan
       - security-chrome-scan
       - test-container-startup
