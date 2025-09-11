@@ -18,8 +18,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - chrome-cache:/home/runner/_work
       - chrome-config:/home/runner/.config
-      - chrome-cache-npm:/home/runner/.npm
-      - chrome-cache-pip:/home/runner/.cache/pip
+      - chrome-cache-npm:/home/runner/.runnercache/npm
+      - chrome-cache-pip:/home/runner/.runnercache/pip
       - /dev/shm:/dev/shm
     # Drop all capabilities except those needed for Chrome and Docker socket
     cap_drop:
