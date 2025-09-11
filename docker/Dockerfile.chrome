@@ -41,7 +41,8 @@ RUN if [ "$TARGETARCH" != "amd64" ]; then \
 # --- SETUP APT FOR DOCKER IMAGES AND UP DATE UBUNTU ---
 RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker \
     && echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker \
-    && apt-get update && apt-get upgrade -y
+    && apt-get update && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # --- INSTALL SYSTEM, NODE.JS, PYTHON, CHROME AND DRIVERS ---
 RUN apt-get install -y \
@@ -85,6 +86,11 @@ RUN useradd -m -s /bin/bash runner \
     && mkdir -p /home/runner/workspace /actions-runner \
     && chown -R runner:runner /home/runner /actions-runner
 
+# --- INSTALL NODE.JS ---
+RUN curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" -o /tmp/node.tar.xz \
+    && tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 --no-same-owner \
+    && rm -rf /tmp/node.tar.xz 
+
 # --- INSTALL PYTHON PACKAGES ---
 USER runner
 WORKDIR /home/runner
@@ -93,11 +99,8 @@ RUN python3 -m venv /home/runner/venv \
     && /home/runner/venv/bin/pip install --no-cache-dir selenium pytest pytest-selenium webdriver-manager
 ENV PATH="/home/runner/venv/bin:$PATH"
 
-# --- INSTALL NODE.JS, NPM, PLAYWRIGHT, CYPRESS ---
-RUN sudo curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" -o /tmp/node.tar.xz \
-    && sudo tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 --no-same-owner \
-    && sudo rm -rf /tmp/node.tar.xz \
-    && npm config set prefix /home/runner/.npm \
+# --- INSTALL, NPM, PLAYWRIGHT, CYPRESS ---
+RUN npm config set prefix /home/runner/.npm \
     && npm config set cache /home/runner/.npm-cache \
     && npm install -g \
     npm@11.6.0 \

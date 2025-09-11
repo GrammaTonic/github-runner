@@ -19,7 +19,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # --- SETUP APT FOR DOCKER IMAGES AND UP DATE UBUNTU ---
 RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker \
     && echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker \
-    && apt-get update && apt-get upgrade -y
+    && apt-get update && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # --- SETUP AS ROOT USER ---
 RUN apt-get update && apt-get install -y --no-install-recommends \
