@@ -23,17 +23,19 @@ failed_count=0
 
 
 
-echo "# Maintenance Workflow Summary" > maintenance-summary.md
-echo "" >> maintenance-summary.md
-echo "**Run Date**: $(date -u)" >> maintenance-summary.md
-echo "**Trigger**: $GITHUB_EVENT_NAME" >> maintenance-summary.md
-echo "**Branch**: $GITHUB_REF_NAME" >> maintenance-summary.md
-echo "" >> maintenance-summary.md
-echo "## Job Results" >> maintenance-summary.md
-echo "" >> maintenance-summary.md
+mkdir -p test-results
+MD_FILE="test-results/maintenance-summary.md"
+echo "# Maintenance Workflow Summary" > "$MD_FILE"
+echo "" >> "$MD_FILE"
+echo "**Run Date**: $(date -u)" >> "$MD_FILE"
+echo "**Trigger**: $GITHUB_EVENT_NAME" >> "$MD_FILE"
+echo "**Branch**: $GITHUB_REF_NAME" >> "$MD_FILE"
+echo "" >> "$MD_FILE"
+echo "## Job Results" >> "$MD_FILE"
+echo "" >> "$MD_FILE"
 
 for status in "${jobs_status[@]}"; do
-  echo "- $status" >> maintenance-summary.md
+  echo "- $status" >> "$MD_FILE"
   if [[ "$status" == *"success"* ]]; then
     ((success_count++))
   elif [[ "$status" == *"failure"* ]]; then
@@ -41,22 +43,21 @@ for status in "${jobs_status[@]}"; do
   fi
 done
 
-echo "" >> maintenance-summary.md
-echo "## Summary" >> maintenance-summary.md
-echo "- ✅ Successful jobs: $success_count" >> maintenance-summary.md
-echo "- ❌ Failed jobs: $failed_count" >> maintenance-summary.md
-echo "" >> maintenance-summary.md
-echo "## Actions Taken" >> maintenance-summary.md
-echo "- Security vulnerability scanning completed" >> maintenance-summary.md
-echo "- Version tracking updated" >> maintenance-summary.md
-echo "- Documentation validated" >> maintenance-summary.md
-echo "- Repository health checked" >> maintenance-summary.md
-echo "- Cleanup procedures executed" >> maintenance-summary.md
-echo "" >> maintenance-summary.md
-echo "## Next Steps" >> maintenance-summary.md
-echo "- Monitor for any failed jobs requiring attention" >> maintenance-summary.md
-echo "- Review security scan results" >> maintenance-summary.md
-echo "maintenance-summary.md generated."
-echo "- Check for available updates" >> maintenance-summary.md
-echo "- Continue regular maintenance schedule" >> maintenance-summary.md
-echo "maintenance-summary.md generated."
+echo "" >> "$MD_FILE"
+echo "## Summary" >> "$MD_FILE"
+echo "- ✅ Successful jobs: $success_count" >> "$MD_FILE"
+echo "- ❌ Failed jobs: $failed_count" >> "$MD_FILE"
+echo "" >> "$MD_FILE"
+echo "## Actions Taken" >> "$MD_FILE"
+echo "- Security vulnerability scanning completed" >> "$MD_FILE"
+echo "- Version tracking updated" >> "$MD_FILE"
+echo "- Documentation validated" >> "$MD_FILE"
+echo "- Repository health checked" >> "$MD_FILE"
+echo "- Cleanup procedures executed" >> "$MD_FILE"
+echo "" >> "$MD_FILE"
+echo "## Next Steps" >> "$MD_FILE"
+echo "- Monitor for any failed jobs requiring attention" >> "$MD_FILE"
+echo "- Review security scan results" >> "$MD_FILE"
+echo "- Check for available updates" >> "$MD_FILE"
+echo "- Continue regular maintenance schedule" >> "$MD_FILE"
+echo "$MD_FILE generated."
