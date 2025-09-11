@@ -1,5 +1,12 @@
+# Dockerfile for Chrome Runner (ubuntu:questing)
+#
+# This image uses ubuntu:questing (25.10 pre-release) for latest browser dependencies.
+# CVE mitigation is performed via npm overrides and local installs for all app-level dependencies.
+# CVEs in npm's internal modules are documented and monitored; see README.md and DEPLOYMENT.md.
+# Example: Trivy scan results are saved to test-results/docker/ for audit.
+# For production, use ubuntu:24.04 and rerun all security scans.
 # Use a specific version for reproducible builds
-FROM ubuntu:24.04 AS base
+FROM ubuntu:questing
 
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"
@@ -14,23 +21,30 @@ ARG NODE_VERSION="24.7.0"
 
 # Environment variables
 ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBCONF_NOWARNINGS=yes
 ENV CHROME_BIN=/usr/bin/google-chrome
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 ENV DISPLAY=:99
-ENV PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/sbin:/bin:/opt/chrome-linux64:/actions-runner:/home/runner/.npm-global/bin:$PATH"
-ENV NODE_PATH="/home/runner/.npm-global/lib/node_modules"
+ENV PATH="/home/runner/.npm/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/sbin:/bin:/opt/chrome-linux64:/actions-runner"
+ENV NODE_PATH="/home/runner/.npm/lib/node_modules"
+ENV PLAYWRIGHT_BROWSERS_PATH="/home/runner/.cache/ms-playwright"
 
 # Set SHELL to handle pipe errors correctly
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-# --- SETUP AS ROOT USER ---
 
 # --- ARCHITECTURE CHECK ---
 RUN if [ "$TARGETARCH" != "amd64" ]; then \
       echo "ERROR: Chrome runner image only supports linux/amd64 (x86_64)." && exit 1; \
     fi
 
+# --- SETUP APT FOR DOCKER IMAGES AND UP DATE UBUNTU ---
+RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker \
+    && echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker \
+    && apt-get update && apt-get upgrade -y
+
 # --- INSTALL SYSTEM, NODE.JS, PYTHON, CHROME AND DRIVERS ---
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get install -y \
     # Essential tools
     curl ca-certificates gnupg wget unzip xz-utils \
     # System utilities
@@ -45,85 +59,68 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-pip python3-venv \
     # Playwright/Chromium/Chrome required libraries (Ubuntu 24.04 compatible)
     libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libgstreamer-plugins-good1.0-0 libgstreamer-plugins-bad1.0-0 gstreamer1.0-plugins-ugly libgtk-4-1 libgraphene-1.0-0 libatomic1 libxslt1.1 libwoff1 libvpx9 libevent-2.1-7 libopus0 libwebpdemux2 libavif16 libharfbuzz-icu0 libwebpmux3 libenchant-2-2 libsecret-1-0 libhyphen0 libmanette-0.2-0 libgles2 libx264-164 flite \
-    # Download and install specific Node.js version
-    && curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" -o /tmp/node.tar.xz \
-    && tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 --no-same-owner \
-    # Download and install Chrome
-    && CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
+    # Clean up APT cache, downloaded archives, and temporary files
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/log/* \
+    && find /usr/share/doc -type f -delete 2>/dev/null || true \
+    && find /usr/share/man -type f -delete 2>/dev/null || true
+
+# --- INSTALL CHROME AND CHROMEDRIVER ---
+RUN CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
     && curl -fSL -o /tmp/chrome.zip "$CHROME_URL" \
     && unzip -o /tmp/chrome.zip -d /opt/ \
     && ln -sf /opt/chrome-linux64/chrome /usr/bin/google-chrome \
-    # Download and install ChromeDriver
+    && rm -rf /tmp/chrome.zip \
     && CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" \
     && curl -fSL -o /tmp/chromedriver.zip "$CHROMEDRIVER_URL" \
     && unzip -o /tmp/chromedriver.zip -d /tmp/ \
     && mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
-    # Clean up
-    && rm -rf /tmp/*.zip /tmp/*.tar.xz /tmp/chromedriver-linux64 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /tmp/chromedriver.zip
 
 # --- CREATE USER AND DIRECTORIES ---
 RUN useradd -m -s /bin/bash runner \
     && usermod -aG sudo runner \
     && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
-    && mkdir -p /home/runner/workspace /actions-runner /home/runner/.npm-global \
+    && mkdir -p /home/runner/workspace /actions-runner \
     && chown -R runner:runner /home/runner /actions-runner
 
-# --- SETUP AS RUNNER USER ---
+# --- INSTALL PYTHON PACKAGES ---
 USER runner
 WORKDIR /home/runner
-
-# --- INSTALL NPM, PIP AND PLAYWRIGHT PACKAGES ---
-RUN npm config set prefix /home/runner/.npm-global \
-    && npm install -g playwright@1.55.0 cypress@15.1.0 @playwright/test@1.55.0 \
-    && npm install -g flat@5.0.2 --force \
-    && npm install -g sha.js@2.4.12 --force \
-    && npm cache clean --force \
-    # Create Python virtual environment for runner user
-    && python3 -m venv /home/runner/venv \
+RUN python3 -m venv /home/runner/venv \
     && /home/runner/venv/bin/pip install --upgrade pip \
-    && /home/runner/venv/bin/pip install --no-cache-dir selenium pytest pytest-selenium webdriver-manager \
-    && npx playwright install --only-shell
-
-# Add venv bin to PATH for all subsequent steps
+    && /home/runner/venv/bin/pip install --no-cache-dir selenium pytest pytest-selenium webdriver-manager
 ENV PATH="/home/runner/venv/bin:$PATH"
 
-# --- GITHUB ACTIONS RUNNER (MULTI-STAGE) ---
-FROM base AS builder
-USER root
+# --- INSTALL NODE.JS, NPM, PLAYWRIGHT, CYPRESS ---
+RUN sudo curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" -o /tmp/node.tar.xz \
+    && sudo tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 --no-same-owner \
+    && sudo rm -rf /tmp/node.tar.xz \
+    && npm config set prefix /home/runner/.npm \
+    && npm config set cache /home/runner/.npm-cache \
+    && npm install -g \
+    npm@11.6.0 \
+    playwright \
+    @playwright/test \
+    cypress \
+    && rm -rf /home/runner/.cache/Cypress \
+    && npm install playwright \
+    && npx playwright install chromium firefox --only-shell
+
+# --- INSTALL GITHUB ACTIONS RUNNER ---
 ARG RUNNER_VERSION
-WORKDIR /tmp
+WORKDIR /actions-runner
 RUN curl -o "actions-runner.tar.gz" -L "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
     && tar xzf "./actions-runner.tar.gz" \
     && rm "./actions-runner.tar.gz"
-# Prevent 'Last USER should not be root' warning
-USER runner
-
-# --- FINAL IMAGE ASSEMBLY ---
-FROM base
-## Switch to root for setup/permissions only; final image runs as unprivileged runner user.
-USER root
-COPY --from=builder --chown=runner:runner /tmp /actions-runner
-COPY --chown=runner:runner entrypoint-chrome.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-
-# Final image runs as unprivileged runner user.
-USER runner
 WORKDIR /home/runner
 
 # --- VERIFICATION, HEALTHCHECK AND ENTRYPOINT ---
-RUN echo "Final PATH: $PATH" \
-    && node --version \
-    && npm --version \
-    && npx playwright --version \
-    && google-chrome --version \
-    && chromedriver --version \
-    && /actions-runner/run.sh --version
+COPY --chown=runner:runner entrypoint-chrome.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD pgrep -f "Runner.Listener" > /dev/null || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
-

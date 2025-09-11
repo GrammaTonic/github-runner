@@ -1,3 +1,6 @@
+# Questing Base Image and CVE Mitigation
+
+The Chrome runner uses `ubuntu:questing` for latest browser support. CVEs are mitigated via npm overrides, local installs, and Trivy scan automation. For production, use a stable Ubuntu LTS base.
 # Docker Configuration
 
 Complete guide to configuring Docker and Docker Compose for GitHub Actions self-hosted runners.

@@ -1,3 +1,6 @@
+# Base Image: Ubuntu Questing (25.10 Pre-release)
+
+This project uses `ubuntu:questing` for the Chrome runner to ensure compatibility with the latest browser dependencies. CVE mitigation is performed via npm overrides, local installs, and automated Trivy scans. See README and DEPLOYMENT for details.
 # GitHub Actions Self-Hosted Runner Wiki
 
 Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Runner project!

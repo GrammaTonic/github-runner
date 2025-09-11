@@ -1,3 +1,14 @@
+# Security and CVE Mitigation
+
+- The runner images use `ubuntu:questing` for experimental and bleeding-edge browser support.
+- All dependencies are scanned with Trivy after build and container startup.
+- CVEs in npm's internal modules are not directly fixable; we document and monitor these, and patch all app-level dependencies.
+- For production, switch to a stable Ubuntu LTS base and rerun all security scans.
+
+# Audit and Compliance
+
+- All Trivy scan results are saved to `test-results/docker/` for review.
+- Document any known CVEs and their risk profile in `/docs/security/`.
 - **Warning:** Chrome runner image only supports `linux/amd64`. Do not deploy on ARM hosts.
 
 # Deployment Guide

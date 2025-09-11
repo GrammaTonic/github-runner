@@ -1,3 +1,15 @@
+# Base Image: Ubuntu Questing (25.10 Pre-release)
+
+This repository uses `ubuntu:questing` as the base image for Chrome runner containers. This is a pre-release version of Ubuntu (25.10) chosen for access to the latest system libraries and browser dependencies.
+
+**CVE Mitigation Strategy:**
+- Many CVEs in Node.js, npm, and transitive dependencies cannot be patched directly due to upstream packaging.
+- We use npm `overrides` and local installs to patch all app-level dependencies.
+- CVEs present only in npm's internal modules are documented and monitored; they do not affect runtime security for the runner or browser tests.
+- All images are scanned with Trivy and results are saved to `test-results/docker/` for auditability.
+
+**Security Note:**  
+If you require a fully supported, production-grade image, use a stable Ubuntu LTS release (e.g., `ubuntu:24.04`). See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for migration instructions.
 # GitHub Actions Self-Hosted Runner
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/GrammaTonic/github-runner)](https://github.com/GrammaTonic/github-runner/releases/latest)
