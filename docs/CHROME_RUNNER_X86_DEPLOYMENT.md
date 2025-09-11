@@ -1,3 +1,20 @@
+# Using Ubuntu Questing for Chrome Runner
+
+The Chrome runner image is built on `ubuntu:questing` to ensure compatibility with the latest browser and UI testing dependencies. This approach may result in more reported CVEs due to pre-release packages.
+
+#### CVE Handling
+
+- All app-level dependencies are patched using npm `overrides` and local installs.
+- CVEs in npm's internal modules are documented and tracked; they do not impact runner security.
+- Trivy scans are automated in all test scripts, and results are stored for compliance and audit.
+
+#### Example Trivy Scan Command
+
+```bash
+docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy:latest image github-runner-chrome:test-local > test-results/docker/trivy_scan_<timestamp>.txt
+```
 # Chrome Runner x86 Deployment Guide
 
 ## Overview

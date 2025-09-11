@@ -11,17 +11,31 @@ ENV_FILE="tests/docker/runner.env"
 LOCAL_IMAGE="github-runner:test-local"
 
 echo "[INFO] Building Normal runner Docker image locally..."
-docker build --platform=linux/amd64 -f docker/Dockerfile -t "$LOCAL_IMAGE" ./docker
-
 echo "[INFO] Creating Docker Compose override file for local image..."
-cat > "$OVERRIDE_FILE" <<EOF
-services:
-  $SERVICE_NAME:
-    image: $LOCAL_IMAGE
-EOF
+docker build --platform=linux/amd64 -f docker/Dockerfile -t "$LOCAL_IMAGE" ./docker
+if command -v trivy &> /dev/null; then
+    trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_${TIMESTAMP}.txt
+    echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
+elif docker --version &> /dev/null; then
+  echo "[INFO] Running Trivy via Docker..."
+  mkdir -p test-results/docker
+  # Detect Docker socket path (macOS vs Linux)
+  DOCKER_SOCK="/var/run/docker.sock"
+  if [ -S "/Users/grammatonic/.docker/run/docker.sock" ]; then
+    DOCKER_SOCK="/Users/grammatonic/.docker/run/docker.sock"
+  fi
+  echo "[INFO] Using Docker socket: $DOCKER_SOCK"
+  docker run --rm \
+    -v "$DOCKER_SOCK:/var/run/docker.sock" \
+    -v "$(pwd)/test-results/docker:/output" \
+    aquasec/trivy:latest image "$LOCAL_IMAGE" --format json --output /output/trivy_scan_${TIMESTAMP}.txt
+  echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
+else
+    echo "[WARNING] Trivy not available. Skipping security scan."
+fi
 
 echo "[INFO] Removing any previous test container..."
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$OVERRIDE_FILE" down
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$OVERRIDE_FILE" down -v
 
 echo "[INFO] Starting Normal runner container using Docker Compose (detached, override, env)..."
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$OVERRIDE_FILE" up -d "$SERVICE_NAME"
@@ -57,7 +71,6 @@ if [ "$STATUS" = "running" ]; then
     rm -f "$OVERRIDE_FILE"
     exit 1
   fi
-
   echo "[INFO] The container will remain running for workflow jobs or manual debugging."
   echo "[INFO] To stop and remove the container manually, run:"
   echo "  docker compose --env-file $ENV_FILE -f $COMPOSE_FILE -f $OVERRIDE_FILE down"

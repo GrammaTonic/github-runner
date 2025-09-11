@@ -1,3 +1,15 @@
+# Base Image: Ubuntu Questing (25.10 Pre-release)
+
+This repository uses `ubuntu:questing` as the base image for Chrome runner containers. This is a pre-release version of Ubuntu (25.10) chosen for access to the latest system libraries and browser dependencies.
+
+**CVE Mitigation Strategy:**
+- Many CVEs in Node.js, npm, and transitive dependencies cannot be patched directly due to upstream packaging.
+- We use npm `overrides` and local installs to patch all app-level dependencies.
+- CVEs present only in npm's internal modules are documented and monitored; they do not affect runtime security for the runner or browser tests.
+- All images are scanned with Trivy and results are saved to `test-results/docker/` for auditability.
+
+**Security Note:**  
+If you require a fully supported, production-grade image, use a stable Ubuntu LTS release (e.g., `ubuntu:24.04`). See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for migration instructions.
 # GitHub Actions Self-Hosted Runner
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/GrammaTonic/github-runner)](https://github.com/GrammaTonic/github-runner/releases/latest)
@@ -16,26 +28,27 @@ Note: Documentation workflows and repo prompts were recently improved — see
 
 | Component                 | Standard Runner  | Chrome Runner    | Status            |
 | ------------------------- | ---------------- | ---------------- | ----------------- |
-| **Image Version**         | v2.0.2           | v2.0.2           | ✅ Latest         |
+| **Image Version**         | v2.0.9           | v2.0.9           | ✅ Latest         |
 | **GitHub Actions Runner** | v2.328.0         | v2.328.0         | ✅ Latest         |
-| **Base OS**               | Ubuntu 24.04 LTS | Ubuntu 24.04 LTS | ✅ Supported      |
+| **Base OS**               | Ubuntu 25.10 Questing | Ubuntu 25.10 Questing | ✅ Supported/Pre-release |
 | **Node.js**               |                  | 24.7.0           | ✅ Chrome Only    |
 | **Python**                | 3.10+            | 3.10+            | ✅ Latest         |
 | **Playwright**            | -                | v1.55.0          | ✅ Latest         |
 | **Cypress**               | -                | v15.1.0          | ✅ Security Fixed |
-| **Chrome**                | -                | Stable           | ✅ Latest         |
+| **Chrome**                | -                | 140.0.7339.80    | ✅ Latest         |
 
 > 📋 For detailed version information, see [Version Overview](docs/VERSION_OVERVIEW.md)
 
-## 🔒 Security Status
+## 🔒 Security Status & Workflow Sync
 
 - ✅ **VDB-216777/CVE-2020-36632**: Flat package vulnerability patched (`flat@5.0.2`)
 - ✅ **CVE-2025-9288**: Cypress SHA.js vulnerability patched (`sha.js@2.4.12`)
 - ✅ **CVE-2024-37890**: WebSocket DoS vulnerability patched (`ws@8.17.1`)
-- ✅ **Trivy Security Scanning**: Automated weekly vulnerability scans
+- ✅ **Trivy Security Scanning**: Automated weekly vulnerability scans (filesystem, main runner, Chrome runner)
 - ✅ **Container Hardening**: Non-root execution, minimal attack surface
+- ✅ **Workflow Sync**: All security scan jobs (`security-scan`, `security-container-scan`, `security-chrome-scan`) are present in `.github/workflows/ci-cd.yml` and must be kept in sync across all branches. Use `git diff develop .github/workflows/ci-cd.yml` to verify parity before merging. If you see a warning about missing scan jobs, update and sync your workflow files, then re-run the workflow.
 
-## 🚀 Features
+## 🚀 Features & Security Scanning
 
 - **Containerized Runners**: Docker-based runners with multi-platform support (amd64/arm64)
 - **Chrome Runner**: Specialized environment for web UI testing and browser automation
@@ -46,16 +59,17 @@ Note: Documentation workflows and repo prompts were recently improved — see
 - **High Availability**: Health checks, automatic restarts, and failover mechanisms
 - **Multi-Environment**: Support for dev, staging, and production environments
   - **Cache Optimization**: Persistent volume caching for build artifacts and dependencies
-  - **Security Scanning**: Weekly Trivy scans with automated SARIF reporting
+  - **Security Scanning**: Weekly Trivy scans (filesystem, container, Chrome runner) with automated SARIF reporting and GitHub Security tab integration
   - **Architecture Enforcement**: Chrome runner image only supports `linux/amd64` (x86_64). Builds on ARM (Apple Silicon) will fail with a clear error.
 
-### 🆕 Recent Improvements (January 2025)
+### 🆕 Recent Improvements (September 2025)
 
-- ✅ Applied critical security patches for prototype pollution and DoS vulnerabilities
-- ✅ Optimized Docker image sizes with comprehensive cache cleaning
-- ✅ Enhanced Chrome Runner with latest Playwright (1.55.0) and Cypress (15.1.0)
-- ✅ Standardized Docker build contexts for consistent CI/CD pipeline execution
-- ✅ Implemented automated security advisory workflow with Trivy scanning
+-- ✅ Applied critical security patches for prototype pollution and DoS vulnerabilities
+-- ✅ Optimized Docker image sizes with comprehensive cache cleaning
+-- ✅ Enhanced Chrome Runner with latest Playwright (1.55.0), Cypress (15.1.0), and Chrome (140.0.7339.80)
+-- ✅ Standardized Docker build contexts for consistent CI/CD pipeline execution
+-- ✅ Implemented automated security advisory workflow with Trivy scanning (filesystem, container, Chrome runner)
+-- ✅ All security scan jobs and workflow files are now kept in sync across branches for reliable code scanning and compliance
 
 ## 📦 Installation
 
