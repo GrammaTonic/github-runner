@@ -1,106 +1,37 @@
+
 name: Release Management
 
 on:
   push:
     tags:
-      - "v*.*.*"
+      - 'v*.*.*'
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to release (e.g., v1.0.0)"
-        required: true
-        type: string
-      release_type:
-        description: "Type of release"
-        required: true
-        default: "minor"
-        type: choice
-        options:
-          - major
-          - minor
-          - patch
-          - prerelease
-      create_draft:
-        description: "Create draft release"
-        required: false
-        default: true
-        type: boolean
-
-permissions:
-  contents: write
-  packages: write
-  pull-requests: read
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  REGISTRY: ghcr.io/grammatonic
+  IMAGE_NAME: github-runner
 
 jobs:
   validate-release:
     name: Validate Release
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
       is_prerelease: ${{ steps.version.outputs.is_prerelease }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Determine version
+      - name: Extract version from tag
         id: version
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            version="${{ inputs.version }}"
-          else
-            version="${{ github.ref_name }}"
-          fi
-
-          # Validate version format
-          if [[ ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
-            echo "::error::Invalid version format: $version"
-            exit 1
-          fi
-
-          # Check if it's a prerelease
+          ref=${GITHUB_REF#refs/tags/}
+          version="$ref"
           is_prerelease="false"
-          if [[ "$version" =~ -[a-zA-Z0-9]+ ]]; then
+          if [[ "$version" == *-* ]]; then
             is_prerelease="true"
           fi
-
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "is_prerelease=$is_prerelease" >> "$GITHUB_OUTPUT"
-
           echo "Version: $version"
           echo "Is prerelease: $is_prerelease"
-
-      - name: Check if tag already exists
-        run: |
-          version="${{ steps.version.outputs.version }}"
-          # Skip tag existence check when triggered by tag push (tag already exists)
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
-            echo "Skipping tag existence check - workflow triggered by tag push"
-          else
-            if git tag -l | grep -q "^$version$"; then
-              echo "::error::Tag $version already exists"
-              exit 1
-            fi
-          fi
-
-      - name: Validate changelog
-        run: |
-          if [[ ! -f "CHANGELOG.md" ]]; then
-            echo "::warning::CHANGELOG.md not found - will generate basic changelog"
-          else
-            version="${{ steps.version.outputs.version }}"
-            if ! grep -q "$version" CHANGELOG.md; then
-              echo "::warning::Version $version not found in CHANGELOG.md"
-            fi
-          fi
-
   build-release-artifacts:
     name: Build Release Artifacts
     runs-on: ubuntu-latest
@@ -111,13 +42,14 @@ jobs:
     outputs:
       image-digest: ${{ steps.build.outputs.digest }}
       image-tags: ${{ steps.meta.outputs.tags }}
+      chrome-image-digest: ${{ steps.build_chrome.outputs.digest }}
+      chrome-image-tags: ${{ steps.meta_chrome.outputs.tags }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
@@ -125,6 +57,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Standard runner image metadata
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -136,27 +69,18 @@ jobs:
             type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push release image
-        id: build
-        uses: docker/build-push-action@v5
+
+      # Chrome runner image metadata
+      - name: Extract Chrome metadata
+        id: meta_chrome
+        uses: docker/metadata-action@v5
         with:
-          context: ./docker
-          file: ./docker/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
-
-      - name: Sign container image
-        uses: sigstore/cosign-installer@v3
-
-      - name: Sign the published Docker image
-        env:
-          COSIGN_EXPERIMENTAL: 1
-        run: |
-          cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-chrome
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
@@ -170,7 +94,7 @@ jobs:
         with:
           name: sbom
           path: sbom.spdx.json
-          retention-days: 90
+
 
   security-scan-release:
     name: Security Scan Release
@@ -180,29 +104,46 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - name: Run Trivy vulnerability scanner
+      - name: Run Trivy vulnerability scanner (standard)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-release-artifacts.outputs.image-digest }}
           format: "sarif"
           output: "release-security-scan.sarif"
-
-      - name: Upload security scan results
+      - name: Run Trivy vulnerability scanner (chrome)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-chrome@${{ needs.build-release-artifacts.outputs.chrome-image-digest }}
+          format: "sarif"
+          output: "release-chrome-security-scan.sarif"
+      - name: Upload security scan results (standard)
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: "release-security-scan.sarif"
           category: "container-scan"
-
-      - name: Check for critical vulnerabilities
+      - name: Upload security scan results (chrome)
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "release-chrome-security-scan.sarif"
+          category: "container-scan-chrome"
+      - name: Check for critical vulnerabilities (standard)
         run: |
-          # Fail release if critical vulnerabilities are found
           critical_count=$(grep -c "CRITICAL" release-security-scan.sarif || echo "0")
           if [[ $critical_count -gt 0 ]]; then
-            echo "::error::Critical vulnerabilities found in release image!"
+            echo "::error::Critical vulnerabilities found in standard release image!"
             echo "::error::Cannot proceed with release. Please fix vulnerabilities first."
             exit 1
           fi
-          echo "✅ No critical vulnerabilities found"
+          echo "✅ No critical vulnerabilities found in standard image"
+      - name: Check for critical vulnerabilities (chrome)
+        run: |
+          critical_count=$(grep -c "CRITICAL" release-chrome-security-scan.sarif || echo "0")
+          if [[ $critical_count -gt 0 ]]; then
+            echo "::error::Critical vulnerabilities found in Chrome release image!"
+            echo "::error::Cannot proceed with release. Please fix vulnerabilities first."
+            exit 1
+          fi
+          echo "✅ No critical vulnerabilities found in Chrome image"
 
   create-release:
     name: Create GitHub Release
@@ -258,7 +199,7 @@ jobs:
           tag_name: ${{ needs.validate-release.outputs.version }}
           release_name: Release ${{ needs.validate-release.outputs.version }}
           body_path: release-changelog.md
-          draft: ${{ inputs.create_draft || false }}
+          draft: false
           prerelease: ${{ needs.validate-release.outputs.is_prerelease }}
 
       - name: Upload release assets
@@ -308,10 +249,10 @@ jobs:
     name: Deploy Release
     runs-on: ubuntu-latest
     needs: [validate-release, build-release-artifacts, create-release]
-    if: ${{ !inputs.create_draft && needs.validate-release.outputs.is_prerelease == 'false' }}
     permissions:
       contents: read
       packages: read
+    if: ${{ needs.validate-release.outputs.is_prerelease == 'false' }}
     steps:
       - name: Deploy release to production
         run: |
