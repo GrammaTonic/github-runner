@@ -38,6 +38,19 @@ else
     echo "[WARNING] Trivy not available. Skipping security scan."
 fi
 
+echo "[INFO] Running Trivy security scan on the built image..."
+if command -v trivy &> /dev/null; then
+    trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_${TIMESTAMP}.txt
+    echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
+elif docker --version &> /dev/null; then
+    echo "[INFO] Running Trivy via Docker..."
+    mkdir -p test-results/docker
+    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)/test-results/docker:/output" aquasec/trivy:latest image "$LOCAL_IMAGE" --format table --output /output/trivy_scan_${TIMESTAMP}.txt
+    echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
+else
+    echo "[WARNING] Trivy not available. Skipping security scan."
+fi
+
 echo "[INFO] Creating Docker Compose override file for local image..."
 cat > "$OVERRIDE_FILE" <<EOF
 services:
