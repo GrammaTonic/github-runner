@@ -1,3 +1,8 @@
+# [Unreleased]
+- Documentation updated to reflect use of `ubuntu:questing` as base image for Chrome runner.
+- Added detailed explanation of CVE mitigation strategy, including npm overrides, Trivy scan automation, and audit workflow.
+- Migration notes for switching to stable Ubuntu LTS for production.
+- Reference: See PR #<PR_NUMBER> or commit <COMMIT_HASH>.
 ## Unreleased
 
 ## v1.1.1 - 2025-01-15

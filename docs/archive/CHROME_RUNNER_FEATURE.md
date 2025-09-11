@@ -38,14 +38,14 @@ This feature branch implements a **specialized Chrome runner** for GitHub Action
    - Performance tuning parameters
    - Testing framework configurations
 
-6. **`docs/chrome-runner.md`** - Comprehensive documentation
+6. **`../../docs/chrome-runner.md`** - Comprehensive documentation
    - Quick start guide
    - Testing framework examples
    - Troubleshooting and optimization tips
 
 ### Modified Files
 
-1. **`.github/workflows/ci-cd.yml`** - Enhanced CI/CD pipeline
+1. **`../../.github/workflows/ci-cd.yml`** - Enhanced CI/CD pipeline
 
    - Added `build-chrome` job for Chrome runner builds
    - Added `security-chrome-scan` for Chrome image security scanning
@@ -204,10 +204,10 @@ docker-compose -f docker/docker-compose.chrome.yml up -d --scale chrome-runner=5
 
 ## 🔗 Related Documentation
 
-- [Chrome Runner Documentation](docs/chrome-runner.md)
+- [Chrome Runner Documentation](../../docs/chrome-runner.md)
 - [Main Project README](../README.md)
-- [Docker Configuration Guide](wiki-content/Docker-Configuration.md)
-- [CI/CD Pipeline Documentation](.github/workflows/ci-cd.yml)
+- [Docker Configuration Guide](../../wiki-content/Docker-Configuration.md)
+- [CI/CD Pipeline Documentation](../../.github/workflows/ci-cd.yml)
 
 ---
 

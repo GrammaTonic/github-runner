@@ -582,6 +582,7 @@ jobs:
             fi
           done
 
+
       - name: Validate Docker configurations
         run: |
           echo "Validating Docker configurations..."
@@ -590,20 +591,23 @@ jobs:
           for dockerfile in docker/Dockerfile docker/Dockerfile.chrome; do
             if [[ -f "$dockerfile" ]]; then
               echo "Validating $dockerfile..."
-              
-              # Check for security best practices
-              if grep -q "USER.*root" "$dockerfile"; then
-                echo "::warning::$dockerfile may be running as root user"
-              fi
-              
+
               # Check for version pinning
               if grep -q "FROM.*:latest" "$dockerfile"; then
                 echo "::warning::$dockerfile uses :latest tag"
               fi
-              
+
               # Check for security patches
               if grep -q "flat@5.0.2" "$dockerfile"; then
                 echo "✅ $dockerfile has flat security patch"
+              fi
+
+              # Check final USER statement
+              final_user=$(grep -E '^USER ' "$dockerfile" | tail -1 | awk '{print $2}')
+              if [[ "$final_user" == "root" ]]; then
+                echo "::warning::$dockerfile: Final USER is root (should be non-root for best practice)"
+              else
+                echo "✅ $dockerfile: Final USER is $final_user (non-root, best practice)"
               fi
             fi
           done
@@ -714,8 +718,10 @@ jobs:
     if: always()
     steps:
       - name: Generate maintenance summary
+        shell: bash
         run: |
           echo "Generating maintenance workflow summary..."
+          echo "PWD: $(pwd)"
 
           # Collect job results
           jobs_status=()
@@ -730,17 +736,16 @@ jobs:
           success_count=0
           failed_count=0
 
-          cat > maintenance-summary.md << 'EOF'
-          # Maintenance Workflow Summary
+          echo "# Maintenance Workflow Summary" > maintenance-summary.md
+          echo "" >> maintenance-summary.md
+          echo "**Run Date**: $(date -u)" >> maintenance-summary.md
+          echo "**Trigger**: ${{ github.event_name }}" >> maintenance-summary.md
+          echo "**Branch**: ${{ github.ref_name }}" >> maintenance-summary.md
+          echo "" >> maintenance-summary.md
+          echo "## Job Results" >> maintenance-summary.md
+          echo "" >> maintenance-summary.md
 
-          **Run Date**: $(date -u)
-          **Trigger**: ${{ github.event_name }}
-          **Branch**: ${{ github.ref_name }}
-
-          ## Job Results
-
-          EOF
-
+          set +e
           for status in "${jobs_status[@]}"; do
             echo "- $status" >> maintenance-summary.md
             if [[ "$status" == *"success"* ]]; then
@@ -749,26 +754,27 @@ jobs:
               ((failed_count++))
             fi
           done
+          set -e
 
-          cat >> maintenance-summary.md << EOF
+          echo "" >> maintenance-summary.md
+          echo "## Summary" >> maintenance-summary.md
+          echo "- ✅ Successful jobs: $success_count" >> maintenance-summary.md
+          echo "- ❌ Failed jobs: $failed_count" >> maintenance-summary.md
+          echo "" >> maintenance-summary.md
+          echo "## Actions Taken" >> maintenance-summary.md
+          echo "- Security vulnerability scanning completed" >> maintenance-summary.md
+          echo "- Version tracking updated" >> maintenance-summary.md
+          echo "- Documentation validated" >> maintenance-summary.md
+          echo "- Repository health checked" >> maintenance-summary.md
+          echo "- Cleanup procedures executed" >> maintenance-summary.md
+          echo "" >> maintenance-summary.md
+          echo "## Next Steps" >> maintenance-summary.md
+          echo "- Monitor for any failed jobs requiring attention" >> maintenance-summary.md
+          echo "- Review security scan results" >> maintenance-summary.md
+          echo "- Check for available updates" >> maintenance-summary.md
+          echo "- Continue regular maintenance schedule" >> maintenance-summary.md
 
-          ## Summary
-          - ✅ Successful jobs: $success_count
-          - ❌ Failed jobs: $failed_count
-
-          ## Actions Taken
-          - Security vulnerability scanning completed
-          - Version tracking updated
-          - Documentation validated
-          - Repository health checked
-          - Cleanup procedures executed
-
-          ## Next Steps
-          - Monitor for any failed jobs requiring attention
-          - Review security scan results
-          - Check for available updates
-          - Continue regular maintenance schedule
-          EOF
+          exit 0
 
       - name: Upload maintenance summary
         uses: actions/upload-artifact@v4

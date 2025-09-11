@@ -16,7 +16,27 @@ ENV_FILE="tests/docker/chrome-runner.env"
 LOCAL_IMAGE="github-runner-chrome:test-local"
 
 echo "[INFO] Building Chrome runner Docker image locally..."
-docker build --platform=linux/amd64 -f docker/Dockerfile.chrome -t "$LOCAL_IMAGE" ./docker
+docker build --platform=linux/amd64 -f docker/Dockerfile.chrome -t "$LOCAL_IMAGE" ./docker --progress=plain
+if command -v trivy &> /dev/null; then
+    trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_${TIMESTAMP}.txt
+    echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
+elif docker --version &> /dev/null; then
+  echo "[INFO] Running Trivy via Docker..."
+  mkdir -p test-results/docker
+  # Detect Docker socket path (macOS vs Linux)
+  DOCKER_SOCK="/var/run/docker.sock"
+  if [ -S "/Users/grammatonic/.docker/run/docker.sock" ]; then
+    DOCKER_SOCK="/Users/grammatonic/.docker/run/docker.sock"
+  fi
+  echo "[INFO] Using Docker socket: $DOCKER_SOCK"
+  docker run --rm \
+    -v "$DOCKER_SOCK:/var/run/docker.sock" \
+    -v "$(pwd)/test-results/docker:/output" \
+    aquasec/trivy:latest image "$LOCAL_IMAGE" --format json --output /output/trivy_scan_${TIMESTAMP}.txt
+  echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
+else
+    echo "[WARNING] Trivy not available. Skipping security scan."
+fi
 
 echo "[INFO] Running Trivy security scan on the built image..."
 if command -v trivy &> /dev/null; then
@@ -38,9 +58,9 @@ services:
     image: $LOCAL_IMAGE
 EOF
 
+echo "[INFO] Removing any previous test container and associated volumes..."
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$OVERRIDE_FILE" down -v
 
-echo "[INFO] Removing any previous test container..."
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$OVERRIDE_FILE" down
 
 echo "[INFO] Starting Chrome runner container using Docker Compose (detached, override, env)..."
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$OVERRIDE_FILE" up -d "$SERVICE_NAME"
@@ -73,31 +93,20 @@ if [ "$STATUS" = "running" ]; then
 
   # Copy script into container
   docker cp "$JS_SCRIPT_PATH" "$CONTAINER_NAME":/tmp/google_screenshot.js
-    
-    # Verify playwright module is available before running
-    echo "[INFO] Verifying Playwright module availability..."
-    if ! docker exec "$CONTAINER_NAME" node -e "require('playwright')" 2>/dev/null; then
-        echo "[ERROR] Playwright module not found in container"
-        echo "[INFO] Attempting to install Playwright browsers..."
-        docker exec "$CONTAINER_NAME" /usr/bin/npx playwright install chromium --yes
-    fi
 
     # Run the script inside the container using node and capture output with live display
     echo "[INFO] Running Playwright screenshot script inside container..."
     echo "[INFO] Live output from Playwright script:"
     mkdir -p test-results/docker
-  docker exec -e SCREENSHOT_PATH="$SCREENSHOT_PATH" "$CONTAINER_NAME" node /tmp/google_screenshot.js 2>&1 | tee test-results/docker/playwright_output_${TIMESTAMP}.log
-    
+    docker exec -e SCREENSHOT_PATH="$SCREENSHOT_PATH" "$CONTAINER_NAME" node /tmp/google_screenshot.js 2>&1 | tee test-results/docker/playwright_output_${TIMESTAMP}.log
     # Check if the script exited successfully and also check for error messages in the log
     SCRIPT_EXIT_CODE=$?
     echo "[INFO] Playwright script exit code: $SCRIPT_EXIT_CODE"
-    
     # Also check if there were any error messages in the output
     if grep -q "ERROR\|Error\|error\|Cannot find module\|MODULE_NOT_FOUND" test-results/docker/playwright_output_${TIMESTAMP}.log; then
         echo "[WARNING] Error messages detected in log output"
         SCRIPT_EXIT_CODE=1
     fi
-    
     if [ $SCRIPT_EXIT_CODE -eq 0 ]; then
         echo "[SUCCESS] Playwright script completed successfully"
         echo "[INFO] Test results saved in test-results/docker/:"
@@ -112,7 +121,6 @@ if [ "$STATUS" = "running" ]; then
     mkdir -p test-results/docker
     docker cp "$CONTAINER_NAME":$SCREENSHOT_PATH test-results/docker/ 2>/dev/null || true
     LOCAL_SCREENSHOT="test-results/docker/$(basename $SCREENSHOT_PATH)"
-    
     # Check if screenshot was actually created
     if [ -f "$LOCAL_SCREENSHOT" ] && [ -s "$LOCAL_SCREENSHOT" ]; then
         echo "[SUCCESS] Screenshot saved as $LOCAL_SCREENSHOT"

@@ -202,19 +202,20 @@ curl -s https://api.github.com/user
 - Chrome runner and standard runner quick start instructions updated for diagnostics and health checks
 - All troubleshooting and setup steps reflect current best practices
 
-See [Home](Home) and [Chrome Runner Guide](Chrome-Runner) for full details.
+See [Home](Home.md) and [Chrome Runner Guide](Chrome-Runner.md) for full details.
 
 ## 🔄 Next Steps
 
 After successful installation:
 
-1. **[Quick Start Guide](Quick-Start)** - Run your first workflow
-2. **[Docker Configuration](Docker-Configuration)** - Customize Docker setup
-3. **[Security Configuration](Security-Configuration)** - Secure your runners
-4. **[Production Deployment](Production-Deployment)** - Production checklist
+1. **[Quick Start Guide](Quick-Start.md)** - Run your first workflow
+2. **[Docker Configuration](Docker-Configuration.md)** - Customize Docker setup
+
+<!-- Security Configuration doc not available. Link removed for CI/CD compliance. -->
+4. **[Production Deployment](Production-Deployment.md)** - Production checklist
 
 ## 📞 Getting Help
 
-- **Issues**: Check [Common Issues](Common-Issues)
-- **Documentation**: Browse the [wiki home](Home)
+- **Issues**: Check [Common Issues](Common-Issues.md)
+- **Documentation**: Browse the [wiki home](Home.md)
 - **Support**: Open an issue on [GitHub](https://github.com/GrammaTonic/github-runner/issues)
