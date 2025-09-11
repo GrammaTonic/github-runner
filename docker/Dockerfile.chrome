@@ -42,10 +42,13 @@ RUN if [ "$TARGETARCH" != "amd64" ]; then \
 RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker \
     && echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker \
     && apt-get update && apt-get upgrade -y \
+    && apt-get autoremove -y \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # --- INSTALL SYSTEM, NODE.JS, PYTHON, CHROME AND DRIVERS ---
-RUN apt-get install -y \
+RUN apt-get update \
+    && apt-get install -y \
     # Essential tools
     curl ca-certificates gnupg wget unzip xz-utils \
     # System utilities
