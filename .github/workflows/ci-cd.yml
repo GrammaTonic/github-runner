@@ -11,9 +11,6 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [main, develop]
-    # Run on all pushes to main/develop (including merges)
-    # No path filters to ensure merge events always trigger CI/CD
-    tags: ["v*.*.*"] # Tags trigger regardless of paths
   pull_request:
     branches: [main, develop]
     paths:
