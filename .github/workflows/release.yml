@@ -2,10 +2,6 @@
 name: Release Management
 
 on:
-  workflow_run:
-    workflows: ["CI/CD Pipeline"]
-    types:
-      - completed
   push:
     tags:
       - 'v*.*.*'
