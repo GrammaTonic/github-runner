@@ -85,7 +85,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,github.com/grammatonic/github-runner:main
+          cache-from: type=registry,ref=ghcr.io/grammatonic/github-runner:main
           cache-to: type=gha,mode=max
           platforms: linux/amd64
       - name: Generate SBOM
@@ -138,7 +138,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,github.com/grammatonic/github-runner:main-chrome
+          cache-from: type=registry,ref=ghcr.io/grammatonic/github-runner:main-chrome
           cache-to: type=gha,mode=max
           platforms: linux/amd64
       - name: Generate SBOM
