@@ -74,14 +74,14 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Inject built normal runner image tag into docker-compose.production.yml
         env:
-          NORMAL_IMAGE_TAG: ${{ needs.build.outputs.image-primary }}
+          NORMAL_IMAGE_TAG: ${{ needs.build.outputs.normal-image-primary }}
         run: |
           echo "Injecting built normal runner image tag into docker-compose.production.yml..."
           sed -i.bak "s|image: ghcr.io/grammatonic/github-runner:latest|image: $NORMAL_IMAGE_TAG|" docker/docker-compose.production.yml
           echo "Updated image line in docker-compose.production.yml to: $NORMAL_IMAGE_TAG"
       - name: Pull and verify built normal runner image
         env:
-          NORMAL_IMAGE_TAG: ${{ needs.build.outputs.image-primary }}
+          NORMAL_IMAGE_TAG: ${{ needs.build.outputs.normal-image-primary }}
         run: |
           docker pull "$NORMAL_IMAGE_TAG"
           echo "Pulled normal runner image: $NORMAL_IMAGE_TAG"
@@ -167,14 +167,14 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Inject built Chrome runner image tag into docker-compose.chrome.yml
         env:
-          CHROME_IMAGE_TAG: ${{ needs.build-chrome.outputs.image-primary }}
+          CHROME_IMAGE_TAG: ${{ needs.build-chrome.outputs.chrome-image-primary }}
         run: |
           echo "Injecting built Chrome runner image tag into docker-compose.chrome.yml..."
           sed -i.bak "s|image: ghcr.io/grammatonic/github-runner:chrome-latest|image: $CHROME_IMAGE_TAG|" docker/docker-compose.chrome.yml
           echo "Updated image line in docker-compose.chrome.yml to: $CHROME_IMAGE_TAG"
       - name: Pull and verify built Chrome runner image
         env:
-          CHROME_IMAGE_TAG: ${{ needs.build-chrome.outputs.image-primary }}
+          CHROME_IMAGE_TAG: ${{ needs.build-chrome.outputs.chrome-image-primary }}
         run: |
           docker pull "$CHROME_IMAGE_TAG"
           echo "Pulled Chrome runner image: $CHROME_IMAGE_TAG"
@@ -344,9 +344,9 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image-digest: ${{ steps.build.outputs.digest }}
-      image-tag: ${{ steps.meta.outputs.tags }}
-      image-primary: ${{ steps.get-primary-tag.outputs.primary-tag }}
+      normal-image-digest: ${{ steps.build.outputs.digest }}
+      normal-image-tag: ${{ steps.meta.outputs.tags }}
+      normal-image-primary: ${{ steps.get-primary-tag.outputs.primary-tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -360,7 +360,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Extract metadata
+      - name: Extract normal runner metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -369,7 +369,7 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=raw,value=latest,branch=main
-      - name: Build and push Docker image
+      - name: Build and push normal runner Docker image
         id: build
         uses: docker/build-push-action@v5
         with:
@@ -382,29 +382,28 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           no-cache: ${{ false }}
-      - name: Get primary tag for security scan
+      - name: Get primary normal runner tag for security scan
         id: get-primary-tag
         if: success() && steps.build.conclusion == 'success'
         run: |
-          # Extract the first tag from the multi-line tags output for security scanning
           TAGS="${{ steps.meta.outputs.tags }}"
           PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
           echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
-          echo "Primary tag for security scan: $PRIMARY_TAG"
-          echo "Image pushed to registry: $PRIMARY_TAG"
-          echo "$PRIMARY_TAG" > build-image-tag.txt
-          echo "${{ steps.build.outputs.digest }}" > build-image-digest.txt
-      - name: Upload build image tag as artifact
+          echo "Primary normal runner tag for security scan: $PRIMARY_TAG"
+          echo "Normal runner image pushed to registry: $PRIMARY_TAG"
+          echo "$PRIMARY_TAG" > build-normal-image-tag.txt
+          echo "${{ steps.build.outputs.digest }}" > build-normal-image-digest.txt
+      - name: Upload normal runner build image tag as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-image-tag
-          path: build-image-tag.txt
+          name: build-normal-image-tag
+          path: build-normal-image-tag.txt
           retention-days: 30
-      - name: Upload build image digest as artifact
+      - name: Upload normal runner build image digest as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-image-digest
-          path: build-image-digest.txt
+          name: build-normal-image-digest
+          path: build-normal-image-digest.txt
           retention-days: 30
   build-chrome:
     name: Build Chrome Runner Image
@@ -414,9 +413,9 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image-digest: ${{ steps.build-chrome.outputs.digest }}
-      image-tag: ${{ steps.meta-chrome.outputs.tags }}
-      image-primary: ${{ steps.get-primary-tag-chrome.outputs.primary-tag }}
+      chrome-image-digest: ${{ steps.build-chrome.outputs.digest }}
+      chrome-image-tag: ${{ steps.meta-chrome.outputs.tags }}
+      chrome-image-primary: ${{ steps.get-primary-tag-chrome.outputs.primary-tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -436,9 +435,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch,suffix=-chrome
-            type=ref,event=pr,suffix=-chrome
-            type=raw,value=chrome-latest,branch=main
+            type=ref,event=branch
+            type=ref,event=pr
+            type=raw,value=latest,branch=main
       - name: Build and push Chrome runner image
         id: build-chrome
         uses: docker/build-push-action@v5
@@ -452,16 +451,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           no-cache: ${{ false }}
-      - name: Get primary Chrome tag for security scan
+      - name: Get primary Chrome runner tag for security scan
         id: get-primary-tag-chrome
         if: success() && steps.build-chrome.conclusion == 'success'
         run: |
-          # Extract the first tag from the multi-line tags output for security scanning
           TAGS="${{ steps.meta-chrome.outputs.tags }}"
           PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
           echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
-          echo "Primary Chrome tag for security scan: $PRIMARY_TAG"
-          echo "Chrome image pushed to registry: $PRIMARY_TAG"
+          echo "Primary Chrome runner tag for security scan: $PRIMARY_TAG"
+          echo "Chrome runner image pushed to registry: $PRIMARY_TAG"
           echo "$PRIMARY_TAG" > build-chrome-image-tag.txt
           echo "${{ steps.build-chrome.outputs.digest }}" > build-chrome-image-digest.txt
       - name: Upload Chrome build image tag as artifact
@@ -791,13 +789,13 @@ jobs:
       - name: Pull built images from registry
         run: |
           # Pull the images that were just built and pushed by the build jobs
-          echo "Pulling main runner image: ${{ needs.build.outputs.image-primary }}"
-          docker pull "${{ needs.build.outputs.image-primary }}"
-          echo "Pulling Chrome runner image: ${{ needs.build-chrome.outputs.image-primary }}"
-          docker pull "${{ needs.build-chrome.outputs.image-primary }}"
+          echo "Pulling main runner image: ${{ needs.build.outputs.normal-image-primary }}"
+          docker pull "${{ needs.build.outputs.normal-image-primary }}"
+          echo "Pulling Chrome runner image: ${{ needs.build-chrome.outputs.chrome-image-primary }}"
+          docker pull "${{ needs.build-chrome.outputs.chrome-image-primary }}"
           # Tag for easier testing
-          docker tag "${{ needs.build.outputs.image-primary }}" github-runner:latest
-          docker tag "${{ needs.build-chrome.outputs.image-primary }}" github-runner:chrome-latest
+          docker tag "${{ needs.build.outputs.normal-image-primary }}" github-runner:latest
+          docker tag "${{ needs.build-chrome.outputs.chrome-image-primary }}" github-runner:chrome-latest
           echo "Available images for testing:"
           docker images | grep github-runner
       - name: Run User Deployment Experience Tests
@@ -834,14 +832,14 @@ jobs:
         run: |
           # Pull the built Docker images from the registry instead of using artifacts
           if [[ "${{ matrix.container-type }}" == "main-runner" ]]; then
-            IMAGE_TAG="${{ needs.build.outputs.image-primary }}"
+            IMAGE_TAG="${{ needs.build.outputs.normal-image-primary }}"
             echo "Pulling main runner image: $IMAGE_TAG"
             docker pull "$IMAGE_TAG"
             # Tag for easier testing
             docker tag "$IMAGE_TAG" github-runner:latest
             echo "Tagged as github-runner:latest"
           else
-            IMAGE_TAG="${{ needs.build-chrome.outputs.image-primary }}"
+            IMAGE_TAG="${{ needs.build-chrome.outputs.chrome-image-primary }}"
             echo "Pulling Chrome runner image: $IMAGE_TAG"
             docker pull "$IMAGE_TAG"
             # Tag for easier testing  
@@ -875,7 +873,7 @@ jobs:
           # Test using the actual production Docker Compose file that users would use
           # This validates the real user experience, not custom CI configurations
           # Create test override to bypass GitHub registration for CI and use the built image
-          IMAGE_TAG="${{ needs.build.outputs.image-primary }}"
+          IMAGE_TAG="${{ needs.build.outputs.normal-image-primary }}"
           cat > docker/docker-compose.test-override.yml << EOF
           services:
             github-runner:
@@ -942,7 +940,7 @@ jobs:
           sed -i 's/RUNNER_NAME=.*/RUNNER_NAME=ci-test-chrome-runner/' config/runner.env
           sed -i 's/RUNNER_LABELS=.*/RUNNER_LABELS=chrome,ui-tests,selenium,playwright,cypress,headless/' config/runner.env
           # Create Chrome test override to bypass GitHub registration for CI and use the built image
-          CHROME_IMAGE_TAG="${{ needs.build-chrome.outputs.image-primary }}"
+          CHROME_IMAGE_TAG="${{ needs.build-chrome.outputs.chrome-image-primary }}"
           cat > docker/docker-compose.chrome-test-override.yml << EOF
           services:
             github-runner-chrome:
@@ -1069,7 +1067,7 @@ jobs:
       - name: Run Trivy vulnerability scanner on container
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build.outputs.image-primary }}
+          image-ref: ${{ needs.build.outputs.normal-image-primary }}
           format: "sarif"
           output: "trivy-container-results.sarif"
       - name: Upload container scan results
@@ -1093,7 +1091,7 @@ jobs:
       - name: Run Trivy vulnerability scanner on Chrome container
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build-chrome.outputs.image-primary }}
+          image-ref: ${{ needs.build-chrome.outputs.chrome-image-primary }}
           format: "sarif"
           output: "trivy-chrome-results.sarif"
       - name: Upload Chrome container scan results
