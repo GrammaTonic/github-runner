@@ -431,6 +431,8 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=raw,value=latest,branch=main
+          labels: |
+            org.opencontainers.image.name=github-runner-chrome
       - name: Build and push Chrome runner image
         id: build-chrome
         uses: docker/build-push-action@v5
