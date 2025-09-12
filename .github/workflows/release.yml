@@ -45,8 +45,8 @@ jobs:
           echo "is_prerelease=$is_prerelease" >> "$GITHUB_OUTPUT"
           echo "Version: $version"
           echo "Is prerelease: $is_prerelease"
-  build-release-artifacts:
-    name: Build Release Artifacts
+  build-standard-artifacts:
+    name: Build Standard Artifacts
     runs-on: ubuntu-latest
     needs: [validate-release]
     permissions:
@@ -55,8 +55,6 @@ jobs:
     outputs:
       image-digest: ${{ steps.build.outputs.digest }}
       image-tags: ${{ steps.meta.outputs.tags }}
-      chrome-image-digest: ${{ steps.build_chrome.outputs.digest }}
-      chrome-image-tags: ${{ steps.meta_chrome.outputs.tags }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -68,7 +66,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # Standard runner image metadata
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -78,17 +75,6 @@ jobs:
             type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}
             type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}
             type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}
-            type=raw,value=latest,enable={{is_default_branch}}
-      # Chrome runner image metadata
-      - name: Extract Chrome metadata
-        id: meta_chrome
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}-chrome
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}-chrome
-            type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}-chrome
             type=raw,value=latest,enable={{is_default_branch}}
       - name: Build and push runner image
         id: build
@@ -102,35 +88,65 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
-      - name: Build and push Chrome runner image
-        id: build_chrome
-        uses: docker/build-push-action@v5
-        with:
-          context: ./docker
-          file: ./docker/Dockerfile.chrome
-          push: true
-          tags: ${{ steps.meta_chrome.outputs.tags }}
-          labels: ${{ steps.meta_chrome.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      - name: Generate SBOM (standard)
+      - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           format: spdx-json
           output-file: sbom.spdx.json
-      - name: Upload SBOM as artifact (standard)
+      - name: Upload SBOM as artifact
         uses: actions/upload-artifact@v4
         with:
           name: sbom
           path: sbom.spdx.json
-      - name: Generate SBOM (chrome)
+  build-chrome-artifacts:
+    name: Build Chrome Artifacts
+    runs-on: ubuntu-latest
+    needs: [validate-release]
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tags: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}-chrome
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}-chrome
+            type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}-chrome
+      - name: Build and push Chrome runner image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker
+          file: ./docker/Dockerfile.chrome
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build_chrome.outputs.digest }}
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           format: spdx-json
           output-file: sbom-chrome.spdx.json
-      - name: Upload SBOM as artifact (chrome)
+      - name: Upload SBOM as artifact
         uses: actions/upload-artifact@v4
         with:
           name: sbom-chrome
@@ -138,34 +154,42 @@ jobs:
   security-scan-release:
     name: Security Scan Release
     runs-on: ubuntu-latest
-    needs: [build-release-artifacts]
+    needs: [build-standard-artifacts, build-chrome-artifacts]
     permissions:
       contents: read
       security-events: write
+    strategy:
+      matrix:
+        scan: [standard, chrome]
     steps:
       - name: Run Trivy vulnerability scanner (standard)
+        if: matrix.scan == 'standard'
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-release-artifacts.outputs.image-digest }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-standard-artifacts.outputs.image-digest }}
           format: "sarif"
           output: "release-security-scan.sarif"
       - name: Run Trivy vulnerability scanner (chrome)
+        if: matrix.scan == 'chrome'
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-release-artifacts.outputs.chrome-image-digest }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-chrome-artifacts.outputs.image-digest }}
           format: "sarif"
           output: "release-chrome-security-scan.sarif"
       - name: Upload security scan results (standard)
+        if: matrix.scan == 'standard'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: "release-security-scan.sarif"
           category: "container-scan"
       - name: Upload security scan results (chrome)
+        if: matrix.scan == 'chrome'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: "release-chrome-security-scan.sarif"
           category: "container-scan-chrome"
       - name: Check for critical vulnerabilities (standard)
+        if: matrix.scan == 'standard'
         run: |
           critical_count=$(grep -c "CRITICAL" release-security-scan.sarif || echo "0")
           if [[ $critical_count -gt 0 ]]; then
@@ -175,6 +199,7 @@ jobs:
           fi
           echo "✅ No critical vulnerabilities found in standard image"
       - name: Check for critical vulnerabilities (chrome)
+        if: matrix.scan == 'chrome'
         run: |
           critical_count=$(grep -c "CRITICAL" release-chrome-security-scan.sarif || echo "0")
           if [[ $critical_count -gt 0 ]]; then
@@ -186,7 +211,7 @@ jobs:
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [validate-release, build-release-artifacts, security-scan-release]
+    needs: [validate-release, security-scan-release, build-standard-artifacts, build-chrome-artifacts]
     permissions:
       contents: write
     steps:
