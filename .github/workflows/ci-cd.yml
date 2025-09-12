@@ -1,5 +1,4 @@
 name: CI/CD Pipeline
-
 # Canonical branch flow for this repository:
 # - Feature work: create feature branches from `develop` and open PRs targeting `develop` (feature -> develop).
 # - Integration: merge feature PRs into `develop` and run integration/user-experience checks on those PRs.
@@ -9,7 +8,6 @@ name: CI/CD Pipeline
 # - Many jobs run on both `develop` and `main` pushes to keep staging and deployment paths intact.
 # - Job-level `if:` guards that check `github.event.pull_request.base.ref` are updated to account for feature PRs targeting `develop` as well as promotion PRs from `develop`->`main`.
 # Edit with care: updating triggers or branch checks may affect deployment or baseline seeding behavior.
-
 on:
   push:
     branches: [main, develop]
@@ -46,11 +44,9 @@ on:
         required: false
         default: false
         type: boolean
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
 permissions:
   contents: read
   packages: write
@@ -58,13 +54,11 @@ permissions:
   pull-requests: write
   checks: write
   actions: read
-
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   DOCKER_BUILDKIT: 1
   COMPOSE_DOCKER_CLI_BUILD: 1
-
 jobs:
   provision-normal-runner:
     name: Provision Normal Runner
@@ -257,14 +251,12 @@ jobs:
           echo "Running Playwright screenshot integration script..."
           chmod +x tests/integration/playwright_screenshot_integration.sh
           tests/integration/playwright_screenshot_integration.sh
-
       - name: Upload Playwright screenshot artifact
         uses: actions/upload-artifact@v4
         with:
           name: playwright-google-screenshot
           path: test-results/playwright/google_screenshot_*.png
           retention-days: 30
-
   lint-and-validate:
     name: Lint and Validate
     runs-on: ubuntu-latest
@@ -275,7 +267,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
       - name: Validate Docker files
         run: |
           # Check if Docker files exist
@@ -287,7 +278,6 @@ jobs:
               exit 1
             fi
           done
-
       - name: Validate Docker Compose files
         run: |
           # Validate separate compose files syntax
@@ -297,7 +287,6 @@ jobs:
           if [[ -f "docker/docker-compose.chrome.yml" ]]; then
             docker compose -f docker/docker-compose.chrome.yml config --quiet
           fi
-
       - name: Validate shell scripts
         run: |
           # Install shellcheck
@@ -308,7 +297,6 @@ jobs:
             echo "Checking $script"
             shellcheck -S warning "$script" || exit 1
           done
-
       - name: Check environment file templates
         run: |
           # Validate environment file syntax (basic check)
@@ -319,7 +307,6 @@ jobs:
               echo "Warning: $envfile may have invalid environment variable syntax"
             }
           done || true
-
   security-scan:
     name: Security Scanning
     runs-on: ubuntu-latest
@@ -332,7 +319,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Run Trivy vulnerability scanner on filesystem
         uses: aquasecurity/trivy-action@master
         with:
@@ -340,14 +326,12 @@ jobs:
           scan-ref: "."
           format: "sarif"
           output: "trivy-results.sarif"
-
       - name: Upload Trivy scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
           category: "filesystem-scan"
-
       - name: Check for secrets in repository
         uses: trufflesecurity/trufflehog@main
         with:
@@ -355,7 +339,6 @@ jobs:
           base: ${{ github.event.before }}
           head: HEAD
           extra_args: --debug --only-verified
-
   build:
     name: Build Docker Images
     runs-on: ubuntu-latest
@@ -372,31 +355,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
-      - name: Cache Node.js modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: ${{ runner.os }}-node-
-
-      - name: Cache pip packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: ${{ runner.os }}-pip-
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -411,7 +377,6 @@ jobs:
             type=semver,pattern={{major}}
             type=sha,prefix=sha-,enable={{is_default_branch}}
             type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Build and push Docker image
         id: build
         uses: docker/build-push-action@v5
@@ -425,7 +390,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           no-cache: ${{ false }}
-
       - name: Get primary tag for security scan
         id: get-primary-tag
         if: success() && steps.build.conclusion == 'success'
@@ -450,7 +414,6 @@ jobs:
           name: build-image-digest
           path: build-image-digest.txt
           retention-days: 30
-
   build-chrome:
     name: Build Chrome Runner Image
     runs-on: ubuntu-latest
@@ -467,17 +430,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Extract Chrome runner metadata
         id: meta-chrome
         uses: docker/metadata-action@v5
@@ -492,7 +452,6 @@ jobs:
             type=semver,pattern={{major}}-chrome
             type=sha,prefix=sha-,suffix=-chrome,enable={{is_default_branch}}
             type=raw,value=chrome-latest,enable={{is_default_branch}}
-
       - name: Build and push Chrome runner image
         id: build-chrome
         uses: docker/build-push-action@v5
@@ -503,10 +462,9 @@ jobs:
           load: true
           tags: ${{ steps.meta-chrome.outputs.tags }}
           labels: ${{ steps.meta-chrome.outputs.labels }}
-          cache-from: type=gha,scope=chrome
-          cache-to: type=gha,mode=max,scope=chrome
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           no-cache: ${{ false }}
-
       - name: Get primary Chrome tag for security scan
         id: get-primary-tag-chrome
         if: success() && steps.build-chrome.conclusion == 'success'
@@ -531,7 +489,6 @@ jobs:
           name: build-chrome-image-digest
           path: build-chrome-image-digest.txt
           retention-days: 30
-
   # Comprehensive Testing Suite
   test-package-validation:
     name: Package Validation Tests
@@ -544,23 +501,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
       - name: Run Package Validation Tests
         run: |
           echo "🧪 Running comprehensive package validation tests..."
-
           # Make scripts executable
           chmod +x tests/docker/validate-packages.sh
           chmod +x tests/unit/package-validation.sh
-
           # Run package validation in dry-run mode first (syntax check)
           echo "Running package validation (dry-run)..."
           DRY_RUN=true tests/docker/validate-packages.sh
-
           # Run unit tests for package detection
           echo "Running unit tests for obsolete package detection..."
           tests/unit/package-validation.sh
-
       - name: Upload package validation results
         uses: actions/upload-artifact@v4
         if: always()
@@ -568,7 +520,6 @@ jobs:
           name: package-validation-results
           path: test-results/
           retention-days: 30
-
   test-comprehensive:
     name: Comprehensive Integration Tests
     runs-on: ubuntu-latest
@@ -585,49 +536,37 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
       - name: Set up test environment
         run: |
           # Install comprehensive test dependencies
           sudo apt-get update
           sudo apt-get install -y jq curl
-
           # Install hadolint for Docker linting (from GitHub releases)
           HADOLINT_VERSION="v2.12.0"
           wget -O /tmp/hadolint "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-x86_64"
           chmod +x /tmp/hadolint
           sudo mv /tmp/hadolint /usr/local/bin/hadolint
-
           # Verify hadolint installation
           hadolint --version || echo "Hadolint installation failed, will skip Docker linting"
-
           # Create test results directory
           mkdir -p test-results/${{ matrix.test-suite }}
-
           # Make all test scripts executable
           find tests/ -name "*.sh" -type f -exec chmod +x {} \;
-
       - name: Run Unit Tests
         if: matrix.test-suite == 'unit'
         run: |
           echo "🧪 Running unit tests..."
-
           # Run unit tests for package validation
           TEST_RESULTS_DIR="test-results/unit" tests/unit/package-validation.sh
-
       - name: Run Integration Tests
         if: matrix.test-suite == 'integration'
         run: |
           echo "🧪 Running integration tests..."
-
           # Create integration test results directory
           mkdir -p test-results/integration
-
           # Run focused integration tests for CI environment
           # Skip Docker builds and container tests (tested separately)
-
           integration_errors=0
-
           # Test 1: Dockerfile syntax validation
           echo "Validating Dockerfile syntax..."
           if command -v hadolint >/dev/null 2>&1; then
@@ -646,14 +585,11 @@ jobs:
           else
             echo "ℹ️  Hadolint not available, skipping Docker linting"
           fi
-
           # Test 2: Docker Compose validation
           echo "Validating docker-compose files..."
-
           # Create temporary directories that compose files expect to exist
           mkdir -p ../cache/build ../cache/deps ../cache/workspace ../config
           mkdir -p docker/test-reports
-
           for compose_file in docker/docker-compose*.yml; do
             if [[ -f "$compose_file" ]]; then
               compose_name="$(basename "$compose_file")"
@@ -668,12 +604,10 @@ jobs:
               fi
             fi
           done
-
           # Clean up temporary directories
           rmdir ../cache/build ../cache/deps ../cache/workspace 2>/dev/null || true
           rmdir ../cache 2>/dev/null || true
           rmdir docker/test-reports 2>/dev/null || true
-
           # Test 3: Configuration file validation
           echo "Validating configuration files..."
           for config_file in config/*.env*; do
@@ -688,7 +622,6 @@ jobs:
               fi
             fi
           done
-
           # Test 4: Script validation
           echo "Validating shell scripts..."
           for script in scripts/*.sh; do
@@ -700,38 +633,30 @@ jobs:
               fi
             fi
           done
-
           echo "Integration tests completed. Errors: $integration_errors"
-
           if [[ $integration_errors -gt 0 ]]; then
             echo "❌ Integration tests failed"
             exit 1
           else
             echo "✅ Integration tests passed"
           fi
-
       - name: Run Docker Package Validation
         if: matrix.test-suite == 'docker-validation'
         run: |
           echo "🧪 Running Docker package validation..."
-
           # Create docker validation test results directory
           mkdir -p test-results/docker-validation
-
           # Run focused Docker package validation (without building)
           docker_errors=0
-
           # Test 1: Package duplication check
           echo "Checking for duplicate packages in Dockerfiles..."
           for dockerfile in docker/Dockerfile*; do
             if [[ -f "$dockerfile" ]]; then
               dockerfile_name="$(basename "$dockerfile")"
-              
               # Extract package names from RUN commands that install packages
               packages=$(grep -E "RUN.*apt-get install|RUN.*apk add" "$dockerfile" | \
                 sed -E 's/.*apt-get install[^a-zA-Z-]*//; s/.*apk add[^a-zA-Z-]*//; s/[\\&|;].*//; s/#.*//; s/\s+/ /g' | \
                 tr ' ' '\n' | grep -E '^[a-zA-Z][a-zA-Z0-9.-]*$' | sort)
-              
               # Check for duplicates
               duplicates=$(echo "$packages" | uniq -d)
               if [[ -n "$duplicates" ]]; then
@@ -744,7 +669,6 @@ jobs:
               fi
             fi
           done
-
           # Test 2: Obsolete package check
           echo "Checking for known obsolete packages..."
           obsolete_packages=("python2" "python2.7" "python-pip" "nodejs-legacy")
@@ -760,29 +684,23 @@ jobs:
               done
             fi
           done
-
           echo "Docker validation completed. Errors: $docker_errors"
-
           if [[ $docker_errors -gt 0 ]]; then
             echo "❌ Docker package validation failed"
             exit 1
           else
             echo "✅ Docker package validation passed"
           fi
-
       - name: Run Security Tests
         if: matrix.test-suite == 'security'
         run: |
           echo "🧪 Running security validation tests..."
-
           # Create security test results directory
           mkdir -p test-results/security
-
           # Check for potential secrets
           echo "Checking for potential secrets..."
           secret_patterns=("password" "secret" "token" "key" "api_key" "auth")
           secrets_found=false
-
           for pattern in "${secret_patterns[@]}"; do
             if grep -r -i "$pattern" . \
                 --exclude-dir=".git" \
@@ -795,21 +713,17 @@ jobs:
               secrets_found=true
             fi
           done
-
           # Check Docker security practices
           echo "Checking Docker security practices..."
           security_issues=0
-
           for dockerfile in docker/Dockerfile*; do
             if [[ -f "$dockerfile" ]]; then
               dockerfile_name="$(basename "$dockerfile")"
-              
               # Check for running as root
               if ! grep -q "USER " "$dockerfile"; then
                 echo "SECURITY: $dockerfile_name may run as root" >> "test-results/security/docker-security.log"
                 security_issues=$((security_issues + 1))
               fi
-              
               # Check for COPY . .
               if grep -q "COPY \. \." "$dockerfile"; then
                 echo "SECURITY: $dockerfile_name uses 'COPY . .' - overly broad" >> "test-results/security/docker-security.log"
@@ -817,32 +731,24 @@ jobs:
               fi
             fi
           done
-
           echo "Security scan completed. Issues found: $security_issues"
-
       - name: Run Configuration Tests
         if: matrix.test-suite == 'configuration'
         run: |
           echo "🧪 Running configuration validation tests..."
-
           # Create configuration test results directory
           mkdir -p test-results/configuration
-
           config_errors=0
-
           # Test configuration files
           for config_file in config/*.env*; do
             if [[ -f "$config_file" ]]; then
               config_name="$(basename "$config_file")"
-              
               echo "Validating $config_name..."
-              
               # Syntax check
               if ! bash -n "$config_file" > "test-results/configuration/$config_name.log" 2>&1; then
                 echo "❌ Syntax error in $config_name"
                 config_errors=$((config_errors + 1))
               fi
-              
               # Check for required variables
               required_vars=("GITHUB_TOKEN" "GITHUB_REPOSITORY")
               for var in "${required_vars[@]}"; do
@@ -852,12 +758,10 @@ jobs:
               done
             fi
           done
-
           # Test scripts
           for script in scripts/*.sh; do
             if [[ -f "$script" ]]; then
               script_name="$(basename "$script")"
-              
               # Syntax check
               if ! bash -n "$script" > "test-results/configuration/$script_name.log" 2>&1; then
                 echo "❌ Syntax error in $script_name"
@@ -865,13 +769,10 @@ jobs:
               fi
             fi
           done
-
           echo "Configuration validation completed. Errors found: $config_errors"
-
           if [[ $config_errors -gt 0 ]]; then
             exit 1
           fi
-
       - name: Upload comprehensive test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -879,7 +780,6 @@ jobs:
           name: test-results-${{ matrix.test-suite }}
           path: test-results/${{ matrix.test-suite }}
           retention-days: 30
-
   test-user-deployment:
     name: User Deployment Experience Tests
     runs-on: ubuntu-latest
@@ -890,42 +790,33 @@ jobs:
     if: ${{ github.event_name == 'pull_request' && (github.event.pull_request.base.ref == 'develop' || (github.event.pull_request.base.ref == 'main' && github.event.pull_request.head.ref == 'develop')) }}
     permissions:
       contents: read
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Pull built images from registry
         run: |
           # Pull the images that were just built and pushed by the build jobs
           echo "Pulling main runner image: ${{ needs.build.outputs.image-primary }}"
           docker pull "${{ needs.build.outputs.image-primary }}"
-
           echo "Pulling Chrome runner image: ${{ needs.build-chrome.outputs.image-primary }}"
           docker pull "${{ needs.build-chrome.outputs.image-primary }}"
-
           # Tag for easier testing
           docker tag "${{ needs.build.outputs.image-primary }}" github-runner:latest
           docker tag "${{ needs.build-chrome.outputs.image-primary }}" github-runner:chrome-latest
-
           echo "Available images for testing:"
           docker images | grep github-runner
-
       - name: Run User Deployment Experience Tests
         run: |
           chmod +x tests/user-deployment/test-user-experience.sh
           tests/user-deployment/test-user-experience.sh
-
       - name: Upload user deployment test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -933,7 +824,6 @@ jobs:
           name: user-deployment-test-results
           path: test-results/user-deployment
           retention-days: 30
-
   test-container-startup:
     name: Container Startup Tests
     runs-on: ubuntu-latest
@@ -949,12 +839,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
       - name: Download built images
         run: |
           # Log in to Container Registry to pull the built images
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-
       - name: Pull and verify Docker images
         run: |
           # Pull the built Docker images from the registry instead of using artifacts
@@ -962,7 +850,6 @@ jobs:
             IMAGE_TAG="${{ needs.build.outputs.image-primary }}"
             echo "Pulling main runner image: $IMAGE_TAG"
             docker pull "$IMAGE_TAG"
-            
             # Tag for easier testing
             docker tag "$IMAGE_TAG" github-runner:latest
             echo "Tagged as github-runner:latest"
@@ -970,46 +857,36 @@ jobs:
             IMAGE_TAG="${{ needs.build-chrome.outputs.image-primary }}"
             echo "Pulling Chrome runner image: $IMAGE_TAG"
             docker pull "$IMAGE_TAG"
-            
             # Tag for easier testing  
             docker tag "$IMAGE_TAG" github-runner:chrome-latest
             echo "Tagged as github-runner:chrome-latest"
           fi
-
           # Verify images are available
           echo "Available Docker images:"
           docker images | grep github-runner
-
       - name: Set up container test environment
         run: |
           # Create test results directory
           mkdir -p test-results/container-startup/${{ matrix.container-type }}
-
           # Use the actual user environment template and production Docker Compose
           # This tests the real user experience, not custom CI configurations
-
           # Copy the user environment template
           cp config/runner.env.example config/runner.env
-
           # Configure with valid test values that won't cause GitHub API calls
           sed -i 's/GITHUB_TOKEN=.*/GITHUB_TOKEN=ghp_test_token_for_ci_not_real/' config/runner.env
           sed -i 's/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=test-org\/test-repository/' config/runner.env
           sed -i 's/RUNNER_NAME=.*/RUNNER_NAME=ci-test-main-runner/' config/runner.env
           sed -i 's/RUNNER_LABELS=.*/RUNNER_LABELS=test,ci,docker,self-hosted/' config/runner.env
-
           # Verify the user environment file is properly configured
           echo "=== User Environment Configuration ==="
           grep -E '^[A-Z_]+=.*' config/runner.env | head -10
           echo "=== End Configuration ==="
-
       - name: Test Main Runner Container Startup
         if: matrix.container-type == 'main-runner'
         run: |
           echo "🚀 Testing main GitHub runner using production Docker Compose..."
-
           # Test using the actual production Docker Compose file that users would use
           # This validates the real user experience, not custom CI configurations
-
           # Create test override to bypass GitHub registration for CI and use the built image
           IMAGE_TAG="${{ needs.build.outputs.image-primary }}"
           cat > docker/docker-compose.test-override.yml << EOF
@@ -1027,7 +904,6 @@ jobs:
                 bash -c '
                 echo "=== Production Container Startup Test ==="
                 echo "Testing container using production Docker Compose configuration..."
-                
                 # Basic system checks that validate the production setup
                 echo "✓ Container started with production configuration"
                 echo "✓ User context: $$(whoami)"
@@ -1037,28 +913,23 @@ jobs:
                 echo "  - GITHUB_REPOSITORY: $$GITHUB_REPOSITORY"
                 echo "  - RUNNER_NAME: $$RUNNER_NAME"
                 echo "  - RUNNER_LABELS: $$RUNNER_LABELS"
-                
                 # Test tools that production runners need
                 echo "✓ Git available: $$(git --version)"
                 echo "✓ Docker available: $$(docker --version)"
                 echo "✓ Node.js available: $$(node --version)"
                 echo "✓ Python available: $$(python3 --version)"
-                
                 # Validate production container setup
                 echo "✓ Production environment validation completed"
                 echo "=== Test completed successfully ==="
                 exit 0
                 '
           EOF
-
           # Start container using production Docker Compose with test override (run one-shot container)
           echo "Running test container..."
           docker compose -f docker/docker-compose.production.yml -f docker/docker-compose.test-override.yml run --rm github-runner
-
           # Get container logs from the completed run
           echo "=== Production Container Test Results ==="
           echo "Container completed successfully"
-
           # Verify Docker Compose configuration
           echo "📊 Verifying production Docker Compose configuration..."
           if ! grep -q "restart:" docker/docker-compose.production.yml; then
@@ -1066,29 +937,23 @@ jobs:
           else
             echo "✅ Restart policy configured"
           fi
-
           if grep -q "healthcheck:" docker/docker-compose.production.yml; then
             echo "✅ Health check configured"
           else
             echo "💡 Consider adding health checks for production readiness"
           fi
           echo "✅ Production main runner container startup test passed"
-
           # Cleanup
           docker compose -f docker/docker-compose.production.yml down || true
-
       - name: Test Chrome Runner Container Startup
         if: matrix.container-type == 'chrome-runner'
         run: |
           echo "🚀 Testing Chrome GitHub runner using production Docker Compose..."
-
           # Test using the actual production Docker Compose file that users would use
           # This validates the real user experience for Chrome runners
-
           # Update environment for Chrome-specific settings
           sed -i 's/RUNNER_NAME=.*/RUNNER_NAME=ci-test-chrome-runner/' config/runner.env
           sed -i 's/RUNNER_LABELS=.*/RUNNER_LABELS=chrome,ui-tests,selenium,playwright,cypress,headless/' config/runner.env
-
           # Create Chrome test override to bypass GitHub registration for CI and use the built image
           CHROME_IMAGE_TAG="${{ needs.build-chrome.outputs.image-primary }}"
           cat > docker/docker-compose.chrome-test-override.yml << EOF
@@ -1108,7 +973,6 @@ jobs:
                 bash -c '
                 echo "=== Production Chrome Container Startup Test ==="
                 echo "Testing Chrome container using production Docker Compose configuration..."
-                
                 # Basic system checks for Chrome production setup
                 echo "✓ Chrome container started with production configuration"
                 echo "✓ User context: $$(whoami)"
@@ -1118,7 +982,6 @@ jobs:
                 echo "  - GITHUB_REPOSITORY: $$GITHUB_REPOSITORY"
                 echo "  - RUNNER_NAME: $$RUNNER_NAME"
                 echo "  - RUNNER_LABELS: $$RUNNER_LABELS"
-                
                 # Test Chrome-specific tools that production runners need
                 echo "Testing Chrome installation..."
                 if command -v google-chrome >/dev/null 2>&1; then
@@ -1127,7 +990,6 @@ jobs:
                   echo "❌ Chrome not found"
                   exit 1
                 fi
-                
                 # Test ChromeDriver
                 if command -v chromedriver >/dev/null 2>&1; then
                   echo "✓ ChromeDriver available: $$(chromedriver --version)"
@@ -1135,12 +997,10 @@ jobs:
                   echo "❌ ChromeDriver not found"
                   exit 1
                 fi
-                
                 # Test development tools
                 echo "✓ Node.js available: $$(node --version)"
                 echo "✓ npm available: $$(npm --version)"
                 echo "✓ Python available: $$(python3 --version)"
-                
                 # Test Chrome headless functionality
                 echo "Testing Chrome headless functionality..."
                 if timeout 30 google-chrome --headless --no-sandbox --disable-dev-shm-usage --virtual-time-budget=1000 --dump-dom about:blank > /tmp/chrome-test.html 2>/dev/null; then
@@ -1149,21 +1009,17 @@ jobs:
                   printf "\u26a0\ufe0f Chrome headless test warning (may work in different environment)\n"
                   printf "\u26a0\ufe0f Check /tmp/chrome-test.html for details. Consider increasing resources or updating Chrome.\n"
                 fi
-                
                 echo "✓ Production Chrome environment validation completed"
                 echo "=== Test completed successfully ==="
                 exit 0
                 '
           EOF
-
           # Start Chrome container using Chrome compose with test override (run one-shot container)
           echo "Running Chrome test container..."
           docker compose -f docker/docker-compose.chrome.yml -f docker/docker-compose.chrome-test-override.yml run --rm github-runner-chrome
-
           # Test completed successfully if we reach here
           echo "=== Production Chrome Container Test Results ==="
           echo "Chrome container completed successfully"
-
           # Verify Chrome Docker Compose configuration
           echo "📊 Verifying Chrome Docker Compose configuration..."
           if ! grep -q "restart:" docker/docker-compose.chrome.yml; then
@@ -1171,24 +1027,20 @@ jobs:
           else
             echo "✅ Restart policy configured"
           fi
-
           if grep -q "healthcheck:" docker/docker-compose.chrome.yml; then
             echo "✅ Health check configured"
           else
             echo "💡 Consider adding health checks for production readiness"
           fi
           echo "✅ Production Chrome runner container startup test passed"
-
           # Cleanup
           docker compose -f docker/docker-compose.chrome.yml down || true
-
       - name: Generate container startup report
         if: always()
         run: |
           # Create detailed startup test report
           REPORT_DIR="test-results/container-startup/${{ matrix.container-type }}"
           mkdir -p "$REPORT_DIR"
-
           echo "# Container Startup Test Report" > "$REPORT_DIR/startup-report.md"
           echo "" >> "$REPORT_DIR/startup-report.md"
           echo "## Test Details" >> "$REPORT_DIR/startup-report.md"
@@ -1197,20 +1049,17 @@ jobs:
           echo "- **Workflow**: ${{ github.workflow }}" >> "$REPORT_DIR/startup-report.md"
           echo "- **Run ID**: ${{ github.run_id }}" >> "$REPORT_DIR/startup-report.md"
           echo "" >> "$REPORT_DIR/startup-report.md"
-
           # Add Docker info
           echo "## Docker Environment" >> "$REPORT_DIR/startup-report.md"
           echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
           docker version >> "$REPORT_DIR/startup-report.md" 2>&1 || true
           echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
           echo "" >> "$REPORT_DIR/startup-report.md"
-
           # Add image info
           echo "## Image Information" >> "$REPORT_DIR/startup-report.md"
           echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
           docker images | grep github-runner >> "$REPORT_DIR/startup-report.md" 2>&1 || true
           echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
-
       - name: Upload container startup test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -1218,7 +1067,6 @@ jobs:
           name: container-startup-results-${{ matrix.container-type }}
           path: test-results/container-startup/${{ matrix.container-type }}
           retention-days: 30
-
   security-container-scan:
     name: Container Security Scan
     runs-on: ubuntu-latest
@@ -1231,21 +1079,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
       - name: Run Trivy vulnerability scanner on container
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ needs.build.outputs.image-primary }}
           format: "sarif"
           output: "trivy-container-results.sarif"
-
       - name: Upload container scan results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: "trivy-container-results.sarif"
           category: "container-scan"
-
   security-chrome-scan:
     name: Chrome Container Security Scan
     runs-on: ubuntu-latest
@@ -1258,22 +1103,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
       - name: Run Trivy vulnerability scanner on Chrome container
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ needs.build-chrome.outputs.image-primary }}
           format: "sarif"
           output: "trivy-chrome-results.sarif"
-
       - name: Upload Chrome container scan results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: "trivy-chrome-results.sarif"
           category: "chrome-container-scan"
-
-
   cleanup:
     name: Cleanup Resources
     runs-on: ubuntu-latest
@@ -1292,11 +1133,9 @@ jobs:
       - name: Clean up old container images
         run: |
           echo "Cleaning up old container images..."
-
           # In a real scenario, this would clean up old images from the registry
           # For example, keeping only the last 10 images
           echo "Cleanup completed"
-
       - name: Generate deployment report
         run: |
           echo "Generating deployment report..."
@@ -1320,7 +1159,6 @@ jobs:
             exit 1
           fi
           cat deployment-report.md
-
       - name: Upload deployment report
         uses: actions/upload-artifact@v4
         with:
