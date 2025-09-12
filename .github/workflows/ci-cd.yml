@@ -23,14 +23,6 @@ on:
       - "docs/**"
   workflow_dispatch:
     inputs:
-      environment:
-        description: "Target environment for deployment"
-        required: true
-        default: "staging"
-        type: choice
-        options:
-          - staging
-          - production
       skip_tests:
         description: "Skip testing steps"
         required: false
@@ -54,6 +46,7 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  IMAGE_CHROME_NAME: ${{ github.repository }}-chrome
   DOCKER_BUILDKIT: 1
   COMPOSE_DOCKER_CLI_BUILD: 1
 jobs:
@@ -433,7 +426,7 @@ jobs:
         id: meta-chrome
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_CHROME_NAME }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
