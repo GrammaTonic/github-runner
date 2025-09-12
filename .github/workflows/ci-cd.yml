@@ -371,12 +371,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=ref,event=tag
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha,prefix=sha-,enable={{is_default_branch}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,branch=main
       - name: Build and push Docker image
         id: build
         uses: docker/build-push-action@v5
@@ -384,7 +379,7 @@ jobs:
           context: ./docker
           file: ./docker/Dockerfile
           push: true
-          load: true
+          load: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -446,12 +441,7 @@ jobs:
           tags: |
             type=ref,event=branch,suffix=-chrome
             type=ref,event=pr,suffix=-chrome
-            type=ref,event=tag,suffix=-chrome
-            type=semver,pattern={{version}}-chrome
-            type=semver,pattern={{major}}.{{minor}}-chrome
-            type=semver,pattern={{major}}-chrome
-            type=sha,prefix=sha-,suffix=-chrome,enable={{is_default_branch}}
-            type=raw,value=chrome-latest,enable={{is_default_branch}}
+            type=raw,value=chrome-latest,branch=main
       - name: Build and push Chrome runner image
         id: build-chrome
         uses: docker/build-push-action@v5
@@ -459,7 +449,7 @@ jobs:
           context: ./docker
           file: ./docker/Dockerfile.chrome
           push: true
-          load: true
+          load: false
           tags: ${{ steps.meta-chrome.outputs.tags }}
           labels: ${{ steps.meta-chrome.outputs.labels }}
           cache-from: type=gha

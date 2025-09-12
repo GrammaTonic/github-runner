@@ -2,6 +2,10 @@
 name: Release Management
 
 on:
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]
+    types:
+      - completed
   push:
     tags:
       - 'v*.*.*'
@@ -85,9 +89,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
+          cache-from: type=gha,github.com/grammatonic/github-runner:main
           cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
@@ -138,8 +142,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
+          cache-from: type=gha,github.com/grammatonic/github-runner:main-chrome
           cache-to: type=gha,mode=max
+          platforms: linux/amd64
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
