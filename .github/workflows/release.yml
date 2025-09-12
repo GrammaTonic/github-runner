@@ -84,11 +84,11 @@ jobs:
         id: meta_chrome
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-chrome
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}
-            type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}-chrome
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}-chrome
+            type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}-chrome
             type=raw,value=latest,enable={{is_default_branch}}
       - name: Build and push runner image
         id: build
