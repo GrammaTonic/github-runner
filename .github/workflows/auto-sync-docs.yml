@@ -79,7 +79,7 @@ jobs:
       - name: Find existing auto-sync PR into develop
         id: find-pr
         if: steps.gen-patch.outputs.changed == 'true'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
