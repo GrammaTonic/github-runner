@@ -78,7 +78,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
       - name: Build and push runner image
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./docker
           file: ./docker/Dockerfile
@@ -131,7 +131,7 @@ jobs:
             type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}-chrome
       - name: Build and push Chrome runner image
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./docker
           file: ./docker/Dockerfile.chrome
