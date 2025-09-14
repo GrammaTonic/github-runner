@@ -372,7 +372,9 @@ jobs:
           load: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
+          cache-from: |
+            type=gha
+            type=gha,scope=main
           cache-to: type=gha,mode=max
           no-cache: ${{ false }}
       - name: Get primary normal runner tag for security scan
@@ -443,7 +445,9 @@ jobs:
           load: false
           tags: ${{ steps.meta-chrome.outputs.tags }}
           labels: ${{ steps.meta-chrome.outputs.labels }}
-          cache-from: type=gha
+          cache-from: |
+            type=gha
+            type=gha,scope=main
           cache-to: type=gha,mode=max
           no-cache: ${{ false }}
       - name: Get primary Chrome runner tag for security scan
