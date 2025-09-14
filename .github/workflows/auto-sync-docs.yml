@@ -12,9 +12,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          # Need full history for diff against origin/main
+          fetch-depth: 0
       - name: Check for outdated references in docs and wiki
         run: |
-          grep -r -i 'template' docs/ wiki-content/ && exit 1 || echo "No outdated references found."
+          # Search for the word 'template' but ignore known benign occurrences:
+          # - files under docs/archive/ (historical notes)
+          # - Prometheus console flag lines which include 'templates' as part of the flag
+          if grep -rnI --line-number 'template' docs/ wiki-content/ | grep -v -E '^docs/archive/|--web.console.templates=' > /tmp/outdated_refs.txt; then
+            echo "❌ Outdated references found:"
+            cat /tmp/outdated_refs.txt
+            # Fail the job when running in CI
+            exit 1
+          else
+            echo "✅ No outdated references found."
+          fi
       - name: Validate Markdown links in docs and wiki
         run: |
           npx markdown-link-check docs/**/*.md
@@ -34,5 +47,6 @@ jobs:
           title: "Automated Documentation and Wiki Sync"
           body: |
             This PR was created automatically to sync documentation and wiki blocks/examples with the latest code and workflow changes.
-          branch: docs-wiki/auto-sync-$(date +'%Y%m%d%H%M%S')
+          # Use run-specific id for a unique branch name (shell substitution won't run here)
+          branch: docs-wiki/auto-sync-${{ github.run_id }}
           base: main
