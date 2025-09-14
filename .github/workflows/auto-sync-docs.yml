@@ -7,6 +7,11 @@ on:
       - develop
   workflow_dispatch:
 
+# Ensure the token used by steps has the rights to create branches/PRs when available.
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   auto-sync-docs:
     runs-on: ubuntu-latest
@@ -54,20 +59,30 @@ jobs:
             echo "No wiki-content directory present, skipping wiki link-check."
           fi
       - name: Generate Documentation and Wiki Patch
+        id: gen-patch
         run: |
-          git diff origin/main -- docs/ wiki-content/ > docs-wiki-full-patch.diff || echo "No doc or wiki changes detected."
+          # Produce a unified diff of docs and wiki content against origin/main
+          set -euo pipefail
+          git fetch origin main --depth=1 || true
+          git diff origin/main -- docs/ wiki-content/ > docs-wiki-full-patch.diff || true
+          # Expose whether the patch file contains changes so downstream steps can skip when nothing changed
+          if [ -s docs-wiki-full-patch.diff ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Upload Docs and Wiki Patch Artifact
         uses: actions/upload-artifact@v4
         with:
           name: docs-wiki-full-patch
           path: docs-wiki-full-patch.diff
       - name: Create Pull Request for Docs and Wiki Updates
+        if: steps.gen-patch.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           commit-message: "docs: automated documentation and wiki sync"
           title: "Automated Documentation and Wiki Sync"
           body: |
             This PR was created automatically to sync documentation and wiki blocks/examples with the latest code and workflow changes.
-          # Use run-specific id for a unique branch name (shell substitution won't run here)
           branch: docs-wiki/auto-sync-${{ github.run_id }}
-          base: main
+          base: develop
