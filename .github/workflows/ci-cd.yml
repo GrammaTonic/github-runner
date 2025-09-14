@@ -439,7 +439,7 @@ jobs:
         id: build-chrome
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64s
+          platforms: linux/amd64
           file: ./docker/Dockerfile.chrome
           push: true
           load: false
