@@ -31,7 +31,7 @@ This document provides a comprehensive overview of all software versions, depend
 
 ### Operating System
 
-**Base OS**: Ubuntu 25.10 Questing (Pre-release)
+**Base OS**: Ubuntu 25.1sss0 Questing (Pre-release)
 **Architecture Support**: amd64 only for Chrome Runner; Standard Runner is amd64
 **Kernel Version**: Linux kernel 6.10+
 - **Security Updates**: Applied via `apt-get update` during build
