@@ -85,7 +85,7 @@ jobs:
 
       - name: Build standard runner image for scanning
         if: contains(steps.params.outputs.scan_targets, 'container')
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./docker
           file: ./docker/Dockerfile
@@ -136,7 +136,7 @@ jobs:
       # Chrome runner container scan
       - name: Build Chrome runner image for scanning
         if: contains(steps.params.outputs.scan_targets, 'chrome')
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./docker
           file: ./docker/Dockerfile.chrome
