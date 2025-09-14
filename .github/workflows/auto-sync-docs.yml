@@ -32,23 +32,26 @@ jobs:
         run: |
           set -euo pipefail
           echo "Collecting markdown files (excluding docs/archive/)..."
-          # Find docs markdown files but exclude archived docs
-          mapfile -t DOCS_FILES < <(find docs -type f -name '*.md' ! -path 'docs/archive/*' -print0 2>/dev/null | xargs -0 -n1 echo)
-          # Find wiki markdown files (may be empty)
-          mapfile -t WIKI_FILES < <(find wiki-content -type f -name '*.md' -print0 2>/dev/null | xargs -0 -n1 echo || true)
-
-          if [ ${#DOCS_FILES[@]} -gt 0 ]; then
-            echo "Running markdown-link-check on ${#DOCS_FILES[@]} docs files..."
-            npx markdown-link-check "${DOCS_FILES[@]}"
+          # Docs: count and run link-check if any (exclude archived docs)
+          DOCS_COUNT=$(find docs -type f -name '*.md' ! -path 'docs/archive/*' 2>/dev/null | wc -l | tr -d ' ' || true)
+          if [ -n "$DOCS_COUNT" ] && [ "$DOCS_COUNT" -gt 0 ]; then
+            echo "Running markdown-link-check on $DOCS_COUNT docs files..."
+            find docs -type f -name '*.md' ! -path 'docs/archive/*' -print0 | xargs -0 npx -y markdown-link-check || true
           else
             echo "No docs markdown files found to check."
           fi
 
-          if [ ${#WIKI_FILES[@]} -gt 0 ]; then
-            echo "Running markdown-link-check on ${#WIKI_FILES[@]} wiki files..."
-            npx markdown-link-check "${WIKI_FILES[@]}"
+          # Wiki: only run if directory exists and files found
+          if [ -d wiki-content ]; then
+            WIKI_COUNT=$(find wiki-content -type f -name '*.md' 2>/dev/null | wc -l | tr -d ' ' || true)
+            if [ -n "$WIKI_COUNT" ] && [ "$WIKI_COUNT" -gt 0 ]; then
+              echo "Running markdown-link-check on $WIKI_COUNT wiki files..."
+              find wiki-content -type f -name '*.md' -print0 | xargs -0 npx -y markdown-link-check || true
+            else
+              echo "No wiki markdown files found to check."
+            fi
           else
-            echo "No wiki markdown files found to check."
+            echo "No wiki-content directory present, skipping wiki link-check."
           fi
       - name: Generate Documentation and Wiki Patch
         run: |
