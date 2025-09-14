@@ -361,7 +361,6 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=raw,value=latest,branch=main
       - name: Determine normal build no-cache
         id: force-rebuild-normal
         run: |
@@ -459,7 +458,6 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=raw,value=latest,branch=main
           labels: |
             org.opencontainers.image.name=github-runner-chrome
       - name: Determine Chrome build no-cache
@@ -844,9 +842,6 @@ jobs:
           docker pull "${{ needs.build.outputs.normal-image-primary }}"
           echo "Pulling Chrome runner image: ${{ needs.build-chrome.outputs.chrome-image-primary }}"
           docker pull "${{ needs.build-chrome.outputs.chrome-image-primary }}"
-          # Tag for easier testing
-          docker tag "${{ needs.build.outputs.normal-image-primary }}" github-runner:latest
-          docker tag "${{ needs.build-chrome.outputs.chrome-image-primary }}" github-runner:chrome-latest
           echo "Available images for testing:"
           docker images | grep github-runner
       - name: Run User Deployment Experience Tests
