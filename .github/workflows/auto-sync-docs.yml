@@ -159,15 +159,15 @@ jobs:
             // We'll create a tree with the patched files by applying the diff in the runner and pushing.
             // For simplicity, reuse the peter-evans action behavior by performing a push: create branch, apply patch, push.
             // Prepare local branch
-            const execTool = require('@actions/exec');
-            const core = require('@actions/core');
+            const execTool2 = require('@actions/exec');
+            const core2 = (typeof core !== 'undefined') ? core : require('@actions/core');
             (async () => {
               try {
-                await execTool.exec('git', ['fetch', 'origin', 'develop']);
-                await execTool.exec('git', ['checkout', '-b', branch, 'origin/develop']);
-                const apply = await execTool.exec('bash', ['-lc', 'git apply --index docs-wiki-full-patch.diff || true']);
-                await execTool.exec('bash', ['-lc', 'git commit -m "docs: automated documentation and wiki sync" || echo "No changes to commit"']);
-                await execTool.exec('git', ['push', 'origin', `HEAD:${branch}`]);
+                  await execTool2.exec('git', ['fetch', 'origin', 'develop']);
+                  await execTool2.exec('git', ['checkout', '-b', branch, 'origin/develop']);
+                  const apply = await execTool2.exec('bash', ['-lc', 'git apply --index docs-wiki-full-patch.diff || true']);
+                  await execTool2.exec('bash', ['-lc', 'git commit -m "docs: automated documentation and wiki sync" || echo "No changes to commit"']);
+                  await execTool2.exec('git', ['push', 'origin', `HEAD:${branch}`]);
                 // Create PR
                 const pr = await github.rest.pulls.create({
                   owner: context.repo.owner,
@@ -179,6 +179,6 @@ jobs:
                 });
                 console.log('Created PR: ' + pr.data.html_url);
               } catch (e) {
-                core.setFailed(e.message);
+                core2.setFailed(e.message);
               }
             })();
