@@ -372,8 +372,18 @@ jobs:
           echo "head_commit_message=$HEAD_MSG"
           if [ "$INPUT_VAL" = "true" ] || echo "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
             echo "force_rebuild=true" >> $GITHUB_OUTPUT
+            # Clear cache settings so build-push-action won't attempt to import caches
+            printf "CACHE_FROM=\nCACHE_TO=\n" >> $GITHUB_ENV
+            echo "cache_from=" >> $GITHUB_OUTPUT
+            echo "cache_to=" >> $GITHUB_OUTPUT
           else
             echo "force_rebuild=false" >> $GITHUB_OUTPUT
+            # Provide the default cache sources (multi-line) via GITHUB_ENV
+            printf "CACHE_FROM=type=gha\ntype=gha,scope=normal-runner\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=normal-runner\n" >> $GITHUB_ENV
+            # Also emit as step outputs so other action inputs can reference them
+            echo "cache_from=type=gha\ntype=gha,scope=normal-runner" >> $GITHUB_OUTPUT
+            echo "cache_to=type=gha,mode=max,scope=normal-runner" >> $GITHUB_OUTPUT
           fi
       - name: Build and push normal runner Docker image
         id: build
@@ -386,10 +396,8 @@ jobs:
           load: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: |
-            type=gha
-            type=gha,scope=normal-runner
-          cache-to: type=gha,mode=max,scope=normal-runner
+          cache-from: ${{ steps.force-rebuild-normal.outputs.cache_from }}
+          cache-to: ${{ steps.force-rebuild-normal.outputs.cache_to }}
           no-cache: ${{ steps.force-rebuild-normal.outputs.force_rebuild == 'true' }}
       - name: Get primary normal runner tag for security scan
         id: get-primary-tag
@@ -459,8 +467,13 @@ jobs:
           echo "head_commit_message=$HEAD_MSG"
           if [ "$INPUT_VAL" = "true" ] || echo "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
             echo "force_rebuild=true" >> $GITHUB_OUTPUT
+            # Clear cache settings so build-push-action won't attempt to import caches
+            printf "CACHE_FROM=\nCACHE_TO=\n" >> $GITHUB_ENV
           else
             echo "force_rebuild=false" >> $GITHUB_OUTPUT
+            # Provide the default cache sources (multi-line) via GITHUB_ENV
+            printf "CACHE_FROM=type=gha\ntype=gha,scope=chrome-runner\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=chrome-runner\n" >> $GITHUB_ENV
           fi
       - name: Build and push Chrome runner image
         id: build-chrome
@@ -473,10 +486,8 @@ jobs:
           load: false
           tags: ${{ steps.meta-chrome.outputs.tags }}
           labels: ${{ steps.meta-chrome.outputs.labels }}
-          cache-from: |
-            type=gha
-            type=gha,scope=chrome-runner
-          cache-to: type=gha,mode=max,scope=chrome-runner
+          cache-from: ${{ steps.force-rebuild-chrome.outputs.cache_from }}
+          cache-to: ${{ steps.force-rebuild-chrome.outputs.cache_to }}
           no-cache: ${{ steps.force-rebuild-chrome.outputs.force_rebuild == 'true' }}
       - name: Get primary Chrome runner tag for security scan
         id: get-primary-tag-chrome
