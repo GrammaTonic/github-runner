@@ -389,7 +389,7 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./docker
           platforms: linux/amd64
           file: ./docker/Dockerfile
           push: true
@@ -479,7 +479,7 @@ jobs:
         id: build-chrome
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./docker
           platforms: linux/amd64
           file: ./docker/Dockerfile.chrome
           push: true
