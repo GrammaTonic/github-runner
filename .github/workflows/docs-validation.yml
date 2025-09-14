@@ -1,0 +1,28 @@
+name: Docs & Wiki Validation
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'wiki-content/**'
+
+jobs:
+  validate-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check for outdated references
+        run: |
+          grep -r -i 'template' docs/ wiki-content/ && exit 1 || echo "No outdated references found."
+      - name: Validate Markdown links
+        run: |
+          npx markdown-link-check docs/**/*.md
+          npx markdown-link-check wiki-content/**/*.md
+      - name: Generate Documentation Patch
+        run: |
+          git diff origin/main -- docs/ wiki-content/ > docs-full-patch.diff || echo "No doc changes detected."
+      - name: Upload Patch Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docs-full-patch
+          path: docs-full-patch.diff
