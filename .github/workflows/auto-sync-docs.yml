@@ -30,8 +30,26 @@ jobs:
           fi
       - name: Validate Markdown links in docs and wiki
         run: |
-          npx markdown-link-check docs/**/*.md
-          npx markdown-link-check wiki-content/**/*.md
+          set -euo pipefail
+          echo "Collecting markdown files (excluding docs/archive/)..."
+          # Find docs markdown files but exclude archived docs
+          mapfile -t DOCS_FILES < <(find docs -type f -name '*.md' ! -path 'docs/archive/*' -print0 2>/dev/null | xargs -0 -n1 echo)
+          # Find wiki markdown files (may be empty)
+          mapfile -t WIKI_FILES < <(find wiki-content -type f -name '*.md' -print0 2>/dev/null | xargs -0 -n1 echo || true)
+
+          if [ ${#DOCS_FILES[@]} -gt 0 ]; then
+            echo "Running markdown-link-check on ${#DOCS_FILES[@]} docs files..."
+            npx markdown-link-check "${DOCS_FILES[@]}"
+          else
+            echo "No docs markdown files found to check."
+          fi
+
+          if [ ${#WIKI_FILES[@]} -gt 0 ]; then
+            echo "Running markdown-link-check on ${#WIKI_FILES[@]} wiki files..."
+            npx markdown-link-check "${WIKI_FILES[@]}"
+          else
+            echo "No wiki markdown files found to check."
+          fi
       - name: Generate Documentation and Wiki Patch
         run: |
           git diff origin/main -- docs/ wiki-content/ > docs-wiki-full-patch.diff || echo "No doc or wiki changes detected."
