@@ -376,7 +376,7 @@ jobs:
             type=gha
             type=gha,scope=normal-runner
           cache-to: type=gha,mode=max,scope=normal-runner
-          no-cache: ${{ false }}
+          no-cache: ${{ github.event.inputs.force_rebuild == 'true' }}
       - name: Get primary normal runner tag for security scan
         id: get-primary-tag
         if: success() && steps.build.conclusion == 'success'
@@ -449,7 +449,7 @@ jobs:
             type=gha
             type=gha,scope=chrome-runner
           cache-to: type=gha,mode=max,scope=chrome-runner
-          no-cache: ${{ false }}
+          no-cache: ${{ github.event.inputs.force_rebuild == 'true' }}
       - name: Get primary Chrome runner tag for security scan
         id: get-primary-tag-chrome
         if: success() && steps.build-chrome.conclusion == 'success'
