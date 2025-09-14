@@ -47,7 +47,7 @@ cd github-runner
 
 ```bash
 # Copy configuration template
-cp config/runner.env.template config/runner.env
+cp config/runner.env.example config/runner.env
 
 # Edit configuration
 nano config/runner.env
