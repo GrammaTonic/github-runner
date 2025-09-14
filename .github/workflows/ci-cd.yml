@@ -381,9 +381,14 @@ jobs:
             # Provide the default cache sources (multi-line) via GITHUB_ENV
             printf "CACHE_FROM=type=gha\ntype=gha,scope=normal-runner\n" >> $GITHUB_ENV
             printf "CACHE_TO=type=gha,mode=max,scope=normal-runner\n" >> $GITHUB_ENV
-            # Also emit as step outputs so other action inputs can reference them
-            echo "cache_from=type=gha\ntype=gha,scope=normal-runner" >> $GITHUB_OUTPUT
-            echo "cache_to=type=gha,mode=max,scope=normal-runner" >> $GITHUB_OUTPUT
+            # Also emit as step outputs so other action inputs can reference them (multi-line)
+            echo "cache_from<<EOF" >> $GITHUB_OUTPUT
+            echo "type=gha" >> $GITHUB_OUTPUT
+            echo "type=gha,scope=normal-runner" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "cache_to<<EOF" >> $GITHUB_OUTPUT
+            echo "type=gha,mode=max,scope=normal-runner" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
           fi
       - name: Build and push normal runner Docker image
         id: build
@@ -474,6 +479,14 @@ jobs:
             # Provide the default cache sources (multi-line) via GITHUB_ENV
             printf "CACHE_FROM=type=gha\ntype=gha,scope=chrome-runner\n" >> $GITHUB_ENV
             printf "CACHE_TO=type=gha,mode=max,scope=chrome-runner\n" >> $GITHUB_ENV
+            # Also emit as step outputs so other action inputs can reference them (multi-line)
+            echo "cache_from<<EOF" >> $GITHUB_OUTPUT
+            echo "type=gha" >> $GITHUB_OUTPUT
+            echo "type=gha,scope=chrome-runner" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "cache_to<<EOF" >> $GITHUB_OUTPUT
+            echo "type=gha,mode=max,scope=chrome-runner" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
           fi
       - name: Build and push Chrome runner image
         id: build-chrome
