@@ -136,7 +136,7 @@ jobs:
           fi
 
       - name: Create security issue if needed
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           CRITICAL_VULNS: ${{ env.critical_vulns }}
         with:
