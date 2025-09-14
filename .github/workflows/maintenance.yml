@@ -40,7 +40,7 @@ jobs:
     if: inputs.update_type == 'all' || inputs.update_type == 'version-tracking' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -109,7 +109,7 @@ jobs:
     if: inputs.update_type == 'all' || inputs.update_type == 'docker-images' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -151,7 +151,7 @@ jobs:
     if: inputs.update_type == 'all' || inputs.update_type == 'github-actions' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -182,7 +182,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Run comprehensive security scan
         uses: aquasecurity/trivy-action@master
@@ -340,7 +340,7 @@ jobs:
     if: inputs.update_type == 'all' || inputs.update_type == 'documentation' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -494,7 +494,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check repository structure and health
         run: |

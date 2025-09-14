@@ -10,7 +10,7 @@ jobs:
   validate-docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: Check for outdated references
         run: |
           # Search for 'template' (case-insensitive) and print matches with line numbers.
