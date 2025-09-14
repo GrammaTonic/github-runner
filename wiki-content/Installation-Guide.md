@@ -45,9 +45,10 @@ cd github-runner
 
 ### 2. Configure Environment
 
-```bash
-# Copy configuration template
-cp config/runner.env.template config/runner.env
+# Copy configuration example
+ # Copy the example environment file into a working runner.env before editing
+# Copy configuration example
+cp config/runner.env.example config/runner.env
 
 # Edit configuration
 nano config/runner.env

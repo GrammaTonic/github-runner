@@ -67,7 +67,7 @@ git clone https://github.com/GrammaTonic/github-runner.git
 cd github-runner
 
 # Configure environment
-cp config/runner.env.template config/runner.env
+cp config/runner.env.example config/runner.env
 # Edit config/runner.env with your GitHub token and repository
 
 # Deploy

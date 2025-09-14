@@ -1,9 +1,9 @@
 # Security and CVE Mitigation
 
-- The runner images use `ubuntu:questing` for experimental and bleeding-edge browser support.
-- All dependencies are scanned with Trivy after build and container startup.
-- CVEs in npm's internal modules are not directly fixable; we document and monitor these, and patch all app-level dependencies.
-- For production, switch to a stable Ubuntu LTS base and rerun all security scans.
+ The runner images use `ubuntu:questing` (25.10 pre-release) for the latest browser and system dependencies.
+ All dependencies are scanned with Trivy after build and container startup; results are saved to `test-results/docker/` for audit and compliance.
+ CVEs in npm's internal modules are documented and monitored; all app-level dependencies are patched using npm overrides and local installs.
+ For production, switch to a stable Ubuntu LTS base and rerun all security scans as documented in README and release notes.
 
 # Audit and Compliance
 
@@ -58,11 +58,11 @@
    cd /opt/github-runner
 
    # Configure environment
-   cp config/runner.env.template config/runner.env
+  cp config/runner.env.example config/runner.env
    # Edit config/runner.env with production values
 
    # Start runners
-   ./scripts/deploy.sh start -s 3
+  ./scripts/quick-start.sh
    ```
 
 3. **Monitoring Setup**
@@ -268,7 +268,7 @@ spec:
 # hpa.yml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
-metadata:
+              # Warning: Chrome runner image only supports `linux/amd64`. ARM builds are blocked at build time.
   name: github-runner-hpa
   namespace: github-runner
 spec:

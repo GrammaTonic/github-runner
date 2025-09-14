@@ -1,6 +1,6 @@
 # Runner Self-Test (issue #969)
 
-This document explains how to smoke-test that self-hosted runners (standard and Chrome) accept GitHub Actions jobs and can execute a simple test workflow.
+This document explains how to smoke-test that self-hosted runners (standard and Chrome) accept GitHub Actions jobs and can execute a simple test workflow. All runner images are now based on `ubuntu:questing` (25.10 pre-release) and support the latest GitHub Actions runner version.
 
 What this provides
 

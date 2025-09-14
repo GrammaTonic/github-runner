@@ -1,0 +1,73 @@
+name: Auto Sync Docs
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+jobs:
+  auto-sync-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # Need full history for diff against origin/main
+          fetch-depth: 0
+      - name: Check for outdated references in docs and wiki
+        run: |
+          # Search for the word 'template' but ignore known benign occurrences:
+          # - files under docs/archive/ (historical notes)
+          # - Prometheus console flag lines which include 'templates' as part of the flag
+            if grep -rnI --line-number -E '\.template\b' docs/ wiki-content/ | grep -v -E '^docs/archive/|--web.console.templates=' > /tmp/outdated_refs.txt; then
+            echo "❌ Outdated references found:"
+            cat /tmp/outdated_refs.txt
+            # Fail the job when running in CI
+            exit 1
+          else
+            echo "✅ No outdated references found."
+          fi
+      - name: Validate Markdown links in docs and wiki
+        run: |
+          set -euo pipefail
+          echo "Collecting markdown files (excluding docs/archive/)..."
+          # Docs: count and run link-check if any (exclude archived docs)
+          DOCS_COUNT=$(find docs -type f -name '*.md' ! -path 'docs/archive/*' 2>/dev/null | wc -l | tr -d ' ' || true)
+          if [ -n "$DOCS_COUNT" ] && [ "$DOCS_COUNT" -gt 0 ]; then
+            echo "Running markdown-link-check on $DOCS_COUNT docs files..."
+            find docs -type f -name '*.md' ! -path 'docs/archive/*' -print0 | xargs -0 npx -y markdown-link-check || true
+          else
+            echo "No docs markdown files found to check."
+          fi
+
+          # Wiki: only run if directory exists and files found
+          if [ -d wiki-content ]; then
+            WIKI_COUNT=$(find wiki-content -type f -name '*.md' 2>/dev/null | wc -l | tr -d ' ' || true)
+            if [ -n "$WIKI_COUNT" ] && [ "$WIKI_COUNT" -gt 0 ]; then
+              echo "Running markdown-link-check on $WIKI_COUNT wiki files..."
+              find wiki-content -type f -name '*.md' -print0 | xargs -0 npx -y markdown-link-check || true
+            else
+              echo "No wiki markdown files found to check."
+            fi
+          else
+            echo "No wiki-content directory present, skipping wiki link-check."
+          fi
+      - name: Generate Documentation and Wiki Patch
+        run: |
+          git diff origin/main -- docs/ wiki-content/ > docs-wiki-full-patch.diff || echo "No doc or wiki changes detected."
+      - name: Upload Docs and Wiki Patch Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-wiki-full-patch
+          path: docs-wiki-full-patch.diff
+      - name: Create Pull Request for Docs and Wiki Updates
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "docs: automated documentation and wiki sync"
+          title: "Automated Documentation and Wiki Sync"
+          body: |
+            This PR was created automatically to sync documentation and wiki blocks/examples with the latest code and workflow changes.
+          # Use run-specific id for a unique branch name (shell substitution won't run here)
+          branch: docs-wiki/auto-sync-${{ github.run_id }}
+          base: main

@@ -1,4 +1,4 @@
-- **Architecture Enforcement**: Chrome runner image only supports `linux/amd64` (x86_64). ARM builds are blocked at build time.
+- **Architecture Enforcement**: Chrome runner image only supports `linux/amd64` (x86_64). ARM builds are blocked at build time. Base image is now `ubuntu:questing` (25.10 pre-release) for latest browser support.
 
 # Chrome Runner Feature Branch
 
