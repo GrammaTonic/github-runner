@@ -47,7 +47,7 @@ cd github-runner
 
 # Copy configuration example
  # Copy the example environment file into a working runner.env before editing
-# Copy configuration template
+# Copy configuration example
 cp config/runner.env.example config/runner.env
 
 # Edit configuration
