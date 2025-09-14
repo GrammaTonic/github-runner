@@ -1,4 +1,4 @@
-# Security Advisory Management Workflow
+# Security Advisory Management Workflow (Synced September 2025)
 
 This document explains the new security management approach that replaces the previous issue-creating workflow.
 

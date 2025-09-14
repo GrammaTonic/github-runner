@@ -8,15 +8,15 @@ This document provides a comprehensive overview of all software versions, depend
 
 ### 1. Standard Runner (`docker/Dockerfile`)
 
-**Image Version**: v2.0.2
-**Base Image**: `ubuntu:24.04`
+**Image Version**: v2.0.9
+**Base Image**: `ubuntu:questing` (25.10 Pre-release)
 **Purpose**: General-purpose GitHub Actions runner with development tools
 **Target Architectures**: `linux/amd64` only
 
 ### 2. Chrome Runner (`docker/Dockerfile.chrome`)
 
-**Image Version**: v2.0.2
-**Base Image**: `ubuntu:24.04`
+**Image Version**: v2.0.9
+**Base Image**: `ubuntu:questing` (25.10 Pre-release)
 **Purpose**: Chrome-optimized runner for web UI testing and browser automation
 **Target Architectures**: `linux/amd64` only (ARM builds are blocked for Chrome runner)
 
@@ -31,9 +31,9 @@ This document provides a comprehensive overview of all software versions, depend
 
 ### Operating System
 
-**Base OS**: Ubuntu 24.04 LTS (Noble Numbat)
+**Base OS**: Ubuntu 25.1sss0 Questing (Pre-release)
 **Architecture Support**: amd64 only for Chrome Runner; Standard Runner is amd64
-**Kernel Version**: Linux kernel 6.8+
+**Kernel Version**: Linux kernel 6.10+
 - **Security Updates**: Applied via `apt-get update` during build
 
 ## Runtime Dependencies
@@ -44,7 +44,7 @@ This document provides a comprehensive overview of all software versions, depend
 | ----------------- | ---------------------------------- | ---------------------- |
 | `nodejs`          | 24.7.0 (Chrome Runner only)        | JavaScript runtime     |
 | `npm`             | Latest available                   | Package manager        |
-| `python3`         | 3.12+ (Ubuntu 24.04 default)       | Python runtime         |
+| `python3`         | 3.10+ (Ubuntu 25.10 default)       | Python runtime         |
 | `python3-pip`     | Latest available                   | Python package manager |
 | `git`             | Latest available                   | Version control        |
 | `git-lfs`         | Latest available                   | Large file support     |
@@ -89,7 +89,7 @@ This document provides a comprehensive overview of all software versions, depend
 | `boto3`                | Latest  | AWS SDK          |
 | `azure-cli`            | Latest  | Azure CLI        |
 | `google-cloud-storage` | Latest  | Google Cloud SDK |
-| `python3`              | 3.12+   | Python runtime   |
+| `python3`              | 3.10+   | Python runtime   |
 
 #### Chrome Runner
 
@@ -104,7 +104,7 @@ This document provides a comprehensive overview of all software versions, depend
 
 ### Google Chrome
 
-- **Version**: Stable channel (latest)
+- **Version**: 140.0.7339.80 (Stable channel)
 - **Installation**: Official Google repository
 - **GPG Key**: Verified from `dl.google.com`
 - **Binary Path**: `/usr/bin/google-chrome-stable`
@@ -192,29 +192,33 @@ This document provides a comprehensive overview of all software versions, depend
 
 ## Health Checks
 
-### Standard Runner
+
+### Standard Runner Health Check
 
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD pgrep -f "Runner.Listener" || exit 1
+  CMD pgrep -f "Runner.Listener" || exit 1
 ```
 
-### Chrome Runner
+
+### Chrome Runner Health Check
 
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD pgrep -f "Runner.Listener" > /dev/null || exit 1
+  CMD pgrep -f "Runner.Listener" > /dev/null || exit 1
 ```
 
 ## Environment Configuration
 
-### Standard Runner Environment
+
+### Standard Runner Environment Variables
 
 - `RUNNER_WORKDIR=/home/runner/_work`
 - `RUNNER_ALLOW_RUNASROOT=false`
 - `DEBIAN_FRONTEND=noninteractive`
 
-### Chrome Runner Environment
+
+### Chrome Runner Environment Variables
 
 - `CHROME_BIN=/usr/bin/google-chrome-stable`
 - `DISPLAY=:99`
@@ -222,17 +226,20 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 ## Volume Mounts
 
-### Standard Runner
+
+### Standard Runner Volume Mounts
 
 - `/home/runner/_work` - Persistent workspace
 - `/home/runner/.cache` - Build and dependency cache
 
-### Chrome Runner
+
+### Chrome Runner Volume Mounts
 
 - `/home/runner/.cache` - Browser and test cache
 - `/home/runner/workspace` - Test workspace
 
 ## Network Configuration
+
 
 ### Exposed Ports
 
@@ -241,11 +248,13 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 ## Update Policy
 
+
 ### Automated Updates
 
 - **Base OS**: Updated during build via `apt-get update`
 - **System Packages**: Latest available versions from Ubuntu repositories
 - **GitHub Runner**: Pinned to specific version for stability
+
 
 ### Manual Updates Required
 
@@ -255,8 +264,10 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 ## Version History
 
+
 ### Recent Changes
 
+- **2025-09-14**: Updated to Ubuntu 25.10 Questing, image version v2.0.9, Chrome 140.0.7339.80, Playwright 1.55.0, Cypress 15.1.0, Node.js 24.7.0 (Chrome Runner only), and architecture enforcement (amd64 only)
 - **2025-09-10**: Extensive documentation update for Ubuntu 24.04 LTS, image version v2.0.2, Node.js 24.7.0 (Chrome Runner only), and architecture enforcement (amd64 only)
 - **2025-01-15**: Applied VDB-216777/CVE-2020-36632 flat package security fix
 - **2025-01-15**: Added comprehensive security patches for Chrome Runner
@@ -272,6 +283,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 ---
 
-**Last Updated**: September 10, 2025  
+**Last Updated**: September 14, 2025 (Synced with code and workflows)
 **Document Version**: 2.0  
 **Maintainer**: GrammaTonic

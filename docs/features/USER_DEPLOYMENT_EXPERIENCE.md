@@ -102,7 +102,7 @@ Failed: 0
 
 ✅ **Complete deployment experience**
 
-- **One-command setup**: `./scripts/quick-start.sh`
+- **One-command setup**: `./scripts/quick-start.sh` (now validates environment and automates deployment for both runner types)
 - Production-ready configuration out of the box
 - Clear guidance when issues occur
 - Automated validation prevents deployment problems
