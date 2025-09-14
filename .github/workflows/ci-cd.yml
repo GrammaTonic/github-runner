@@ -362,6 +362,19 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=raw,value=latest,branch=main
+      - name: Determine normal build no-cache
+        id: force-rebuild-normal
+        run: |
+          # Determine whether to force rebuild for the normal build
+          INPUT_VAL="${{ github.event.inputs.force_rebuild || '' }}"
+          HEAD_MSG="${{ github.event.head_commit.message || '' }}"
+          echo "event_input=$INPUT_VAL"
+          echo "head_commit_message=$HEAD_MSG"
+          if [ "$INPUT_VAL" = "true" ] || echo "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
+            echo "force_rebuild=true" >> $GITHUB_OUTPUT
+          else
+            echo "force_rebuild=false" >> $GITHUB_OUTPUT
+          fi
       - name: Build and push normal runner Docker image
         id: build
         uses: docker/build-push-action@v6
@@ -377,7 +390,7 @@ jobs:
             type=gha
             type=gha,scope=normal-runner
           cache-to: type=gha,mode=max,scope=normal-runner
-          no-cache: ${{ github.event.inputs.force_rebuild == 'true' }}
+          no-cache: ${{ steps.force-rebuild-normal.outputs.force_rebuild == 'true' }}
       - name: Get primary normal runner tag for security scan
         id: get-primary-tag
         if: success() && steps.build.conclusion == 'success'
@@ -436,6 +449,19 @@ jobs:
             type=raw,value=latest,branch=main
           labels: |
             org.opencontainers.image.name=github-runner-chrome
+      - name: Determine Chrome build no-cache
+        id: force-rebuild-chrome
+        run: |
+          # Determine whether to force rebuild for the Chrome build
+          INPUT_VAL="${{ github.event.inputs.force_rebuild || '' }}"
+          HEAD_MSG="${{ github.event.head_commit.message || '' }}"
+          echo "event_input=$INPUT_VAL"
+          echo "head_commit_message=$HEAD_MSG"
+          if [ "$INPUT_VAL" = "true" ] || echo "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
+            echo "force_rebuild=true" >> $GITHUB_OUTPUT
+          else
+            echo "force_rebuild=false" >> $GITHUB_OUTPUT
+          fi
       - name: Build and push Chrome runner image
         id: build-chrome
         uses: docker/build-push-action@v6
@@ -451,7 +477,7 @@ jobs:
             type=gha
             type=gha,scope=chrome-runner
           cache-to: type=gha,mode=max,scope=chrome-runner
-          no-cache: ${{ github.event.inputs.force_rebuild == 'true' }}
+          no-cache: ${{ steps.force-rebuild-chrome.outputs.force_rebuild == 'true' }}
       - name: Get primary Chrome runner tag for security scan
         id: get-primary-tag-chrome
         if: success() && steps.build-chrome.conclusion == 'success'
