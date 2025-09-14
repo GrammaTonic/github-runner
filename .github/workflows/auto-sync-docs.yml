@@ -20,7 +20,7 @@ jobs:
           # Search for the word 'template' but ignore known benign occurrences:
           # - files under docs/archive/ (historical notes)
           # - Prometheus console flag lines which include 'templates' as part of the flag
-          if grep -rnI --line-number 'template' docs/ wiki-content/ | grep -v -E '^docs/archive/|--web.console.templates=' > /tmp/outdated_refs.txt; then
+            if grep -rnI --line-number -E '\.template\b' docs/ wiki-content/ | grep -v -E '^docs/archive/|--web.console.templates=' > /tmp/outdated_refs.txt; then
             echo "❌ Outdated references found:"
             cat /tmp/outdated_refs.txt
             # Fail the job when running in CI

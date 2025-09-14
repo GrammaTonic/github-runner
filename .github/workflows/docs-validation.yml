@@ -15,10 +15,9 @@ jobs:
         run: |
           # Search for 'template' (case-insensitive) and print matches with line numbers.
           # In CI (GITHUB_ACTIONS set) fail the step; when run locally do not exit the user's shell.
-          # Search for the word 'template' but ignore known benign occurrences:
-          # - files under docs/archive/ (historical notes)
-          # - Prometheus console flag lines which include 'templates' as part of the flag
-          if grep -rnI --line-number 'template' docs/ wiki-content/ | grep -v -E '^docs/archive/|--web.console.templates=' > /tmp/outdated_refs.txt; then
+          # Search for filename-style references ending with '.template' (e.g. runner.env.template)
+          # This avoids matching unrelated uses of the word 'template' in prose or cloud templates
+          if grep -rnI --line-number -E '\.template\b' docs/ wiki-content/ | grep -v -E '^docs/archive/|--web.console.templates=' > /tmp/outdated_refs.txt; then
             echo "❌ Outdated references found:"
             cat /tmp/outdated_refs.txt
             if [ -n "${GITHUB_ACTIONS:-}" ]; then
