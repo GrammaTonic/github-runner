@@ -77,31 +77,17 @@ jobs:
         with:
           name: docs-wiki-full-patch
           path: docs-wiki-full-patch.diff
-      - name: Open issue with docs/wiki patch
+      - name: Create Pull Request for Docs and Wiki Updates
         if: steps.gen-patch.outputs.changed == 'true'
-        uses: actions/github-script@v6
+        uses: peter-evans/create-pull-request@v5
         with:
-          script: |
-            const fs = require('fs');
-            const patchPath = 'docs-wiki-full-patch.diff';
-            let body = 'An automated scan detected documentation or wiki changes. The patch is attached below as a diff.\n\n';
-            if (fs.existsSync(patchPath)) {
-              const diff = fs.readFileSync(patchPath, 'utf8');
-              // Limit issue body size; include first 200KB and reference the artifact for full patch
-              const MAX = 200000; // ~200KB
-              if (diff.length > MAX) {
-                body += 'Patch is large; showing first 200KB. Full patch is uploaded as an artifact.\n\n';
-                body += '```\n' + diff.slice(0, MAX) + '\n```';
-              } else {
-                body += '```\n' + diff + '\n```';
-              }
-            } else {
-              body += 'No patch file found in the workspace.';
-            }
-
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `Automated docs/wiki sync - run ${context.runId}`,
-              body: body
-            });
+          # Use the workflow token (GITHUB_TOKEN) provided to the runner. If you prefer a PAT,
+          # set REPO_PUSH_TOKEN and we can update this to use that.
+          token: ${{ github.token }}
+          commit-message: "docs: automated documentation and wiki sync"
+          title: "Automated Documentation and Wiki Sync"
+          body: |
+            This PR was created automatically to sync documentation and wiki blocks/examples with the latest code and workflow changes.
+            The full patch is attached as an artifact on the workflow run if you need to review the complete diff.
+          branch: docs-wiki/auto-sync-${{ github.run_id }}
+          base: develop
