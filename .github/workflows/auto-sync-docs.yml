@@ -144,41 +144,43 @@ jobs:
 
       - name: Create Pull Request for Docs and Wiki Updates (new PR)
         if: steps.gen-patch.outputs.changed == 'true'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const fs = require('fs');
-            const info = fs.existsSync('pr-info.json') ? JSON.parse(fs.readFileSync('pr-info.json', 'utf8')) : { pr_found: false };
-            if (info.pr_found) {
-              console.log('Existing PR found; skipping new PR creation.');
-              return;
-            }
-            // Create a new branch and PR by using the create-pull-request action's behavior via API
-            const branch = `docs-wiki/auto-sync-${context.runId}`;
-            // Create an empty branch from develop and commit the patch
-            // We'll create a tree with the patched files by applying the diff in the runner and pushing.
-            // For simplicity, reuse the peter-evans action behavior by performing a push: create branch, apply patch, push.
-            // Prepare local branch
-            const execTool2 = require('@actions/exec');
-            const core2 = (typeof core !== 'undefined') ? core : require('@actions/core');
-            (async () => {
-              try {
-                  await execTool2.exec('git', ['fetch', 'origin', 'develop']);
-                  await execTool2.exec('git', ['checkout', '-b', branch, 'origin/develop']);
-                  const apply = await execTool2.exec('bash', ['-lc', 'git apply --index docs-wiki-full-patch.diff || true']);
-                  await execTool2.exec('bash', ['-lc', 'git commit -m "docs: automated documentation and wiki sync" || echo "No changes to commit"']);
-                  await execTool2.exec('git', ['push', 'origin', `HEAD:${branch}`]);
-                // Create PR
-                const pr = await github.rest.pulls.create({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  title: 'Automated Documentation and Wiki Sync',
-                  head: branch,
-                  base: 'develop',
-                  body: 'This PR was created automatically to sync documentation and wiki blocks/examples with the latest code and workflow changes. The full patch is attached as an artifact on the workflow run if you need to review the complete diff.'
-                });
-                console.log('Created PR: ' + pr.data.html_url);
-              } catch (e) {
-                core2.setFailed(e.message);
-              }
-            })();
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Read pr-info.json if present
+          if [ -f pr-info.json ]; then
+            PR_FOUND=$(jq -r '.pr_found' pr-info.json)
+          else
+            PR_FOUND=false
+          fi
+          if [ "$PR_FOUND" = "true" ]; then
+            echo "Existing PR found; skipping new PR creation."
+            exit 0
+          fi
+
+          BRANCH="docs-wiki/auto-sync-${{ github.run_id }}"
+          echo "Creating new branch $BRANCH from develop and applying patch..."
+          git fetch origin develop
+          git checkout -b "$BRANCH" origin/develop
+
+          # Apply patch; if it fails or produces no changes, we still try to commit safely
+          if git apply --index docs-wiki-full-patch.diff; then
+            git commit -m "docs: automated documentation and wiki sync" || echo "No changes to commit"
+          else
+            echo "git apply failed or produced no changes; attempting to continue if commit possible"
+            git commit -m "docs: automated documentation and wiki sync" || echo "No changes to commit"
+          fi
+
+          echo "Pushing branch to origin..."
+          git push origin HEAD:"$BRANCH"
+
+          echo "Creating PR via REST API..."
+          API_URL="https://api.github.com/repos/${{ github.repository }}/pulls"
+          PR_BODY=$(jq -Rs . < docs-wiki-full-patch.diff || echo '"Patch unavailable"')
+          PAYLOAD=$(jq -n --arg title "Automated Documentation and Wiki Sync" \
+            --arg head "$BRANCH" --arg base "develop" --arg body "This PR was created automatically to sync documentation and wiki blocks/examples with the latest code and workflow changes. The full patch is attached as an artifact on the workflow run if you need to review the complete diff." \
+            '{title: $title, head: $head, base: $base, body: $body}')
+
+          resp=$(curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -X POST "$API_URL" --data "$PAYLOAD" || true)
+          echo "$resp" | jq -r '.html_url // .message'
