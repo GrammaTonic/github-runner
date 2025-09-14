@@ -12,27 +12,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Check for outdated references
+      - name: Check for outdated references in docs and wiki
         run: |
           grep -r -i 'template' docs/ wiki-content/ && exit 1 || echo "No outdated references found."
-      - name: Validate Markdown links
+      - name: Validate Markdown links in docs and wiki
         run: |
           npx markdown-link-check docs/**/*.md
           npx markdown-link-check wiki-content/**/*.md
-      - name: Generate Documentation Patch
+      - name: Generate Documentation and Wiki Patch
         run: |
-          git diff origin/main -- docs/ wiki-content/ > docs-full-patch.diff || echo "No doc changes detected."
-      - name: Upload Patch Artifact
+          git diff origin/main -- docs/ wiki-content/ > docs-wiki-full-patch.diff || echo "No doc or wiki changes detected."
+      - name: Upload Docs and Wiki Patch Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: docs-full-patch
-          path: docs-full-patch.diff
-      - name: Create Pull Request for Doc Updates
+          name: docs-wiki-full-patch
+          path: docs-wiki-full-patch.diff
+      - name: Create Pull Request for Docs and Wiki Updates
         uses: peter-evans/create-pull-request@v5
         with:
-          commit-message: "docs: automated documentation sync"
-          title: "Automated Documentation Sync"
+          commit-message: "docs: automated documentation and wiki sync"
+          title: "Automated Documentation and Wiki Sync"
           body: |
-            This PR was created automatically to sync documentation blocks and examples with the latest code and workflow changes.
-          branch: docs/auto-sync-$(date +'%Y%m%d%H%M%S')
+            This PR was created automatically to sync documentation and wiki blocks/examples with the latest code and workflow changes.
+          branch: docs-wiki/auto-sync-$(date +'%Y%m%d%H%M%S')
           base: main
