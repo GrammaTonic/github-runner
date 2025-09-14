@@ -20,3 +20,6 @@ updates:
     commit-message:
       prefix: "chore(docker)"
       include: "scope"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
