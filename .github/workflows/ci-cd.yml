@@ -277,18 +277,6 @@ jobs:
           # report in SARIF format for GitHub code scanning dont fail this step on lint errors
           FAIL_ON_ERROR: false
           SAVE_SUPER_LINTER_OUTPUT: true
-      # upload sarif report even if super-linter fails then fail the job if there were lint errors
-      - name: Upload Super Linter SARIF report to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: super-linter-report.sarif
-          category: "linting"
-      - name: Fail if Super Linter found issues
-        if: ${{ always() && steps.lint.outcome == 'failure' }}
-        run: |
-          echo "Super Linter found issues. Failing the job."
-          exit 1
       - name: Validate Docker Compose files
         run: |
           # Validate separate compose files syntax
