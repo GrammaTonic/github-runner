@@ -263,7 +263,7 @@ jobs:
         id: lint
         uses: super-linter/super-linter/slim@v8.1.0
         env:
-          DEFAULT_BRANCH: ${{ github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref || github.ref_name }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: true
           VALIDATE_DOCKERFILE: true
