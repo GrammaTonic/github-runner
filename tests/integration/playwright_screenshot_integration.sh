@@ -20,7 +20,6 @@ if ! docker exec "$CONTAINER_NAME" node -e "require('playwright')" 2>/dev/null; 
 	docker exec "$CONTAINER_NAME" /usr/bin/npx playwright install chromium --yes
 fi
 
-
 echo "[INFO] Running Playwright screenshot script inside container..."
 mkdir -p "$HOST_RESULTS_DIR"
 docker exec -e SCREENSHOT_PATH="$SCREENSHOT_PATH" "$CONTAINER_NAME" node /tmp/google_screenshot.js 2>&1 | tee "$LOG_PATH"
