@@ -87,8 +87,8 @@ jobs:
           echo "Using labels: $RUNNER_LABELS"
           echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
           docker compose -f docker/docker-compose.production.yml up -d
-            echo "Checking if normal runner container is running..."
-            if [ "$(docker ps -q -f name=github-runner-main)" ]; then
+          echo "Checking if normal runner container is running..."
+          if [ "$(docker ps -q -f name=github-runner-main)" ]; then
             echo "Normal runner container is running."
             else
             echo "Normal runner container is not running! Printing status and logs for diagnostics:"
