@@ -14,7 +14,7 @@ echo "[INFO] Building Normal runner Docker image locally..."
 echo "[INFO] Creating Docker Compose override file for local image..."
 docker build --platform=linux/amd64 -f docker/Dockerfile -t "$LOCAL_IMAGE" ./docker
 if command -v trivy &> /dev/null; then
-    trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_${TIMESTAMP}.txt
+    trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_"${TIMESTAMP}".txt
     echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
 elif docker --version &> /dev/null; then
   echo "[INFO] Running Trivy via Docker..."
@@ -28,7 +28,7 @@ elif docker --version &> /dev/null; then
   docker run --rm \
     -v "$DOCKER_SOCK:/var/run/docker.sock" \
     -v "$(pwd)/test-results/docker:/output" \
-    aquasec/trivy:latest image "$LOCAL_IMAGE" --format json --output /output/trivy_scan_${TIMESTAMP}.txt
+    aquasec/trivy:latest image "$LOCAL_IMAGE" --format json --output /output/trivy_scan_"${TIMESTAMP}".txt
   echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
 else
     echo "[WARNING] Trivy not available. Skipping security scan."

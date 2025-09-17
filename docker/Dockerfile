@@ -23,6 +23,7 @@ RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker \
     && rm -rf /var/lib/apt/lists/*
 
 # --- SETUP AS ROOT USER ---
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates gnupg git jq libicu-dev python3 python3-pip python3-venv \
     docker.io build-essential iputils-ping \

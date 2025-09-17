@@ -28,7 +28,7 @@ check_root_markdown() {
     local found_violations=()
     
     # Find all .md files in root
-    if ls *.md >/dev/null 2>&1; then
+    if ls ./*.md >/dev/null 2>&1; then
         for file in *.md; do
             [[ -f "$file" ]] || continue
             
@@ -131,7 +131,7 @@ auto_fix() {
     mkdir -p docs/community docs/features docs/releases docs/archive
     
     # Move files to correct locations
-    if ls *.md >/dev/null 2>&1; then
+    if ls ./*.md >/dev/null 2>&1; then
         for file in *.md; do
             [[ -f "$file" ]] || continue
             

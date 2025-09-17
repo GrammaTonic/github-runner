@@ -214,8 +214,10 @@ EOF
 
 # Function to suggest package alternatives
 suggest_alternatives() {
+    # shellcheck disable=SC2317
     local failed_package="$1"
     
+    # shellcheck disable=SC2317
     case "$failed_package" in
         "libgconf-2-4")
             echo "Alternative: Remove this package - GConf is obsolete. Use GSettings/dconf instead."

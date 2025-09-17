@@ -61,7 +61,7 @@ select_runner_type() {
     echo ""
     
     while true; do
-        read -p "Select runner type [1-3]: " choice
+        read -r -p "Select runner type [1-3]: " choice
         case $choice in
             1)
                 RUNNER_TYPE="standard"
@@ -217,7 +217,7 @@ configure_runner_environment() {
         echo "Create one at: https://github.com/settings/tokens"
         echo "Required scopes: repo (private) or public_repo (public)"
         echo ""
-        read -p "Enter your GitHub token: " -s github_token
+        read -r -p "Enter your GitHub token: " -s github_token
         echo ""
         
         if [ -z "$github_token" ]; then
@@ -233,7 +233,7 @@ configure_runner_environment() {
         echo "Format: username/repository-name"
         echo "Example: johndoe/my-awesome-project"
         echo ""
-        read -p "Enter your repository: " github_repo
+        read -r -p "Enter your repository: " github_repo
         
         if [ -z "$github_repo" ]; then
             log_error "GitHub repository is required"
@@ -254,7 +254,7 @@ configure_runner_environment() {
     if [ "$runner_type" = "chrome" ]; then
         default_name="chrome-runner"
     fi
-    read -p "Runner name (default: $default_name): " runner_name
+    read -r -p "Runner name (default: $default_name): " runner_name
     runner_name=${runner_name:-$default_name}
     
     # Update environment file
@@ -300,7 +300,7 @@ validate_configuration() {
     echo ""
     log_info "Configuration Summary:"
     echo "  Repository: $GITHUB_REPOSITORY"
-    echo "  Main Runner: $RUNNER_NAME"
+    echo "  Main Runner: $runner_name"
     echo "  Chrome Runner: $RUNNER_NAME_CHROME"
     echo ""
 }

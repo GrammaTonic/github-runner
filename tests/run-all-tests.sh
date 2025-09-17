@@ -143,35 +143,47 @@ run_integration_tests() {
 
 # Test Suite 3: Docker Package Validation
 run_docker_package_validation() {
+    # shellcheck disable=SC2317
     start_suite "Docker Package Validation"
     
+    # shellcheck disable=SC2317
     local package_script; package_script="$(dirname "$0")/docker/validate-packages.sh"
+    # shellcheck disable=SC2317
     local package_results="$TEST_RESULTS_DIR/docker"
+    # shellcheck disable=SC2317
     mkdir -p "$package_results"
     
+    # shellcheck disable=SC2317
     if [[ ! -f "$package_script" ]]; then
         fail_suite "Docker Package Validation" "Package validation script not found"
         return 1
     fi
     
+    # shellcheck disable=SC2317
     log_info "Running Docker package validation..."
     
+    # shellcheck disable=SC2317
     local args=()
+    # shellcheck disable=SC2317
     if [[ "$DRY_RUN" == "true" ]]; then
         args+=("--dry-run")
     fi
     
+    # shellcheck disable=SC2317
     local exit_code=0
+    # shellcheck disable=SC2317
     if [[ ${#args[@]} -gt 0 ]]; then
         TEST_RESULTS_DIR="$package_results" "$package_script" "${args[@]}" > "$package_results/package-validation.log" 2>&1 || exit_code=$?
     else
         TEST_RESULTS_DIR="$package_results" "$package_script" > "$package_results/package-validation.log" 2>&1 || exit_code=$?
     fi
     
+    # shellcheck disable=SC2317
     if [[ "$VERBOSE" == "true" ]]; then
         cat "$package_results/package-validation.log"
     fi
     
+    # shellcheck disable=SC2317
     if [[ $exit_code -eq 0 ]]; then
         pass_suite "Docker Package Validation"
     else
@@ -217,22 +229,6 @@ run_container_startup_tests() {
         fail_suite "Container Startup Tests" "Container startup tests failed (exit code: $exit_code)"
         return 1
     fi
-}
-
-# Test Suite 5: Docker Package Validation
-run_docker_package_validation() {
-    start_suite "Docker Package Validation"
-    
-    local package_script; package_script="$(dirname "$0")/docker/validate-packages.sh"
-    local package_results="$TEST_RESULTS_DIR/docker"
-    mkdir -p "$package_results"
-    
-    if [[ ! -f "$package_script" ]]; then
-        fail_suite "Docker Package Validation" "Package validation script not found"
-        return 1
-    fi
-    
-    log_info "Running Docker package validation..."
 }
 
 # Test Suite 4: Security Validation

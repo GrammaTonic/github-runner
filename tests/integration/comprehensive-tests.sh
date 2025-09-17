@@ -70,17 +70,22 @@ fail_test() {
 
 # Cleanup function
 cleanup() {
+    # shellcheck disable=SC2317
     if [[ "$CLEANUP" == "true" ]]; then
         log_info "Cleaning up test environment..."
         
         # Stop and remove test containers
+        # shellcheck disable=SC2317
         docker ps -q --filter "name=test-runner" | xargs -r docker stop > /dev/null 2>&1 || true
+        # shellcheck disable=SC2317
         docker ps -aq --filter "name=test-runner" | xargs -r docker rm > /dev/null 2>&1 || true
         
         # Remove test images
+        # shellcheck disable=SC2317
         docker images -q --filter "reference=test-github-runner*" | xargs -r docker rmi > /dev/null 2>&1 || true
         
         # Clean up test networks
+        # shellcheck disable=SC2317
         docker network ls -q --filter "name=test-runner*" | xargs -r docker network rm > /dev/null 2>&1 || true
     fi
 }

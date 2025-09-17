@@ -167,21 +167,20 @@ setup_main_protection() {
 EOF
     else
         # Standard configuration with review requirement
-        cat << EOF | gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/main/protection --method PUT --input -
+        if ! gh api repos/"$REPO_OWNER"/"$REPO_NAME"/branches/main/protection --method PUT --input - << EOF; then
 {
   "required_status_checks": {
     "strict": true,
     "contexts": ["CI/CD Pipeline"]
   },
-  "enforce_admins": false,
+  "enforce_admins": true,
   "required_pull_request_reviews": {
-    "required_approving_review_count": $REVIEW_COUNT,
+    "required_approving_review_count": 1,
     "dismiss_stale_reviews": true,
     "require_code_owner_reviews": false,
-    "require_last_push_approval": false
+    "dismissal_restrictions": {}
   },
   "restrictions": null,
-  "allow_force_pushes": false,
   "allow_deletions": false,
   "block_creations": false,
   "required_conversation_resolution": true,
@@ -189,7 +188,6 @@ EOF
   "allow_fork_syncing": true
 }
 EOF
-        if [ $? -ne 0 ]; then
             log_warning "Failed to set full protection rules. Trying with minimal protection..."
             
             # Fallback to minimal protection (always include required_status_checks)

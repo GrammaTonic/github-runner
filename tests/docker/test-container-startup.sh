@@ -72,16 +72,22 @@ fail_test() {
 
 # Cleanup function
 cleanup() {
+    # shellcheck disable=SC2317
     if [[ "$CLEANUP" == "true" ]]; then
         log_info "Cleaning up test containers..."
         
         # Stop and remove test containers
+        # shellcheck disable=SC2317
         docker ps -q --filter "name=test-startup-*" | xargs -r docker stop >/dev/null 2>&1 || true
+        # shellcheck disable=SC2317
         docker ps -aq --filter "name=test-startup-*" | xargs -r docker rm >/dev/null 2>&1 || true
         
         # Clean up compose projects
+        # shellcheck disable=SC2317
         cd "$(dirname "$0")/../../docker" || return
+        # shellcheck disable=SC2317
         docker compose -p test-startup-main down >/dev/null 2>&1 || true
+        # shellcheck disable=SC2317
         docker compose -f docker-compose.chrome.yml -p test-startup-chrome down >/dev/null 2>&1 || true
     fi
 }

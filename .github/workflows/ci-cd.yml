@@ -257,8 +257,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
-          fetch-depth: 1
-      - name: Run GitHub Super Linter
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Run GitHub Super Linter 
         id: lint
         uses: super-linter/super-linter@v8.1.0
         env:
@@ -276,8 +277,7 @@ jobs:
           VALIDATE_MD: true
           # report in SARIF format for GitHub code scanning dont fail this step on lint errors
           FAIL_ON_ERROR: false
-          OUTPUT_FORMAT: sarif
-          OUTPUT_FILE: super-linter-report.sarif
+          SAVE_SUPER_LINTER_OUTPUT: true
       # upload sarif report even if super-linter fails then fail the job if there were lint errors
       - name: Upload Super Linter SARIF report to GitHub Security
         uses: github/codeql-action/upload-sarif@v3

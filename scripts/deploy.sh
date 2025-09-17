@@ -9,7 +9,7 @@ ENTRYPOINT_PATH="${ENTRYPOINT_PATH:-/usr/local/bin/entrypoint.sh}"
 
 # Source runner configuration if available
 if [[ -f "config/runner.env" ]]; then
-    # shellcheck source=../config/runner.env.template
+    # shellcheck source=config/runner.env.example
     source config/runner.env
 fi
 
@@ -407,12 +407,13 @@ health_check() {
         echo -n "Checking $container... "
         
         health_output=$(docker exec "$container" "$ENTRYPOINT_PATH" health-check 2>&1)
-        if [[ $? -eq 0 ]]; then
+        if docker exec "$container" "$ENTRYPOINT_PATH" health-check >/dev/null 2>&1; then
             echo -e "${GREEN}HEALTHY${NC}"
             healthy=$((healthy + 1))
         else
             echo -e "${RED}UNHEALTHY${NC}"
             echo -e "${YELLOW}Health check output for $container:${NC}"
+            # shellcheck disable=SC2001
             echo "$health_output" | sed 's/^/  /'
         fi
     done

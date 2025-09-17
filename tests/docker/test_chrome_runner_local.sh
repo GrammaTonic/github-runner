@@ -18,7 +18,7 @@ LOCAL_IMAGE="github-runner-chrome:test-local"
 echo "[INFO] Building Chrome runner Docker image locally..."
 docker build --platform=linux/amd64 -f docker/Dockerfile.chrome -t "$LOCAL_IMAGE" ./docker --progress=plain
 if command -v trivy &> /dev/null; then
-    trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_${TIMESTAMP}.txt
+    trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_"${TIMESTAMP}".txt
     echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
 elif docker --version &> /dev/null; then
   echo "[INFO] Running Trivy via Docker..."
@@ -32,7 +32,7 @@ elif docker --version &> /dev/null; then
   docker run --rm \
     -v "$DOCKER_SOCK:/var/run/docker.sock" \
     -v "$(pwd)/test-results/docker:/output" \
-    aquasec/trivy:latest image "$LOCAL_IMAGE" --format json --output /output/trivy_scan_${TIMESTAMP}.txt
+    aquasec/trivy:latest image "$LOCAL_IMAGE" --format json --output /output/trivy_scan_"${TIMESTAMP}".txt
   echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
 else
     echo "[WARNING] Trivy not available. Skipping security scan."
@@ -40,12 +40,12 @@ fi
 
 echo "[INFO] Running Trivy security scan on the built image..."
 if command -v trivy &> /dev/null; then
-    trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_${TIMESTAMP}.txt
+    trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_"${TIMESTAMP}".txt
     echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
 elif docker --version &> /dev/null; then
     echo "[INFO] Running Trivy via Docker..."
     mkdir -p test-results/docker
-    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)/test-results/docker:/output" aquasec/trivy:latest image "$LOCAL_IMAGE" --format table --output /output/trivy_scan_${TIMESTAMP}.txt
+    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)/test-results/docker:/output" aquasec/trivy:latest image "$LOCAL_IMAGE" --format table --output /output/trivy_scan_"${TIMESTAMP}".txt
     echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
 else
     echo "[WARNING] Trivy not available. Skipping security scan."
@@ -98,19 +98,19 @@ if [ "$STATUS" = "running" ]; then
     echo "[INFO] Running Playwright screenshot script inside container..."
     echo "[INFO] Live output from Playwright script:"
     mkdir -p test-results/docker
-    docker exec -e SCREENSHOT_PATH="$SCREENSHOT_PATH" "$CONTAINER_NAME" node /tmp/google_screenshot.js 2>&1 | tee test-results/docker/playwright_output_${TIMESTAMP}.log
+    docker exec -e SCREENSHOT_PATH="$SCREENSHOT_PATH" "$CONTAINER_NAME" node /tmp/google_screenshot.js 2>&1 | tee test-results/docker/playwright_output_"${TIMESTAMP}".log
     # Check if the script exited successfully and also check for error messages in the log
     SCRIPT_EXIT_CODE=$?
     echo "[INFO] Playwright script exit code: $SCRIPT_EXIT_CODE"
     # Also check if there were any error messages in the output
-    if grep -q "ERROR\|Error\|error\|Cannot find module\|MODULE_NOT_FOUND" test-results/docker/playwright_output_${TIMESTAMP}.log; then
+    if grep -q "ERROR\|Error\|error\|Cannot find module\|MODULE_NOT_FOUND" test-results/docker/playwright_output_"${TIMESTAMP}".log; then
         echo "[WARNING] Error messages detected in log output"
         SCRIPT_EXIT_CODE=1
     fi
     if [ $SCRIPT_EXIT_CODE -eq 0 ]; then
         echo "[SUCCESS] Playwright script completed successfully"
         echo "[INFO] Test results saved in test-results/docker/:"
-        echo "  - Screenshot: $(basename $SCREENSHOT_PATH)"
+        echo "  - Screenshot: $(basename "$SCREENSHOT_PATH")"
         echo "  - Log file: playwright_output_${TIMESTAMP}.log"
     else
         echo "[ERROR] Playwright script failed with exit code $SCRIPT_EXIT_CODE"
@@ -119,8 +119,8 @@ if [ "$STATUS" = "running" ]; then
 
     # Copy screenshot back to host in test-results folder
     mkdir -p test-results/docker
-    docker cp "$CONTAINER_NAME":$SCREENSHOT_PATH test-results/docker/ 2>/dev/null || true
-    LOCAL_SCREENSHOT="test-results/docker/$(basename $SCREENSHOT_PATH)"
+    docker cp "$CONTAINER_NAME":"$SCREENSHOT_PATH" test-results/docker/ 2>/dev/null || true
+    LOCAL_SCREENSHOT="test-results/docker/$(basename "$SCREENSHOT_PATH")"
     # Check if screenshot was actually created
     if [ -f "$LOCAL_SCREENSHOT" ] && [ -s "$LOCAL_SCREENSHOT" ]; then
         echo "[SUCCESS] Screenshot saved as $LOCAL_SCREENSHOT"
