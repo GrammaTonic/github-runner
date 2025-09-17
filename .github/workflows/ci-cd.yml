@@ -269,7 +269,6 @@ jobs:
           VALIDATE_DOCKERFILE: true
           VALIDATE_DOCKERFILE_HADOLINT: true
           FILTER_REGEX_EXCLUDE: docs/archive/.*
-          DISABLE_ERRORS: all-warnings
           VALIDATE_BASH: true
           VALIDATE_SHELL_SHFMT: true
           VALIDATE_YAML: true
