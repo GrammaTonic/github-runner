@@ -252,22 +252,26 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      statuses: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
           fetch-depth: 1
-      - name: Validate Docker files
-        run: |
-          # Check if Docker files exist
-          find . -name "Dockerfile*" -type f | while read -r dockerfile; do
-            echo "Validating $dockerfile"
-            # Run hadolint, ignore DL3002 for builder stages
-            if ! docker run --rm -i hadolint/hadolint hadolint --ignore DL3002 --ignore DL3008 --ignore DL3015 --ignore DL3013 --ignore DL3016 --ignore DL3059 - < "$dockerfile"; then
-              echo "Critical errors found in $dockerfile"
-              exit 1
-            fi
-          done
+      - name: Run GitHub Super Linter
+        uses: github/super-linter@v6
+        env:
+          DEFAULT_BRANCH: develop
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_DOCKERFILE: true
+          VALIDATE_DOCKERFILE_HADOLINT: true
+          VALIDATE_BASH: true
+          VALIDATE_SHELL_SHFMT: true
+          VALIDATE_YAML: true
+          VALIDATE_JSON: true
+          VALIDATE_MD: true
+          FILTER_REGEX_EXCLUDE: docs/archive/.*
       - name: Validate Docker Compose files
         run: |
           # Validate separate compose files syntax
@@ -277,16 +281,6 @@ jobs:
           if [[ -f "docker/docker-compose.chrome.yml" ]]; then
             docker compose -f docker/docker-compose.chrome.yml config --quiet
           fi
-      - name: Validate shell scripts
-        run: |
-          # Install shellcheck
-          sudo apt-get update && sudo apt-get install -y shellcheck
-
-          # Check all shell scripts (fail on errors and warnings for better quality)
-          find . -name "*.sh" -type f | while read -r script; do
-            echo "Checking $script"
-            shellcheck -S warning "$script" || exit 1
-          done
       - name: Check environment file templates
         run: |
           # Validate environment file syntax (basic check)
@@ -575,13 +569,6 @@ jobs:
           # Install comprehensive test dependencies
           sudo apt-get update
           sudo apt-get install -y jq curl
-          # Install hadolint for Docker linting (from GitHub releases)
-          HADOLINT_VERSION="v2.12.0"
-          wget -O /tmp/hadolint "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-x86_64"
-          chmod +x /tmp/hadolint
-          sudo mv /tmp/hadolint /usr/local/bin/hadolint
-          # Verify hadolint installation
-          hadolint --version || echo "Hadolint installation failed, will skip Docker linting"
           # Create test results directory
           mkdir -p test-results/${{ matrix.test-suite }}
           # Make all test scripts executable
@@ -603,22 +590,8 @@ jobs:
           integration_errors=0
           # Test 1: Dockerfile syntax validation
           echo "Validating Dockerfile syntax..."
-          if command -v hadolint >/dev/null 2>&1; then
-            for dockerfile in docker/Dockerfile*; do
-              if [[ -f "$dockerfile" ]]; then
-                dockerfile_name="$(basename "$dockerfile")"
-                # Run hadolint with informational and warning level issues only (ignore style issues)
-                if hadolint --ignore DL3008 --ignore DL3009 --ignore DL3015 "$dockerfile" > "test-results/integration/hadolint-$dockerfile_name.log" 2>&1; then
-                  echo "✅ Hadolint passed for $dockerfile"
-                else
-                  echo "⚠️  Hadolint found issues in $dockerfile (see log for details)"
-                  # Don't fail the build for hadolint issues, just warn
-                fi
-              fi
-            done
-          else
-            echo "ℹ️  Hadolint not available, skipping Docker linting"
-          fi
+          # Note: Docker linting is now handled by Super Linter in the main lint-and-validate job
+          echo "✅ Dockerfile validation handled by Super Linter"
           # Test 2: Docker Compose validation
           echo "Validating docker-compose files..."
           # Create temporary directories that compose files expect to exist

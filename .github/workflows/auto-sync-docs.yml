@@ -184,3 +184,12 @@ jobs:
 
           resp=$(curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -X POST "$API_URL" --data "$PAYLOAD" || true)
           echo "$resp" | jq -r '.html_url // .message'
+      - name: Run GitHub Super Linter for Docs
+        uses: github/super-linter@v6
+        env:
+          DEFAULT_BRANCH: develop
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_MD: true
+          FILTER_REGEX_INCLUDE: docs/**,wiki-content/**
+          FILTER_REGEX_EXCLUDE: docs/archive/**
