@@ -259,19 +259,37 @@ jobs:
         with:
           fetch-depth: 1
       - name: Run GitHub Super Linter
+        id: lint
         uses: super-linter/super-linter@v8.1.0
         env:
-          DEFAULT_BRANCH: ${{ github.ref_name}}
+          DEFAULT_BRANCH: ${{ github.ref_name }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: true
           VALIDATE_DOCKERFILE: true
           VALIDATE_DOCKERFILE_HADOLINT: true
+          FILTER_REGEX_EXCLUDE: docs/archive/.*
+          DISABLE_ERRORS: all-warnings
           VALIDATE_BASH: true
           VALIDATE_SHELL_SHFMT: true
           VALIDATE_YAML: true
           VALIDATE_JSON: true
           VALIDATE_MD: true
-          FILTER_REGEX_EXCLUDE: docs/archive/.*
+          # report in SARIF format for GitHub code scanning dont fail this step on lint errors
+          FAIL_ON_ERROR: false
+          OUTPUT_FORMAT: sarif
+          OUTPUT_FILE: super-linter-report.sarif
+      # upload sarif report even if super-linter fails then fail the job if there were lint errors
+      - name: Upload Super Linter SARIF report to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: super-linter-report.sarif
+          category: "linting"
+      - name: Fail if Super Linter found issues
+        if: ${{ always() && steps.lint.outcome == 'failure' }}
+        run: |
+          echo "Super Linter found issues. Failing the job."
+          exit 1
       - name: Validate Docker Compose files
         run: |
           # Validate separate compose files syntax
