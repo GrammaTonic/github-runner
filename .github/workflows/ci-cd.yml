@@ -261,6 +261,7 @@ jobs:
       - name: Run GitHub Super Linter
         uses: super-linter/super-linter@v8.1.0
         env:
+          DEFAULT_BRANCH: ${{ github.ref_name}}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: true
           VALIDATE_DOCKERFILE: true
