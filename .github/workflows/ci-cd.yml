@@ -886,7 +886,6 @@ jobs:
       - provision-chrome-runner
       - security-container-scan
       - security-chrome-scan
-      - test-container-startup
       - test-comprehensive
     if: always()
     permissions:
