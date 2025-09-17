@@ -1016,7 +1016,7 @@ jobs:
                 else
                     echo "Simple headless test failed, trying alternative approach..."
                     # Second try: Alternative flags
-                    if timeout 15 google-chrome --headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-web-security --disable-features=VizDisplayCompositor --disable-extensions --disable-plugins --disable-images --disable-javascript --disable-background-networking --disable-default-apps --disable-sync --disable-translate --hide-scrollbars --metrics-recording-only --mute-audio --no-first-run --safebrowsing-disable-auto-update --single-process data:text/html,<html><body>Chrome headless test</body></html> > /tmp/chrome-test-alt.html 2>/dev/null; then
+                    if timeout 15 google-chrome --headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-web-security --disable-features=VizDisplayCompositor --disable-extensions --disable-plugins --disable-images --disable-javascript --disable-background-networking --disable-default-apps --disable-sync --disable-translate --hide-scrollbars --metrics-recording-only --mute-audio --no-first-run --safebrowsing-disable-auto-update --single-process "data:text/html,<html><body>Chrome headless test</body></html>" > /tmp/chrome-test-alt.html 2>/dev/null; then
                         printf "\u2713 Chrome headless test passed (alternative mode)\n"
                         CHROME_HEADLESS_PASSED=true
                     fi
