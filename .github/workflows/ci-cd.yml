@@ -261,7 +261,7 @@ jobs:
           persist-credentials: false
       - name: Run GitHub Super Linter 
         id: lint
-        uses: super-linter/super-linter@slim-v8.1.0
+        uses: super-linter/super-linter/slim@v8.1.0
         env:
           DEFAULT_BRANCH: ${{ github.ref_name }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
