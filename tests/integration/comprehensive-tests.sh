@@ -92,6 +92,7 @@ cleanup() {
 }
 
 # Signal handler for cleanup
+# shellcheck disable=SC2317
 trap cleanup EXIT
 
 # Test 1: Docker Package Validation
