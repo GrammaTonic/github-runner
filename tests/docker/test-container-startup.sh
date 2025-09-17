@@ -310,7 +310,7 @@ test_chrome_runner_startup() {
 		--remote-debugging-port=9222 --user-data-dir=/tmp/chrome-test \
 		--disable-background-timer-throttling --disable-renderer-backgrounding \
 		--disable-features=TranslateUI --disable-ipc-flooding-protection \
-		about:blank >"$TEST_RESULTS_DIR/chrome-headless-test.log" 2>&1; then
+		"about:blank" >"$TEST_RESULTS_DIR/chrome-headless-test.log" 2>&1; then
 		log_info "Chrome headless test passed (simple mode)"
 		chrome_test_passed=true
 	fi
@@ -326,7 +326,7 @@ test_chrome_runner_startup() {
 			--disable-sync --disable-translate --hide-scrollbars \
 			--metrics-recording-only --mute-audio --no-first-run \
 			--safebrowsing-disable-auto-update --single-process \
-			data:text/html,<html><body>Chrome headless test</body></html> \
+			"data:text/html,<html><body>Chrome headless test</body></html>" \
 			>"$TEST_RESULTS_DIR/chrome-headless-test-alt.log" 2>&1; then
 			log_info "Chrome headless test passed (alternative mode)"
 			chrome_test_passed=true
