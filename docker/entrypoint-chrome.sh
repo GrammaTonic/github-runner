@@ -20,31 +20,31 @@ cd /actions-runner
 # Request a registration token from the GitHub API
 echo "Requesting registration token for ${GITHUB_REPOSITORY}..."
 RUNNER_TOKEN=$(curl -s -X POST \
-  -H "Authorization: token ${GITHUB_TOKEN}" \
-  -H "Accept: application/vnd.github.v3+json" \
-  "https://api.${GITHUB_HOST}/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token" | jq -r '.token')
+	-H "Authorization: token ${GITHUB_TOKEN}" \
+	-H "Accept: application/vnd.github.v3+json" \
+	"https://api.${GITHUB_HOST}/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token" | jq -r '.token')
 
 if [ -z "$RUNNER_TOKEN" ] || [ "$RUNNER_TOKEN" == "null" ]; then
-  echo "Error: Failed to get registration token. Check GITHUB_TOKEN and GITHUB_REPOSITORY."
-  exit 1
+	echo "Error: Failed to get registration token. Check GITHUB_TOKEN and GITHUB_REPOSITORY."
+	exit 1
 fi
 
 # Configure the runner
 echo "Configuring runner..."
 ./config.sh \
-  --url "https://${GITHUB_HOST}/${GITHUB_REPOSITORY}" \
-  --token "${RUNNER_TOKEN}" \
-  --name "${RUNNER_NAME}" \
-  --labels "${RUNNER_LABELS}" \
-  --work "${RUNNER_WORK_DIR}" \
-  --unattended \
-  --replace
+	--url "https://${GITHUB_HOST}/${GITHUB_REPOSITORY}" \
+	--token "${RUNNER_TOKEN}" \
+	--name "${RUNNER_NAME}" \
+	--labels "${RUNNER_LABELS}" \
+	--work "${RUNNER_WORK_DIR}" \
+	--unattended \
+	--replace
 
 # Function to clean up the runner on exit
 cleanup() {
-  echo "Signal received, removing runner registration..."
-  ./config.sh remove --token "${RUNNER_TOKEN}"
-  echo "Runner registration removed."
+	echo "Signal received, removing runner registration..."
+	./config.sh remove --token "${RUNNER_TOKEN}"
+	echo "Runner registration removed."
 }
 
 # Trap stop (SIGTERM) and interrupt (SIGINT) signals to run the cleanup function
@@ -52,5 +52,5 @@ trap cleanup SIGTERM SIGINT
 
 # Start the runner and wait for the process to exit
 echo "Starting runner..."
-./run.sh & wait $!
-
+./run.sh &
+wait $!
