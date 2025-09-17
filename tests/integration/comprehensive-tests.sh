@@ -69,6 +69,7 @@ fail_test() {
 }
 
 # Cleanup function
+# shellcheck disable=SC2317
 cleanup() {
     # shellcheck disable=SC2317
     if [[ "$CLEANUP" == "true" ]]; then

@@ -196,7 +196,10 @@ EOF
         # Extract failed packages from log
         if grep -q "FAILED_PACKAGES:" "$log_file"; then
             log_error "Failed packages:"
-            sed -n '/FAILED_PACKAGES:/,/OBSOLETE_PACKAGES:/p' "$log_file" | grep -v "FAILED_PACKAGES:" | grep -v "OBSOLETE_PACKAGES:" || true
+            sed -n '/FAILED_PACKAGES:/,/OBSOLETE_PACKAGES:/p' "$log_file" | grep -v "FAILED_PACKAGES:" | grep -v "OBSOLETE_PACKAGES:" | while read -r failed_pkg; do
+                echo "  - $failed_pkg"
+                suggest_alternatives "$failed_pkg"
+            done
         fi
         
         # Extract obsolete packages from log
@@ -213,6 +216,7 @@ EOF
 }
 
 # Function to suggest package alternatives
+# shellcheck disable=SC2317
 suggest_alternatives() {
     # shellcheck disable=SC2317
     local failed_package="$1"
@@ -220,19 +224,25 @@ suggest_alternatives() {
     # shellcheck disable=SC2317
     case "$failed_package" in
         "libgconf-2-4")
+            # shellcheck disable=SC2317
             echo "Alternative: Remove this package - GConf is obsolete. Use GSettings/dconf instead."
+            # shellcheck disable=SC2317
             echo "  Modern applications use GSettings which doesn't require additional packages."
             ;;
         "python2.7")
+            # shellcheck disable=SC2317
             echo "Alternative: python3, python3-dev"
             ;;
         "libssl1.0.0")
+            # shellcheck disable=SC2317
             echo "Alternative: libssl3, libssl1.1"
             ;;
         "nodejs")
+            # shellcheck disable=SC2317
             echo "Alternative: Add NodeSource repository or use snap: 'snap install node --classic'"
             ;;
         *)
+            # shellcheck disable=SC2317
             echo "Run 'apt-cache search ${failed_package%%-*}' to find alternatives"
             ;;
     esac
