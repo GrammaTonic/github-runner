@@ -47,6 +47,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   IMAGE_CHROME_NAME: ${{ github.repository }}-chrome
+  IMAGE_CHROME_GO_NAME: ${{ github.repository }}-chrome-go
   DOCKER_BUILDKIT: 1
   COMPOSE_DOCKER_CLI_BUILD: 1
 jobs:
@@ -518,6 +519,102 @@ jobs:
         with:
           name: build-chrome-image-digest
           path: build-chrome-image-digest.txt
+          retention-days: 30
+  build-chrome-go:
+    name: Build Chrome-Go Runner Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      chrome-go-image-digest: ${{ steps.build-chrome-go.outputs.digest }}
+      chrome-go-image-tag: ${{ steps.meta-chrome-go.outputs.tags }}
+      chrome-go-image-primary: ${{ steps.get-primary-tag-chrome-go.outputs.primary-tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Extract Chrome-Go runner metadata
+        id: meta-chrome-go
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_CHROME_GO_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+          labels: |
+            org.opencontainers.image.name=github-runner-chrome-go
+      - name: Determine Chrome-Go build no-cache
+        id: force-rebuild-chrome-go
+        run: |
+          # Determine whether to force rebuild for the Chrome-Go build
+          INPUT_VAL="${{ github.event.inputs.force_rebuild || '' }}"
+          HEAD_MSG="${{ github.event.head_commit.message || '' }}"
+          echo "event_input=$INPUT_VAL"
+          echo "head_commit_message=$HEAD_MSG"
+          if [ "$INPUT_VAL" = "true" ] || echo "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
+            echo "force_rebuild=true" >> $GITHUB_OUTPUT
+            # Clear cache settings so build-push-action won't attempt to import caches
+            printf "CACHE_FROM=\nCACHE_TO=\n" >> $GITHUB_ENV
+          else
+            echo "force_rebuild=false" >> $GITHUB_OUTPUT
+            # Provide the default cache sources (multi-line) via GITHUB_ENV
+            printf "CACHE_FROM=type=gha\ntype=gha,scope=chrome-go-runner\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=chrome-go-runner\n" >> $GITHUB_ENV
+            # Also emit as step outputs so other action inputs can reference them (multi-line)
+            echo "cache_from<<EOF" >> $GITHUB_OUTPUT
+            echo "type=gha" >> $GITHUB_OUTPUT
+            echo "type=gha,scope=chrome-go-runner" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "cache_to<<EOF" >> $GITHUB_OUTPUT
+            echo "type=gha,mode=max,scope=chrome-go-runner" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+      - name: Build and push Chrome-Go runner image
+        id: build-chrome-go
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker
+          platforms: linux/amd64
+          file: ./docker/Dockerfile.chrome-go
+          push: true
+          load: false
+          tags: ${{ steps.meta-chrome-go.outputs.tags }}
+          labels: ${{ steps.meta-chrome-go.outputs.labels }}
+          cache-from: ${{ steps.force-rebuild-chrome-go.outputs.cache_from }}
+          cache-to: ${{ steps.force-rebuild-chrome-go.outputs.cache_to }}
+          no-cache: ${{ steps.force-rebuild-chrome-go.outputs.force_rebuild == 'true' }}
+      - name: Get primary Chrome-Go runner tag for security scan
+        id: get-primary-tag-chrome-go
+        if: success() && steps.build-chrome-go.conclusion == 'success'
+        run: |
+          TAGS="${{ steps.meta-chrome-go.outputs.tags }}"
+          PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
+          echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
+          echo "Primary Chrome-Go runner tag for security scan: $PRIMARY_TAG"
+          echo "Chrome-Go runner image pushed to registry: $PRIMARY_TAG"
+          echo "$PRIMARY_TAG" > build-chrome-go-image-tag.txt
+          echo "${{ steps.build-chrome-go.outputs.digest }}" > build-chrome-go-image-digest.txt
+      - name: Upload Chrome-Go build image tag as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-chrome-go-image-tag
+          path: build-chrome-go-image-tag.txt
+          retention-days: 30
+      - name: Upload Chrome-Go build image digest as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-chrome-go-image-digest
+          path: build-chrome-go-image-digest.txt
           retention-days: 30
   # Comprehensive Testing Suite
   test-package-validation:
