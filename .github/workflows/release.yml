@@ -1,4 +1,3 @@
-
 name: Release Management
 
 on:
@@ -152,16 +151,70 @@ jobs:
         with:
           name: sbom-chrome
           path: sbom-chrome.spdx.json
+  build-chrome-go-artifacts:
+    name: Build Chrome-Go Runner Artifacts
+    runs-on: ubuntu-latest
+    needs: validate-release
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}-chrome-go
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}-chrome-go
+            type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}-chrome-go
+      - name: Build and push Chrome-Go runner image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker
+          file: ./docker/Dockerfile.chrome-go
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=ghcr.io/grammatonic/github-runner:main-chrome-go
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          format: spdx-json
+          output-file: sbom-chrome-go.spdx.json
+      - name: Upload SBOM as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-chrome-go
+          path: sbom-chrome-go.spdx.json
   security-scan-release:
     name: Security Scan Release
     runs-on: ubuntu-latest
-    needs: [build-standard-artifacts, build-chrome-artifacts]
+    needs: [build-standard-artifacts, build-chrome-artifacts, build-chrome-go-artifacts]
     permissions:
       contents: read
       security-events: write
     strategy:
       matrix:
-        scan: [standard, chrome]
+        scan: [standard, chrome, chrome-go]
     steps:
       - name: Run Trivy vulnerability scanner (standard)
         if: matrix.scan == 'standard'
@@ -177,6 +230,13 @@ jobs:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-chrome-artifacts.outputs.image-digest }}
           format: "sarif"
           output: "release-chrome-security-scan.sarif"
+      - name: Run Trivy vulnerability scanner (chrome-go)
+        if: matrix.scan == 'chrome-go'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-chrome-go-artifacts.outputs.image-digest }}
+          format: "sarif"
+          output: "release-chrome-go-security-scan.sarif"
       - name: Upload security scan results (standard)
         if: matrix.scan == 'standard'
         uses: github/codeql-action/upload-sarif@v3
@@ -189,6 +249,12 @@ jobs:
         with:
           sarif_file: "release-chrome-security-scan.sarif"
           category: "container-scan-chrome"
+      - name: Upload security scan results (chrome-go)
+        if: matrix.scan == 'chrome-go'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "release-chrome-go-security-scan.sarif"
+          category: "container-scan-chrome-go"
       - name: Check for critical vulnerabilities (standard)
         if: matrix.scan == 'standard'
         run: |
@@ -209,10 +275,20 @@ jobs:
             exit 1
           fi
           echo "✅ No critical vulnerabilities found in Chrome image"
+      - name: Check for critical vulnerabilities (chrome-go)
+        if: matrix.scan == 'chrome-go'
+        run: |
+          critical_count=$(grep -c "CRITICAL" release-chrome-go-security-scan.sarif || echo "0")
+          if [[ $critical_count -gt 0 ]]; then
+            echo "::error::Critical vulnerabilities found in Chrome-Go release image!"
+            echo "::error::Cannot proceed with release. Please fix vulnerabilities first."
+            exit 1
+          fi
+          echo "✅ No critical vulnerabilities found in Chrome-Go image"
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [validate-release, security-scan-release, build-standard-artifacts, build-chrome-artifacts]
+    needs: [validate-release, security-scan-release, build-standard-artifacts, build-chrome-artifacts, build-chrome-go-artifacts]
     permissions:
       contents: write
     steps:
