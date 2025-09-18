@@ -97,7 +97,7 @@ RUN curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-l
     && rm -rf /tmp/node.tar.xz 
 
 # --- INSTALL GO ---
-RUN GO_VERSION="1.23.1" \
+RUN GO_VERSION="1.25.1" \
     && curl -fsSL "https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o /tmp/go.tar.gz \
     && tar -C /usr/local -xzf /tmp/go.tar.gz \
     && rm /tmp/go.tar.gz \
