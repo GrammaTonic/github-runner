@@ -3,7 +3,8 @@
 # Runs Playwright screenshot test inside Chrome runner container and copies result to host
 set -euo pipefail
 
-CONTAINER_NAME="github-runner-chrome"
+# Allow container name to be specified via environment variable, default to github-runner-chrome
+CONTAINER_NAME="${CONTAINER_NAME:-github-runner-chrome}"
 JS_SCRIPT_PATH="tests/playwright/google_screenshot.js"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 SCREENSHOT_PATH="/tmp/google_screenshot_${TIMESTAMP}.png"
@@ -11,6 +12,7 @@ HOST_RESULTS_DIR="test-results/playwright"
 HOST_SCREENSHOT_PATH="$HOST_RESULTS_DIR/google_screenshot_${TIMESTAMP}.png"
 LOG_PATH="$HOST_RESULTS_DIR/playwright_output_${TIMESTAMP}.log"
 
+echo "[INFO] Using container: $CONTAINER_NAME"
 echo "[INFO] Copying Playwright screenshot script into container..."
 docker cp "$JS_SCRIPT_PATH" "$CONTAINER_NAME":/tmp/google_screenshot.js
 
