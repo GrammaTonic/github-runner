@@ -1,0 +1,69 @@
+services:
+  github-runner-chrome-go:
+    image: ghcr.io/grammatonic/github-runner:chrome-go-latest
+    container_name: github-runner-chrome-go
+    restart: unless-stopped
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
+      - RUNNER_NAME=${RUNNER_NAME:-chrome-go-runner}
+      - RUNNER_LABELS=${RUNNER_LABELS:-docker,chrome,go,self-hosted,linux,x64,ui-tests}
+      - RUNNER_GROUP=${RUNNER_GROUP:-default}
+      - RUNNER_WORKDIR=${RUNNER_WORKDIR:-/home/runner/_work}
+      - RUNNER_EPHEMERAL=${RUNNER_EPHEMERAL:-false}
+      - RUNNER_REPLACE_EXISTING=${RUNNER_REPLACE_EXISTING:-true}
+      - DISPLAY=${DISPLAY:-:99}
+      - CHROME_FLAGS=${CHROME_FLAGS:---headless --no-sandbox --disable-dev-shm-usage --disable-gpu}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - chrome-go-cache:/home/runner/_work
+      - chrome-go-config:/home/runner/.config
+      - chrome-go-cache-npm:/home/runner/.runnercache/npm
+      - chrome-go-cache-pip:/home/runner/.runnercache/pip
+      - chrome-go-cache-go:/home/runner/go/pkg
+      - /dev/shm:/dev/shm
+    # Drop all capabilities except those needed for Chrome and Docker socket
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - NET_BIND_SERVICE
+    networks:
+      - runner-network
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "Runner.Listener"]
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Chrome needs more resources
+    mem_limit: 2g
+    cpus: 1.0
+    # Required for Chrome
+    shm_size: 2gb
+    security_opt:
+      - seccomp:unconfined
+
+volumes:
+  chrome-go-cache:
+    driver: local
+  chrome-go-config:
+    driver: local
+  chrome-go-cache-npm:
+    driver: local
+  chrome-go-cache-pip:
+    driver: local
+  chrome-go-cache-go:
+    driver: local
+
+networks:
+  runner-network:
+    driver: bridge
+    name: github-runners
