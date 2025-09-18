@@ -278,13 +278,24 @@ jobs:
           echo "Pulled Chrome-Go runner image: $CHROME_GO_IMAGE_TAG"
       - name: Provision Chrome-Go runner container in staging
         env:
-          RUNNER_LABELS: chrome,go,ui-tests,extra-label
           GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
+          echo "Setting up Chrome-Go runner configuration..."
+          # Copy the example config file
+          cp config/chrome-go-runner.env.example config/chrome-go-runner.env
+          
+          # Update the config file with actual values
+          sed -i.bak "s|GITHUB_TOKEN=ghp_your_personal_access_token_here|GITHUB_TOKEN=$GITHUB_TOKEN|" config/chrome-go-runner.env
+          sed -i.bak "s|GITHUB_REPOSITORY=your-username/your-repo-name|GITHUB_REPOSITORY=$GITHUB_REPOSITORY|" config/chrome-go-runner.env
+          
           echo "Provisioning Chrome-Go runner container in staging..."
-          echo "Using labels: $RUNNER_LABELS"
+          echo "Using configuration from config/chrome-go-runner.env"
           echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
-          docker compose -f docker/docker-compose.chrome-go.yml up -d
+          
+          # Use --env-file to load configuration
+          docker compose --env-file config/chrome-go-runner.env -f docker/docker-compose.chrome-go.yml up -d
+          
           echo "Checking if Chrome-Go runner container is running..."
           RUNNING=$(docker ps --filter "name=github-runner-chrome-go" --filter "status=running" -q)
           if [ -z "$RUNNING" ]; then

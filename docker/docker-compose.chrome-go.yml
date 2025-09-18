@@ -14,6 +14,25 @@ services:
       - RUNNER_REPLACE_EXISTING=${RUNNER_REPLACE_EXISTING:-true}
       - DISPLAY=${DISPLAY:-:99}
       - CHROME_FLAGS=${CHROME_FLAGS:---headless --no-sandbox --disable-dev-shm-usage --disable-gpu}
+      # Go-specific environment variables
+      - GO_VERSION=${GO_VERSION:-1.23.1}
+      - GOPATH=${GOPATH:-/home/runner/go}
+      - GOROOT=${GOROOT:-/usr/local/go}
+      - GO111MODULE=${GO111MODULE:-on}
+      - GOPROXY=${GOPROXY:-https://proxy.golang.org,direct}
+      - GOSUMDB=${GOSUMDB:-sum.golang.org}
+      - CGO_ENABLED=${CGO_ENABLED:-1}
+      - GO_BUILD_FLAGS=${GO_BUILD_FLAGS:--v}
+      - GO_TEST_FLAGS=${GO_TEST_FLAGS:--v -race -cover}
+      - GO_TEST_TIMEOUT=${GO_TEST_TIMEOUT:-10m}
+      - GOMODCACHE=${GOMODCACHE:-/home/runner/go/pkg/mod}
+      # Additional configuration
+      - NODE_OPTIONS=${NODE_OPTIONS:---max-old-space-size=4096}
+      - PYTHON_UNBUFFERED=${PYTHON_UNBUFFERED:-1}
+      - PLAYWRIGHT_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH:-/home/runner/.cache/ms-playwright}
+      - PLAYWRIGHT_TIMEOUT=${PLAYWRIGHT_TIMEOUT:-30000}
+      - BROWSER_TIMEOUT=${BROWSER_TIMEOUT:-30000}
+      - SELENIUM_TIMEOUT=${SELENIUM_TIMEOUT:-30000}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - chrome-go-cache:/home/runner/_work
