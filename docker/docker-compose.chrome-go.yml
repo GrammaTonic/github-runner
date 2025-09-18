@@ -15,7 +15,7 @@ services:
       - DISPLAY=${DISPLAY:-:99}
       - CHROME_FLAGS=${CHROME_FLAGS:---headless --no-sandbox --disable-dev-shm-usage --disable-gpu}
       # Go-specific environment variables
-      - GO_VERSION=${GO_VERSION:-1.23.1}
+      - GO_VERSION=${GO_VERSION:-1.25.1}
       - GOPATH=${GOPATH:-/home/runner/go}
       - GOROOT=${GOROOT:-/usr/local/go}
       - GO111MODULE=${GO111MODULE:-on}
