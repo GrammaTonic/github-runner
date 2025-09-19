@@ -10,7 +10,7 @@ FROM ubuntu:questing
 
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"
-LABEL description="Optimized GitHub Actions Self-Hosted Runner for Chrome and web UI testing"
+LABEL description="Optimized GitHub Actions Self-Hosted Runner for Chrome, Go, and web UI testing"
 LABEL version="2.0.9"
 
 # Define arguments at the top for easy management
@@ -26,7 +26,7 @@ ENV CHROME_BIN=/usr/bin/google-chrome
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV DISPLAY=:99
-ENV PATH="/home/runner/.npm/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/sbin:/bin:/opt/chrome-linux64:/actions-runner"
+ENV PATH="/home/runner/.npm/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/sbin:/bin:/opt/chrome-linux64:/actions-runner:/usr/local/go/bin"
 ENV NODE_PATH="/home/runner/.npm/lib/node_modules"
 ENV PLAYWRIGHT_BROWSERS_PATH="/home/runner/.cache/ms-playwright"
 
@@ -95,6 +95,15 @@ RUN useradd -m -s /bin/bash runner \
 RUN curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" -o /tmp/node.tar.xz \
     && tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 --no-same-owner \
     && rm -rf /tmp/node.tar.xz 
+
+# --- INSTALL GO ---
+RUN GO_VERSION="1.25.1" \
+    && curl -fsSL "https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o /tmp/go.tar.gz \
+    && tar -C /usr/local -xzf /tmp/go.tar.gz \
+    && rm /tmp/go.tar.gz \
+    && ln -sf /usr/local/go/bin/go /usr/local/bin/go \
+    && ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt \
+    && ln -sf /usr/local/go/bin/godoc /usr/local/bin/godoc
 
 # --- INSTALL PYTHON PACKAGES ---
 USER runner

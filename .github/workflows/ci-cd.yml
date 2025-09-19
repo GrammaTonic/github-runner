@@ -47,6 +47,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   IMAGE_CHROME_NAME: ${{ github.repository }}-chrome
+  IMAGE_CHROME_GO_NAME: ${{ github.repository }}-chrome-go
   DOCKER_BUILDKIT: 1
   COMPOSE_DOCKER_CLI_BUILD: 1
 jobs:
@@ -87,8 +88,8 @@ jobs:
           echo "Using labels: $RUNNER_LABELS"
           echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
           docker compose -f docker/docker-compose.production.yml up -d
-            echo "Checking if normal runner container is running..."
-            if [ "$(docker ps -q -f name=github-runner-main)" ]; then
+          echo "Checking if normal runner container is running..."
+          if [ "$(docker ps -q -f name=github-runner-main)" ]; then
             echo "Normal runner container is running."
             else
             echo "Normal runner container is not running! Printing status and logs for diagnostics:"
@@ -240,11 +241,135 @@ jobs:
         run: |
           echo "Running Playwright screenshot integration script..."
           chmod +x tests/integration/playwright_screenshot_integration.sh
-          tests/integration/playwright_screenshot_integration.sh
+          CONTAINER_NAME=github-runner-chrome tests/integration/playwright_screenshot_integration.sh
       - name: Upload Playwright screenshot artifact
         uses: actions/upload-artifact@v4
         with:
           name: playwright-google-screenshot
+          path: test-results/playwright/google_screenshot_*.png
+          retention-days: 30
+  provision-chrome-go-runner:
+    name: Provision Chrome-Go Runner
+    runs-on: ubuntu-latest
+    needs: [build-chrome-go]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Inject built Chrome-Go runner image tag into docker-compose.chrome-go.yml
+        env:
+          CHROME_GO_IMAGE_TAG: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
+        run: |
+          echo "Injecting built Chrome-Go runner image tag into docker-compose.chrome-go.yml..."
+          sed -i.bak "s|image: ghcr.io/grammatonic/github-runner:chrome-go-latest|image: $CHROME_GO_IMAGE_TAG|" docker/docker-compose.chrome-go.yml
+          echo "Updated image line in docker-compose.chrome-go.yml to: $CHROME_GO_IMAGE_TAG"
+      - name: Pull and verify built Chrome-Go runner image
+        env:
+          CHROME_GO_IMAGE_TAG: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
+        run: |
+          docker pull "$CHROME_GO_IMAGE_TAG"
+          echo "Pulled Chrome-Go runner image: $CHROME_GO_IMAGE_TAG"
+      - name: Provision Chrome-Go runner container in staging
+        env:
+          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          echo "Setting up Chrome-Go runner configuration..."
+          # Copy the example config file
+          cp config/chrome-go-runner.env.example config/chrome-go-runner.env
+          
+          # Update the config file with actual values
+          sed -i.bak "s|GITHUB_TOKEN=ghp_your_personal_access_token_here|GITHUB_TOKEN=$GITHUB_TOKEN|" config/chrome-go-runner.env
+          sed -i.bak "s|GITHUB_REPOSITORY=your-username/your-repo-name|GITHUB_REPOSITORY=$GITHUB_REPOSITORY|" config/chrome-go-runner.env
+          
+          echo "Provisioning Chrome-Go runner container in staging..."
+          echo "Using configuration from config/chrome-go-runner.env"
+          echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
+          
+          # Use --env-file to load configuration
+          docker compose --env-file config/chrome-go-runner.env -f docker/docker-compose.chrome-go.yml up -d
+          
+          echo "Checking if Chrome-Go runner container is running..."
+          RUNNING=$(docker ps --filter "name=github-runner-chrome-go" --filter "status=running" -q)
+          if [ -z "$RUNNING" ]; then
+            echo "ERROR: Chrome-Go runner container is not running! Printing status and logs:"
+            docker ps -a
+            docker logs github-runner-chrome-go || echo "No logs available."
+            exit 1
+          else
+            echo "Chrome-Go runner container is running."
+              echo "--- Chrome-Go runner container logs (post-startup) ---"
+              docker logs github-runner-chrome-go || echo "No logs available."
+              echo "--- End of Chrome-Go runner container logs ---"
+          fi
+      - name: Health check Chrome-Go runner container
+        run: |
+            echo "Checking health of Chrome-Go runner container..."
+            MAX_RETRIES=6
+            RETRY_INTERVAL=5
+            for i in $(seq 1 $MAX_RETRIES); do
+              HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-chrome-go)
+              echo "Full health JSON: $HEALTH_JSON"
+              STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
+              FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
+              LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
+              echo "Health status: $STATUS"
+              echo "Failing streak: $FAILING_STREAK"
+              echo "Health logs: $LOGS"
+              if [ "$STATUS" = "healthy" ]; then
+                echo "Chrome-Go runner container health is healthy."
+                break
+              elif [ "$STATUS" = "unhealthy" ]; then
+                echo "ERROR: Chrome-Go runner container is unhealthy!"
+                exit 1
+              elif [ "$STATUS" = "starting" ]; then
+                if [ $i -lt $MAX_RETRIES ]; then
+                  echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
+                  sleep $RETRY_INTERVAL
+                else
+                  echo "WARNING: Chrome-Go runner container health is still 'starting' after $MAX_RETRIES retries."
+                  exit 1
+                fi
+              else
+                echo "Unknown health status: $STATUS"
+                exit 1
+              fi
+            done
+      - name: Check Chrome-Go runner container for GitHub connection
+        run: |
+          echo "Checking Chrome-Go runner container logs for GitHub connection..."
+          if docker logs github-runner-chrome-go | grep -q "Connected to GitHub"; then
+            echo "✅ Chrome-Go runner successfully connected to GitHub."
+          else
+            echo "❌ Chrome-Go runner did NOT connect to GitHub. Printing logs for diagnostics:"
+            docker logs github-runner-chrome-go
+            exit 1
+          fi
+      - name: Verify Go installation in Chrome-Go runner
+        run: |
+          echo "Verifying Go installation in Chrome-Go runner..."
+          if docker exec github-runner-chrome-go go version; then
+            echo "✅ Go is installed and working in Chrome-Go runner."
+          else
+            echo "❌ Go is not properly installed in Chrome-Go runner."
+            exit 1
+          fi
+      - name: Run playwright screenshot test on Chrome-Go runner
+        run: |
+          echo "Running Playwright screenshot integration script..."
+          chmod +x tests/integration/playwright_screenshot_integration.sh
+          CONTAINER_NAME=github-runner-chrome-go tests/integration/playwright_screenshot_integration.sh
+      - name: Upload Playwright screenshot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-chrome-go-google-screenshot
           path: test-results/playwright/google_screenshot_*.png
           retention-days: 30
   lint-and-validate:
@@ -252,22 +377,31 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      statuses: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
-          fetch-depth: 1
-      - name: Validate Docker files
-        run: |
-          # Check if Docker files exist
-          find . -name "Dockerfile*" -type f | while read -r dockerfile; do
-            echo "Validating $dockerfile"
-            # Run hadolint, ignore DL3002 for builder stages
-            if ! docker run --rm -i hadolint/hadolint hadolint --ignore DL3002 --ignore DL3008 --ignore DL3015 --ignore DL3013 --ignore DL3016 --ignore DL3059 - < "$dockerfile"; then
-              echo "Critical errors found in $dockerfile"
-              exit 1
-            fi
-          done
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Run GitHub Super Linter 
+        id: lint
+        uses: super-linter/super-linter/slim@v8.1.0
+        env:
+          DEFAULT_BRANCH: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref || github.ref_name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_DOCKERFILE: true
+          VALIDATE_DOCKERFILE_HADOLINT: true
+          FILTER_REGEX_EXCLUDE: docs/archive/.*
+          VALIDATE_BASH: true
+          VALIDATE_SHELL_SHFMT: true
+          VALIDATE_YAML: true
+          VALIDATE_JSON: true
+          VALIDATE_MD: true
+          # report in SARIF format for GitHub code scanning dont fail this step on lint errors
+          FAIL_ON_ERROR: false
+          SAVE_SUPER_LINTER_OUTPUT: true
       - name: Validate Docker Compose files
         run: |
           # Validate separate compose files syntax
@@ -277,16 +411,6 @@ jobs:
           if [[ -f "docker/docker-compose.chrome.yml" ]]; then
             docker compose -f docker/docker-compose.chrome.yml config --quiet
           fi
-      - name: Validate shell scripts
-        run: |
-          # Install shellcheck
-          sudo apt-get update && sudo apt-get install -y shellcheck
-
-          # Check all shell scripts (fail on errors and warnings for better quality)
-          find . -name "*.sh" -type f | while read -r script; do
-            echo "Checking $script"
-            shellcheck -S warning "$script" || exit 1
-          done
       - name: Check environment file templates
         run: |
           # Validate environment file syntax (basic check)
@@ -300,7 +424,6 @@ jobs:
   security-scan:
     name: Security Scanning
     runs-on: ubuntu-latest
-    needs: [lint-and-validate]
     permissions:
       contents: read
       security-events: write
@@ -332,7 +455,6 @@ jobs:
   build:
     name: Build Docker Images
     runs-on: ubuntu-latest
-    needs: [lint-and-validate]
     permissions:
       contents: read
       packages: write
@@ -429,7 +551,6 @@ jobs:
   build-chrome:
     name: Build Chrome Runner Image
     runs-on: ubuntu-latest
-    needs: [lint-and-validate]
     permissions:
       contents: read
       packages: write
@@ -523,11 +644,106 @@ jobs:
           name: build-chrome-image-digest
           path: build-chrome-image-digest.txt
           retention-days: 30
+  build-chrome-go:
+    name: Build Chrome-Go Runner Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      chrome-go-image-digest: ${{ steps.build-chrome-go.outputs.digest }}
+      chrome-go-image-tag: ${{ steps.meta-chrome-go.outputs.tags }}
+      chrome-go-image-primary: ${{ steps.get-primary-tag-chrome-go.outputs.primary-tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Extract Chrome-Go runner metadata
+        id: meta-chrome-go
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_CHROME_GO_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+          labels: |
+            org.opencontainers.image.name=github-runner-chrome-go
+      - name: Determine Chrome-Go build no-cache
+        id: force-rebuild-chrome-go
+        run: |
+          # Determine whether to force rebuild for the Chrome-Go build
+          INPUT_VAL="${{ github.event.inputs.force_rebuild || '' }}"
+          HEAD_MSG="${{ github.event.head_commit.message || '' }}"
+          echo "event_input=$INPUT_VAL"
+          echo "head_commit_message=$HEAD_MSG"
+          if [ "$INPUT_VAL" = "true" ] || echo "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
+            echo "force_rebuild=true" >> $GITHUB_OUTPUT
+            # Clear cache settings so build-push-action won't attempt to import caches
+            printf "CACHE_FROM=\nCACHE_TO=\n" >> $GITHUB_ENV
+          else
+            echo "force_rebuild=false" >> $GITHUB_OUTPUT
+            # Provide the default cache sources (multi-line) via GITHUB_ENV
+            printf "CACHE_FROM=type=gha\ntype=gha,scope=chrome-go-runner\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=chrome-go-runner\n" >> $GITHUB_ENV
+            # Also emit as step outputs so other action inputs can reference them (multi-line)
+            echo "cache_from<<EOF" >> $GITHUB_OUTPUT
+            echo "type=gha" >> $GITHUB_OUTPUT
+            echo "type=gha,scope=chrome-go-runner" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "cache_to<<EOF" >> $GITHUB_OUTPUT
+            echo "type=gha,mode=max,scope=chrome-go-runner" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+      - name: Build and push Chrome-Go runner image
+        id: build-chrome-go
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker
+          platforms: linux/amd64
+          file: ./docker/Dockerfile.chrome-go
+          push: true
+          load: false
+          tags: ${{ steps.meta-chrome-go.outputs.tags }}
+          labels: ${{ steps.meta-chrome-go.outputs.labels }}
+          cache-from: ${{ steps.force-rebuild-chrome-go.outputs.cache_from }}
+          cache-to: ${{ steps.force-rebuild-chrome-go.outputs.cache_to }}
+          no-cache: ${{ steps.force-rebuild-chrome-go.outputs.force_rebuild == 'true' }}
+      - name: Get primary Chrome-Go runner tag for security scan
+        id: get-primary-tag-chrome-go
+        if: success() && steps.build-chrome-go.conclusion == 'success'
+        run: |
+          TAGS="${{ steps.meta-chrome-go.outputs.tags }}"
+          PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
+          echo "primary-tag=$PRIMARY_TAG" >> $GITHUB_OUTPUT
+          echo "Primary Chrome-Go runner tag for security scan: $PRIMARY_TAG"
+          echo "Chrome-Go runner image pushed to registry: $PRIMARY_TAG"
+          echo "$PRIMARY_TAG" > build-chrome-go-image-tag.txt
+          echo "${{ steps.build-chrome-go.outputs.digest }}" > build-chrome-go-image-digest.txt
+      - name: Upload Chrome-Go build image tag as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-chrome-go-image-tag
+          path: build-chrome-go-image-tag.txt
+          retention-days: 30
+      - name: Upload Chrome-Go build image digest as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-chrome-go-image-digest
+          path: build-chrome-go-image-digest.txt
+          retention-days: 30
   # Comprehensive Testing Suite
   test-package-validation:
     name: Package Validation Tests
     runs-on: ubuntu-latest
-    needs: [lint-and-validate]
     permissions:
       contents: read
     steps:
@@ -575,13 +791,6 @@ jobs:
           # Install comprehensive test dependencies
           sudo apt-get update
           sudo apt-get install -y jq curl
-          # Install hadolint for Docker linting (from GitHub releases)
-          HADOLINT_VERSION="v2.12.0"
-          wget -O /tmp/hadolint "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-x86_64"
-          chmod +x /tmp/hadolint
-          sudo mv /tmp/hadolint /usr/local/bin/hadolint
-          # Verify hadolint installation
-          hadolint --version || echo "Hadolint installation failed, will skip Docker linting"
           # Create test results directory
           mkdir -p test-results/${{ matrix.test-suite }}
           # Make all test scripts executable
@@ -603,22 +812,8 @@ jobs:
           integration_errors=0
           # Test 1: Dockerfile syntax validation
           echo "Validating Dockerfile syntax..."
-          if command -v hadolint >/dev/null 2>&1; then
-            for dockerfile in docker/Dockerfile*; do
-              if [[ -f "$dockerfile" ]]; then
-                dockerfile_name="$(basename "$dockerfile")"
-                # Run hadolint with informational and warning level issues only (ignore style issues)
-                if hadolint --ignore DL3008 --ignore DL3009 --ignore DL3015 "$dockerfile" > "test-results/integration/hadolint-$dockerfile_name.log" 2>&1; then
-                  echo "✅ Hadolint passed for $dockerfile"
-                else
-                  echo "⚠️  Hadolint found issues in $dockerfile (see log for details)"
-                  # Don't fail the build for hadolint issues, just warn
-                fi
-              fi
-            done
-          else
-            echo "ℹ️  Hadolint not available, skipping Docker linting"
-          fi
+          # Note: Docker linting is now handled by Super Linter in the main lint-and-validate job
+          echo "✅ Dockerfile validation handled by Super Linter"
           # Test 2: Docker Compose validation
           echo "Validating docker-compose files..."
           # Create temporary directories that compose files expect to exist
@@ -855,249 +1050,7 @@ jobs:
           name: user-deployment-test-results
           path: test-results/user-deployment
           retention-days: 30
-  test-container-startup:
-    name: Container Startup Tests
-    runs-on: ubuntu-latest
-    needs: [build, build-chrome]
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        container-type: [main-runner, chrome-runner]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 1
-      - name: Download built images
-        run: |
-          # Log in to Container Registry to pull the built images
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-      - name: Pull and verify Docker images
-        run: |
-          # Pull the built Docker images from the registry instead of using artifacts
-          if [[ "${{ matrix.container-type }}" == "main-runner" ]]; then
-            IMAGE_TAG="${{ needs.build.outputs.normal-image-primary }}"
-            echo "Pulling main runner image: $IMAGE_TAG"
-            docker pull "$IMAGE_TAG"
-            # Tag for easier testing
-            docker tag "$IMAGE_TAG" github-runner:latest
-            echo "Tagged as github-runner:latest"
-          else
-            IMAGE_TAG="${{ needs.build-chrome.outputs.chrome-image-primary }}"
-            echo "Pulling Chrome runner image: $IMAGE_TAG"
-            docker pull "$IMAGE_TAG"
-            # Tag for easier testing  
-            docker tag "$IMAGE_TAG" github-runner:chrome-latest
-            echo "Tagged as github-runner:chrome-latest"
-          fi
-          # Verify images are available
-          echo "Available Docker images:"
-          docker images | grep github-runner
-      - name: Set up container test environment
-        run: |
-          # Create test results directory
-          mkdir -p test-results/container-startup/${{ matrix.container-type }}
-          # Use the actual user environment template and production Docker Compose
-          # This tests the real user experience, not custom CI configurations
-          # Copy the user environment template
-          cp config/runner.env.example config/runner.env
-          # Configure with valid test values that won't cause GitHub API calls
-          sed -i 's/GITHUB_TOKEN=.*/GITHUB_TOKEN=ghp_test_token_for_ci_not_real/' config/runner.env
-          sed -i 's/GITHUB_REPOSITORY=.*/GITHUB_REPOSITORY=test-org\/test-repository/' config/runner.env
-          sed -i 's/RUNNER_NAME=.*/RUNNER_NAME=ci-test-main-runner/' config/runner.env
-          sed -i 's/RUNNER_LABELS=.*/RUNNER_LABELS=test,ci,docker,self-hosted/' config/runner.env
-          # Verify the user environment file is properly configured
-          echo "=== User Environment Configuration ==="
-          grep -E '^[A-Z_]+=.*' config/runner.env | head -10
-          echo "=== End Configuration ==="
-      - name: Test Main Runner Container Startup
-        if: matrix.container-type == 'main-runner'
-        run: |
-          echo "🚀 Testing main GitHub runner using production Docker Compose..."
-          # Test using the actual production Docker Compose file that users would use
-          # This validates the real user experience, not custom CI configurations
-          # Create test override to bypass GitHub registration for CI and use the built image
-          IMAGE_TAG="${{ needs.build.outputs.normal-image-primary }}"
-          cat > docker/docker-compose.test-override.yml << EOF
-          services:
-            github-runner:
-              image: ${IMAGE_TAG}
-              environment:
-                # Override environment to prevent GitHub API calls
-                - GITHUB_TOKEN=ghp_test_token_for_ci_not_real
-                - GITHUB_REPOSITORY=test-org/test-repository
-                - RUNNER_NAME=ci-test-main-runner
-                - RUNNER_LABELS=test,ci,docker,self-hosted
-                - RUNNER_TEST_MODE=true
-              entrypoint: |
-                bash -c '
-                echo "=== Production Container Startup Test ==="
-                echo "Testing container using production Docker Compose configuration..."
-                # Basic system checks that validate the production setup
-                echo "✓ Container started with production configuration"
-                echo "✓ User context: $$(whoami)"
-                echo "✓ Working directory: $$(pwd)"
-                echo "✓ Environment variables loaded:"
-                echo "  - GITHUB_TOKEN: $$(echo $$GITHUB_TOKEN | cut -c1-10)..."
-                echo "  - GITHUB_REPOSITORY: $$GITHUB_REPOSITORY"
-                echo "  - RUNNER_NAME: $$RUNNER_NAME"
-                echo "  - RUNNER_LABELS: $$RUNNER_LABELS"
-                # Test tools that production runners need
-                echo "✓ Git available: $$(git --version)"
-                echo "✓ Docker available: $$(docker --version)"
-                echo "✓ Node.js available: $$(node --version)"
-                echo "✓ Python available: $$(python3 --version)"
-                # Validate production container setup
-                echo "✓ Production environment validation completed"
-                echo "=== Test completed successfully ==="
-                exit 0
-                '
-          EOF
-          # Start container using production Docker Compose with test override (run one-shot container)
-          echo "Running test container..."
-          docker compose -f docker/docker-compose.production.yml -f docker/docker-compose.test-override.yml run --rm github-runner
-          # Get container logs from the completed run
-          echo "=== Production Container Test Results ==="
-          echo "Container completed successfully"
-          # Verify Docker Compose configuration
-          echo "📊 Verifying production Docker Compose configuration..."
-          if ! grep -q "restart:" docker/docker-compose.production.yml; then
-            echo "⚠️ No restart policy configured in docker-compose.production.yml"
-          else
-            echo "✅ Restart policy configured"
-          fi
-          if grep -q "healthcheck:" docker/docker-compose.production.yml; then
-            echo "✅ Health check configured"
-          else
-            echo "💡 Consider adding health checks for production readiness"
-          fi
-          echo "✅ Production main runner container startup test passed"
-          # Cleanup
-          docker compose -f docker/docker-compose.production.yml down || true
-      - name: Test Chrome Runner Container Startup
-        if: matrix.container-type == 'chrome-runner'
-        run: |
-          echo "🚀 Testing Chrome GitHub runner using production Docker Compose..."
-          # Test using the actual production Docker Compose file that users would use
-          # This validates the real user experience for Chrome runners
-          # Update environment for Chrome-specific settings
-          sed -i 's/RUNNER_NAME=.*/RUNNER_NAME=ci-test-chrome-runner/' config/runner.env
-          sed -i 's/RUNNER_LABELS=.*/RUNNER_LABELS=chrome,ui-tests,selenium,playwright,cypress,headless/' config/runner.env
-          # Create Chrome test override to bypass GitHub registration for CI and use the built image
-          CHROME_IMAGE_TAG="${{ needs.build-chrome.outputs.chrome-image-primary }}"
-          cat > docker/docker-compose.chrome-test-override.yml << EOF
-          services:
-            github-runner-chrome:
-              image: ${CHROME_IMAGE_TAG}
-              environment:
-                # Override environment to prevent GitHub API calls
-                - GITHUB_TOKEN=ghp_test_token_for_ci_not_real
-                - GITHUB_REPOSITORY=test-org/test-repository
-                - RUNNER_NAME=ci-test-chrome-runner
-                - RUNNER_LABELS=chrome,ui-tests,selenium,playwright,cypress,headless
-                - RUNNER_TEST_MODE=true
-                - DISPLAY=:99
-                - CHROME_FLAGS=--headless --no-sandbox --disable-dev-shm-usage --disable-gpu
-              entrypoint: |
-                bash -c '
-                echo "=== Production Chrome Container Startup Test ==="
-                echo "Testing Chrome container using production Docker Compose configuration..."
-                # Basic system checks for Chrome production setup
-                echo "✓ Chrome container started with production configuration"
-                echo "✓ User context: $$(whoami)"
-                echo "✓ Working directory: $$(pwd)"
-                echo "✓ Environment variables loaded:"
-                echo "  - GITHUB_TOKEN: $$(echo $$GITHUB_TOKEN | cut -c1-10)..."
-                echo "  - GITHUB_REPOSITORY: $$GITHUB_REPOSITORY"
-                echo "  - RUNNER_NAME: $$RUNNER_NAME"
-                echo "  - RUNNER_LABELS: $$RUNNER_LABELS"
-                # Test Chrome-specific tools that production runners need
-                echo "Testing Chrome installation..."
-                if command -v google-chrome >/dev/null 2>&1; then
-                  echo "✓ Chrome available: $$(google-chrome --version)"
-                else
-                  echo "❌ Chrome not found"
-                  exit 1
-                fi
-                # Test ChromeDriver
-                if command -v chromedriver >/dev/null 2>&1; then
-                  echo "✓ ChromeDriver available: $$(chromedriver --version)"
-                else
-                  echo "❌ ChromeDriver not found"
-                  exit 1
-                fi
-                # Test development tools
-                echo "✓ Node.js available: $$(node --version)"
-                echo "✓ npm available: $$(npm --version)"
-                echo "✓ Python available: $$(python3 --version)"
-                # Test Chrome headless functionality
-                echo "Testing Chrome headless functionality..."
-                if timeout 30 google-chrome --headless --no-sandbox --disable-dev-shm-usage --virtual-time-budget=1000 --dump-dom about:blank > /tmp/chrome-test.html 2>/dev/null; then
-                    printf "\u2713 Chrome headless test passed\n"
-                else
-                  printf "\u26a0\ufe0f Chrome headless test warning (may work in different environment)\n"
-                  printf "\u26a0\ufe0f Check /tmp/chrome-test.html for details. Consider increasing resources or updating Chrome.\n"
-                fi
-                echo "✓ Production Chrome environment validation completed"
-                echo "=== Test completed successfully ==="
-                exit 0
-                '
-          EOF
-          # Start Chrome container using Chrome compose with test override (run one-shot container)
-          echo "Running Chrome test container..."
-          docker compose -f docker/docker-compose.chrome.yml -f docker/docker-compose.chrome-test-override.yml run --rm github-runner-chrome
-          # Test completed successfully if we reach here
-          echo "=== Production Chrome Container Test Results ==="
-          echo "Chrome container completed successfully"
-          # Verify Chrome Docker Compose configuration
-          echo "📊 Verifying Chrome Docker Compose configuration..."
-          if ! grep -q "restart:" docker/docker-compose.chrome.yml; then
-            echo "⚠️ No restart policy configured in docker-compose.chrome.yml"
-          else
-            echo "✅ Restart policy configured"
-          fi
-          if grep -q "healthcheck:" docker/docker-compose.chrome.yml; then
-            echo "✅ Health check configured"
-          else
-            echo "💡 Consider adding health checks for production readiness"
-          fi
-          echo "✅ Production Chrome runner container startup test passed"
-          # Cleanup
-          docker compose -f docker/docker-compose.chrome.yml down || true
-      - name: Generate container startup report
-        if: always()
-        run: |
-          # Create detailed startup test report
-          REPORT_DIR="test-results/container-startup/${{ matrix.container-type }}"
-          mkdir -p "$REPORT_DIR"
-          echo "# Container Startup Test Report" > "$REPORT_DIR/startup-report.md"
-          echo "" >> "$REPORT_DIR/startup-report.md"
-          echo "## Test Details" >> "$REPORT_DIR/startup-report.md"
-          echo "- **Container Type**: ${{ matrix.container-type }}" >> "$REPORT_DIR/startup-report.md"
-          echo "- **Test Date**: $(date -Iseconds)" >> "$REPORT_DIR/startup-report.md"
-          echo "- **Workflow**: ${{ github.workflow }}" >> "$REPORT_DIR/startup-report.md"
-          echo "- **Run ID**: ${{ github.run_id }}" >> "$REPORT_DIR/startup-report.md"
-          echo "" >> "$REPORT_DIR/startup-report.md"
-          # Add Docker info
-          echo "## Docker Environment" >> "$REPORT_DIR/startup-report.md"
-          echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
-          docker version >> "$REPORT_DIR/startup-report.md" 2>&1 || true
-          echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
-          echo "" >> "$REPORT_DIR/startup-report.md"
-          # Add image info
-          echo "## Image Information" >> "$REPORT_DIR/startup-report.md"
-          echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
-          docker images | grep github-runner >> "$REPORT_DIR/startup-report.md" 2>&1 || true
-          echo "\`\`\`" >> "$REPORT_DIR/startup-report.md"
-      - name: Upload container startup test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: container-startup-results-${{ matrix.container-type }}
-          path: test-results/container-startup/${{ matrix.container-type }}
-          retention-days: 30
+  # test-container-startup job removed: containers are provisioned by provision-normal-runner and provision-chrome-runner.
   security-container-scan:
     name: Container Security Scan
     runs-on: ubuntu-latest
@@ -1146,15 +1099,40 @@ jobs:
         with:
           sarif_file: "trivy-chrome-results.sarif"
           category: "chrome-container-scan"
+  security-chrome-go-scan:
+    name: Chrome-Go Container Security Scan
+    runs-on: ubuntu-latest
+    needs: [build-chrome-go]
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+      - name: Run Trivy vulnerability scanner on Chrome-Go container
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
+          format: "sarif"
+          output: "trivy-chrome-go-results.sarif"
+      - name: Upload Chrome-Go container scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-chrome-go-results.sarif"
+          category: "chrome-go-container-scan"
   cleanup:
     name: Cleanup Resources
     runs-on: ubuntu-latest
     needs:
       - provision-normal-runner
       - provision-chrome-runner
+      - provision-chrome-go-runner
       - security-container-scan
       - security-chrome-scan
-      - test-container-startup
+      - security-chrome-go-scan
       - test-comprehensive
     if: always()
     permissions:
