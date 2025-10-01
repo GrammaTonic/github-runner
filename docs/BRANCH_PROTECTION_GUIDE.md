@@ -38,24 +38,30 @@ This guide explains the branch protection setup and recommended Git workflow for
 
 ```yaml
 Required Status Checks:
-  - Lint and Validate
-  - Security Scanning
-  - Build Docker Images
-  - Test Runner Configuration (unit)
-  - Test Runner Configuration (integration)
-  - Test Runner Configuration (config)
-  - Container Security Scan
+  - CI/CD Pipeline
 
 Pull Request Reviews:
   - Required reviewers: 1
+  - Dismiss stale reviews: Yes
+  - Require code owner reviews: No
+  - Require review of last push: No
+
 Additional Restrictions:
-  - Linear history required: Yes
+  - Linear history required: No
   - Force pushes: Blocked
+  - Deletions: Blocked
+  - Admin enforcement: Yes
+  - Conversation resolution: Required
+```
+
+> ℹ️ The setup script attempts to apply the configuration above. If GitHub rejects some settings, it gracefully falls back to requiring the `CI/CD Pipeline` status check and one approving review without admin enforcement.
 
 ### Develop Branch Protection
 
-  - Test Runner Configuration (unit)
-  - Test Runner Configuration (integration)
+```yaml
+Required Status Checks:
+  - lint-and-validate
+  - security-scan
 
 Pull Request Reviews:
   - Required reviewers: 1

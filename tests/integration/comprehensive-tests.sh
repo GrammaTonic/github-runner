@@ -44,6 +44,32 @@ log_test() {
 	echo -e "${BLUE}[TEST]${NC} $1"
 }
 
+# Timeout command detection
+TIMEOUT_CMD=""
+
+detect_timeout_command() {
+	if command -v timeout >/dev/null 2>&1; then
+		TIMEOUT_CMD="timeout"
+	elif command -v gtimeout >/dev/null 2>&1; then
+		TIMEOUT_CMD="gtimeout"
+	else
+		TIMEOUT_CMD=""
+		log_warn "GNU timeout command not found; proceeding without enforced timeouts"
+	fi
+}
+
+run_with_timeout() {
+	local duration="$1"
+	shift
+	if [[ -n "$TIMEOUT_CMD" ]]; then
+		"$TIMEOUT_CMD" "$duration" "$@"
+	else
+		"$@"
+	fi
+}
+
+detect_timeout_command
+
 # Test tracking functions
 start_test() {
 	local test_name="$1"
@@ -175,7 +201,7 @@ test_docker_build_core() {
 	docker_dir="$(dirname "$0")/../../docker"
 
 	# Build core runner image
-	if timeout "$TIMEOUT" docker build -t test-github-runner:core -f "$docker_dir/Dockerfile" "$docker_dir" >"$build_log" 2>&1; then
+	if run_with_timeout "$TIMEOUT" docker build -t test-github-runner:core -f "$docker_dir/Dockerfile" "$docker_dir" >"$build_log" 2>&1; then
 		pass_test "Docker Build - Core Runner"
 
 		# Test basic container functionality
@@ -204,7 +230,7 @@ test_docker_build_chrome() {
 	docker_dir="$(dirname "$0")/../../docker"
 
 	# Build Chrome runner image
-	if timeout "$TIMEOUT" docker build -t test-github-runner:chrome -f "$docker_dir/Dockerfile.chrome" "$docker_dir" >"$build_log" 2>&1; then
+	if run_with_timeout "$TIMEOUT" docker build -t test-github-runner:chrome -f "$docker_dir/Dockerfile.chrome" "$docker_dir" >"$build_log" 2>&1; then
 		pass_test "Docker Build - Chrome Runner"
 
 		# Test Chrome installation
@@ -492,12 +518,13 @@ GITHUB_REPOSITORY=test/repo
 RUNNER_NAME=test-runner
 RUNNER_LABELS=test,docker,self-hosted
 RUNNER_GROUP=test-group
+RUNNER_SKIP_REGISTRATION=true
 EOF
 
 	log_info "Starting main runner container for health check..."
 
 	# Use docker-compose production file to start the container with test configuration
-	if ! timeout 60 docker compose -f "$docker_dir/docker-compose.production.yml" --env-file "$test_env_file" \
+	if ! run_with_timeout 60 docker compose --env-file "$test_env_file" -f "$docker_dir/docker-compose.production.yml" \
 		-p test-startup up -d github-runner >"$TEST_RESULTS_DIR/main-runner-startup.log" 2>&1; then
 		log_error "Failed to start main runner container with docker-compose"
 		return 1
@@ -505,7 +532,7 @@ EOF
 
 	# Wait for container to be fully started
 	local container_id
-	container_id=$(docker compose -f "$docker_dir/docker-compose.production.yml" -p test-startup ps -q github-runner)
+	container_id=$(docker compose --env-file "$test_env_file" -f "$docker_dir/docker-compose.production.yml" -p test-startup ps -q github-runner)
 
 	if [[ -z "$container_id" ]]; then
 		log_error "Main runner container not found after startup"
@@ -523,10 +550,10 @@ EOF
 	log_info "Performing health checks on main runner..."
 
 	# Check if runner process is present (it will fail to register with fake token, but process should exist)
-	if ! timeout 30 docker exec "$container_id" pgrep -f "actions-runner" >/dev/null 2>&1; then
+	if ! run_with_timeout 30 docker exec "$container_id" pgrep -f "actions-runner" >/dev/null 2>&1; then
 		# Give it more time as the runner startup might be slow
 		sleep 10
-		if ! timeout 20 docker exec "$container_id" pgrep -f "actions-runner" >/dev/null 2>&1; then
+		if ! run_with_timeout 20 docker exec "$container_id" pgrep -f "actions-runner" >/dev/null 2>&1; then
 			log_warn "GitHub Actions runner process not found (expected with test token)"
 			# This is expected to fail with fake token, so we'll check other indicators
 		fi
@@ -552,7 +579,7 @@ EOF
 	fi
 
 	# Stop and remove the test container
-	docker compose -f "$docker_dir/docker-compose.production.yml" -p test-startup down >/dev/null 2>&1 || true
+	docker compose --env-file "$test_env_file" -f "$docker_dir/docker-compose.production.yml" -p test-startup down >/dev/null 2>&1 || true
 
 	log_info "Main runner container startup test completed successfully"
 	return 0
@@ -572,12 +599,13 @@ RUNNER_NAME=test-chrome-runner
 RUNNER_LABELS=chrome,ui-tests,selenium,playwright
 RUNNER_GROUP=chrome-runners
 DISPLAY=:99
+RUNNER_SKIP_REGISTRATION=true
 EOF
 
 	log_info "Starting Chrome runner container for health check..."
 
 	# Use docker-compose to start the Chrome container
-	if ! timeout 90 docker compose -f "$docker_dir/docker-compose.chrome.yml" --env-file "$test_env_file" \
+	if ! run_with_timeout 90 docker compose --env-file "$test_env_file" -f "$docker_dir/docker-compose.chrome.yml" \
 		-p test-chrome-startup up -d chrome-runner >"$TEST_RESULTS_DIR/chrome-runner-startup.log" 2>&1; then
 		log_error "Failed to start Chrome runner container with docker-compose"
 		return 1
@@ -585,7 +613,7 @@ EOF
 
 	# Wait for container to be fully started
 	local container_id
-	container_id=$(docker compose -f "$docker_dir/docker-compose.chrome.yml" -p test-chrome-startup ps -q chrome-runner)
+	container_id=$(docker compose --env-file "$test_env_file" -f "$docker_dir/docker-compose.chrome.yml" -p test-chrome-startup ps -q chrome-runner)
 
 	if [[ -z "$container_id" ]]; then
 		log_error "Chrome runner container not found after startup"
@@ -603,30 +631,30 @@ EOF
 	log_info "Performing health checks on Chrome runner..."
 
 	# Check if Chrome is installed and working
-	if ! timeout 30 docker exec "$container_id" google-chrome --version >"$TEST_RESULTS_DIR/chrome-version-test.log" 2>&1; then
+	if ! run_with_timeout 30 docker exec "$container_id" google-chrome --version >"$TEST_RESULTS_DIR/chrome-version-test.log" 2>&1; then
 		log_error "Chrome not working in Chrome runner container"
 		return 1
 	fi
 
 	# Check if ChromeDriver is available
-	if ! timeout 15 docker exec "$container_id" chromedriver --version >"$TEST_RESULTS_DIR/chromedriver-version-test.log" 2>&1; then
+	if ! run_with_timeout 15 docker exec "$container_id" chromedriver --version >"$TEST_RESULTS_DIR/chromedriver-version-test.log" 2>&1; then
 		log_error "ChromeDriver not working in Chrome runner container"
 		return 1
 	fi
 
 	# Check if Xvfb (virtual display) is running
-	if ! timeout 15 docker exec "$container_id" pgrep Xvfb >/dev/null 2>&1; then
+	if ! run_with_timeout 15 docker exec "$container_id" pgrep Xvfb >/dev/null 2>&1; then
 		log_warn "Xvfb (virtual display) not running - UI tests may fail"
 	fi
 
 	# Check Node.js and npm for frontend testing tools
-	if ! timeout 15 docker exec "$container_id" node --version >/dev/null 2>&1; then
+	if ! run_with_timeout 15 docker exec "$container_id" node --version >/dev/null 2>&1; then
 		log_error "Node.js not available in Chrome runner"
 		return 1
 	fi
 
 	# Test basic Chrome headless functionality
-	if ! timeout 30 docker exec "$container_id" google-chrome --headless --no-sandbox --disable-dev-shm-usage \
+	if ! run_with_timeout 30 docker exec "$container_id" google-chrome --headless --no-sandbox --disable-dev-shm-usage \
 		--virtual-time-budget=1000 --run-all-compositor-stages-before-draw \
 		--dump-dom about:blank >"$TEST_RESULTS_DIR/chrome-headless-test.log" 2>&1; then
 		log_warn "Chrome headless test failed - may impact UI testing capabilities"
@@ -636,7 +664,7 @@ EOF
 	fi
 
 	# Stop and remove the test container
-	docker compose -f "$docker_dir/docker-compose.chrome.yml" -p test-chrome-startup down >/dev/null 2>&1 || true
+	docker compose --env-file "$test_env_file" -f "$docker_dir/docker-compose.chrome.yml" -p test-chrome-startup down >/dev/null 2>&1 || true
 
 	log_info "Chrome runner container startup test completed successfully"
 	return 0

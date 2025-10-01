@@ -1,6 +1,6 @@
 services:
   github-runner:
-    image: ghcr.io/grammatonic/github-runner:latest
+    image: "${RUNNER_IMAGE:-ghcr.io/grammatonic/github-runner:latest}"
     container_name: github-runner-main
     restart: unless-stopped
     environment:
@@ -12,6 +12,7 @@ services:
       - RUNNER_WORKDIR=${RUNNER_WORKDIR:-/home/runner/_work}
       - RUNNER_EPHEMERAL=${RUNNER_EPHEMERAL:-false}
       - RUNNER_REPLACE_EXISTING=${RUNNER_REPLACE_EXISTING:-true}
+      - RUNNER_SKIP_REGISTRATION=${RUNNER_SKIP_REGISTRATION:-false}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - runner-cache:/home/runner/_work

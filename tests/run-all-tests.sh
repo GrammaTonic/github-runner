@@ -80,6 +80,7 @@ run_unit_tests() {
 	local unit_script
 	unit_script="$(dirname "$0")/unit/package-validation.sh"
 	local unit_results="$TEST_RESULTS_DIR/unit"
+	mkdir -p "$unit_results"
 
 	if [[ ! -f "$unit_script" ]]; then
 		fail_suite "Unit Tests" "Unit test script not found"

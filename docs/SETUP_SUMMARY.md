@@ -7,7 +7,7 @@
 ### 1. **Repository Structure**
 
 - **Main Branch**: Production-ready code with maximum protection
-- **Main Branch**: Integration branch with standard protection
+- **Develop Branch**: Integration branch with standard protection
 - **Feature Branches**: Developer-managed branches (no protection)
 - **Hotfix Branches**: Emergency fix branches with bypass capability
 
@@ -17,37 +17,30 @@
 
 ```yaml
 ✅ Required Status Checks:
-  - Lint and Validate
-  - Security Scanning
-  - Build Docker Images
-  - Test Runner Configuration (unit)
-  - Test Runner Configuration (integration)
-  - Test Runner Configuration (config)
-  - Container Security Scan
+  - CI/CD Pipeline
 
 ✅ Pull Request Reviews:
   - Required reviewers: 1
   - Dismiss stale reviews: Yes
-  - Require code owner reviews: Yes
-  - Require review of last push: Yes
+  - Require code owner reviews: No
+  - Require review of last push: No
 
 ✅ Additional Restrictions:
-  - Linear history required: Yes
+  - Linear history required: No
   - Force pushes: Blocked
   - Deletions: Blocked
   - Admin enforcement: Yes
   - Conversation resolution: Required
 ```
 
-#### **Main Branch Protection**
+> ℹ️ If GitHub rejects the advanced configuration, the setup script falls back to requiring the `CI/CD Pipeline` status check and one approving review without admin enforcement.
+
+#### **Develop Branch Protection**
 
 ```yaml
 ✅ Required Status Checks:
-  - Lint and Validate
-  - Security Scanning
-  - Build Docker Images
-  - Test Runner Configuration (unit)
-  - Test Runner Configuration (integration)
+  - lint-and-validate
+  - security-scan
 
 ✅ Pull Request Reviews:
   - Required reviewers: 1
@@ -111,7 +104,7 @@ All existing workflows are fully integrated:
 #### **Active Protection Rules**
 
 - 🔒 **Main Branch**: Fully protected, PR-only access
-- 🔒 **Main Branch**: Protected with required reviews
+- 🔒 **Develop Branch**: Protected with required reviews
 - 📝 **Pull Request #1**: Created to demonstrate workflow
 - 🚨 **Emergency Tools**: Ready for critical incidents
 

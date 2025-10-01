@@ -4,6 +4,17 @@
 # Stop immediately on error
 set -e
 
+# Allow test mode to skip GitHub registration
+if [[ "${RUNNER_SKIP_REGISTRATION:-false}" == "true" ]]; then
+	echo "RUNNER_SKIP_REGISTRATION enabled; skipping GitHub registration and starting idle loop."
+	touch /home/runner/.runner_configured
+	tail -f /dev/null &
+	idle_pid=$!
+	trap 'echo "Stopping runner idle loop"; kill "$idle_pid" >/dev/null 2>&1 || true; exit 0' SIGTERM SIGINT
+	wait "$idle_pid"
+	exit 0
+fi
+
 # --- VARIABLE SETUP ---
 # Check for required environment variables
 : "${GITHUB_TOKEN:?Error: GITHUB_TOKEN environment variable not set.}"

@@ -1,6 +1,6 @@
 services:
   github-runner-chrome:
-    image: ghcr.io/grammatonic/github-runner:chrome-latest
+    image: "${RUNNER_CHROME_IMAGE:-ghcr.io/grammatonic/github-runner:chrome-latest}"
     container_name: github-runner-chrome
     restart: unless-stopped
     environment:
@@ -12,6 +12,7 @@ services:
       - RUNNER_WORKDIR=${RUNNER_WORKDIR:-/home/runner/_work}
       - RUNNER_EPHEMERAL=${RUNNER_EPHEMERAL:-false}
       - RUNNER_REPLACE_EXISTING=${RUNNER_REPLACE_EXISTING:-true}
+      - RUNNER_SKIP_REGISTRATION=${RUNNER_SKIP_REGISTRATION:-false}
       - DISPLAY=${DISPLAY:-:99}
       - CHROME_FLAGS=${CHROME_FLAGS:---headless --no-sandbox --disable-dev-shm-usage --disable-gpu}
     volumes:
