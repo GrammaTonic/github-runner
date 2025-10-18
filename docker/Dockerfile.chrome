@@ -46,12 +46,18 @@ RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# --- INSTALL SYSTEM, NODE.JS, PYTHON, CHROME AND DRIVERS ---
+# --- INSTALL ESSENTIAL TOOLS FIRST ---
 # hadolint ignore=DL3008,DL3015
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-    # Essential tools
+    # Essential tools needed for subsequent steps
     curl ca-certificates gnupg wget unzip xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# --- INSTALL SYSTEM, NODE.JS, PYTHON, CHROME DEPENDENCIES ---
+# hadolint ignore=DL3008,DL3015
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
     # System utilities
     sudo \
     lsb-release \
