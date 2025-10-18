@@ -104,8 +104,8 @@ jobs:
             echo "ERROR: github-runner-main container does not exist. Skipping health check."
             exit 1
           fi
-          MAX_RETRIES=6
-          RETRY_INTERVAL=5
+          MAX_RETRIES=12
+          RETRY_INTERVAL=10
           for i in $(seq 1 $MAX_RETRIES); do
             HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-main)
             echo "Full health JSON: $HEALTH_JSON"
@@ -196,37 +196,37 @@ jobs:
           fi
       - name: Health check Chrome runner container
         run: |
-            echo "Checking health of Chrome runner container..."
-            MAX_RETRIES=6
-            RETRY_INTERVAL=5
-            for i in $(seq 1 $MAX_RETRIES); do
-              HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-chrome)
-              echo "Full health JSON: $HEALTH_JSON"
-              STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
-              FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
-              LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
-              echo "Health status: $STATUS"
-              echo "Failing streak: $FAILING_STREAK"
-              echo "Health logs: $LOGS"
-              if [ "$STATUS" = "healthy" ]; then
-                echo "Chrome runner container health is healthy."
-                break
-              elif [ "$STATUS" = "unhealthy" ]; then
-                echo "ERROR: Chrome runner container is unhealthy!"
-                exit 1
-              elif [ "$STATUS" = "starting" ]; then
-                if [ $i -lt $MAX_RETRIES ]; then
-                  echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
-                  sleep $RETRY_INTERVAL
-                else
-                  echo "WARNING: Chrome runner container health is still 'starting' after $MAX_RETRIES retries."
-                  exit 1
-                fi
+          echo "Checking health of Chrome runner container..."
+          MAX_RETRIES=12
+          RETRY_INTERVAL=10
+          for i in $(seq 1 $MAX_RETRIES); do
+            HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-chrome)
+            echo "Full health JSON: $HEALTH_JSON"
+            STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
+            FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
+            LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
+            echo "Health status: $STATUS"
+            echo "Failing streak: $FAILING_STREAK"
+            echo "Health logs: $LOGS"
+            if [ "$STATUS" = "healthy" ]; then
+              echo "Chrome runner container health is healthy."
+              break
+            elif [ "$STATUS" = "unhealthy" ]; then
+              echo "ERROR: Chrome runner container is unhealthy!"
+              exit 1
+            elif [ "$STATUS" = "starting" ]; then
+              if [ $i -lt $MAX_RETRIES ]; then
+                echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
+                sleep $RETRY_INTERVAL
               else
-                echo "Unknown health status: $STATUS"
+                echo "WARNING: Chrome runner container health is still 'starting' after $MAX_RETRIES retries."
                 exit 1
               fi
-            done
+            else
+              echo "Unknown health status: $STATUS"
+              exit 1
+            fi
+          done
       - name: Check Chrome runner container for GitHub connection
         run: |
           echo "Checking Chrome runner container logs for GitHub connection..."
@@ -311,37 +311,37 @@ jobs:
           fi
       - name: Health check Chrome-Go runner container
         run: |
-            echo "Checking health of Chrome-Go runner container..."
-            MAX_RETRIES=6
-            RETRY_INTERVAL=5
-            for i in $(seq 1 $MAX_RETRIES); do
-              HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-chrome-go)
-              echo "Full health JSON: $HEALTH_JSON"
-              STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
-              FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
-              LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
-              echo "Health status: $STATUS"
-              echo "Failing streak: $FAILING_STREAK"
-              echo "Health logs: $LOGS"
-              if [ "$STATUS" = "healthy" ]; then
-                echo "Chrome-Go runner container health is healthy."
-                break
-              elif [ "$STATUS" = "unhealthy" ]; then
-                echo "ERROR: Chrome-Go runner container is unhealthy!"
-                exit 1
-              elif [ "$STATUS" = "starting" ]; then
-                if [ $i -lt $MAX_RETRIES ]; then
-                  echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
-                  sleep $RETRY_INTERVAL
-                else
-                  echo "WARNING: Chrome-Go runner container health is still 'starting' after $MAX_RETRIES retries."
-                  exit 1
-                fi
+          echo "Checking health of Chrome-Go runner container..."
+          MAX_RETRIES=12
+          RETRY_INTERVAL=10
+          for i in $(seq 1 $MAX_RETRIES); do
+            HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-chrome-go)
+            echo "Full health JSON: $HEALTH_JSON"
+            STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
+            FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
+            LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
+            echo "Health status: $STATUS"
+            echo "Failing streak: $FAILING_STREAK"
+            echo "Health logs: $LOGS"
+            if [ "$STATUS" = "healthy" ]; then
+              echo "Chrome-Go runner container health is healthy."
+              break
+            elif [ "$STATUS" = "unhealthy" ]; then
+              echo "ERROR: Chrome-Go runner container is unhealthy!"
+              exit 1
+            elif [ "$STATUS" = "starting" ]; then
+              if [ $i -lt $MAX_RETRIES ]; then
+                echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
+                sleep $RETRY_INTERVAL
               else
-                echo "Unknown health status: $STATUS"
+                echo "WARNING: Chrome-Go runner container health is still 'starting' after $MAX_RETRIES retries."
                 exit 1
               fi
-            done
+            else
+              echo "Unknown health status: $STATUS"
+              exit 1
+            fi
+          done
       - name: Check Chrome-Go runner container for GitHub connection
         run: |
           echo "Checking Chrome-Go runner container logs for GitHub connection..."

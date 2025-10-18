@@ -55,7 +55,9 @@ fi
 # Load env file locally so this script knows about RUNNER_SKIP_REGISTRATION, etc.
 if [ -f "$ENV_FILE" ]; then
 	# shellcheck disable=SC1090
-	set -a; . "$ENV_FILE"; set +a
+	set -a
+	. "$ENV_FILE"
+	set +a
 fi
 
 echo "[INFO] Removing any previous test container..."

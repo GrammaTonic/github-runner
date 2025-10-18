@@ -6,9 +6,12 @@ services:
     environment:
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
+      - RUNNER_SKIP_REGISTRATION=${RUNNER_SKIP_REGISTRATION:-false}
       - RUNNER_NAME=${RUNNER_NAME:-docker-runner}
       - RUNNER_LABELS=${RUNNER_LABELS:-docker,self-hosted,linux,x64}
       - RUNNER_GROUP=${RUNNER_GROUP:-default}
+      # Accept both names; entrypoint prefers RUNNER_WORK_DIR
+      - RUNNER_WORK_DIR=${RUNNER_WORK_DIR:-/home/runner/_work}
       - RUNNER_WORKDIR=${RUNNER_WORKDIR:-/home/runner/_work}
       - RUNNER_EPHEMERAL=${RUNNER_EPHEMERAL:-false}
       - RUNNER_REPLACE_EXISTING=${RUNNER_REPLACE_EXISTING:-true}
