@@ -17,8 +17,8 @@ is_truthy() {
 	v="$1"
 	v_lc=$(printf '%s' "$v" | tr '[:upper:]' '[:lower:]')
 	case "$v_lc" in
-		1 | true | yes | y | on) return 0 ;;
-		*) return 1 ;;
+	  1 | true | yes | y | on) return 0 ;;
+	  *) return 1 ;;
 	esac
 }
 
@@ -31,8 +31,8 @@ docker build --platform=linux/amd64 -f docker/Dockerfile -t "$LOCAL_IMAGE" ./doc
 	printf '    image: %s\n' "$LOCAL_IMAGE"
 } >"$OVERRIDE_FILE"
 if command -v trivy &>/dev/null; then
-		mkdir -p test-results/docker
-		trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_"${TIMESTAMP}".txt
+	mkdir -p test-results/docker
+	trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_"${TIMESTAMP}".txt
 	echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
 elif docker --version &>/dev/null; then
 	echo "[INFO] Running Trivy via Docker..."

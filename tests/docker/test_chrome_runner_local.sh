@@ -21,20 +21,20 @@ if command -v trivy &>/dev/null; then
   trivy image "$LOCAL_IMAGE" --scanners vuln --format table --output test-results/docker/trivy_scan_"${TIMESTAMP}".txt || echo "[WARN] Trivy scan encountered issues; continuing."
   echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
 elif docker --version &>/dev/null; then
-  echo "[INFO] Running Trivy via Docker..."
-  # Detect Docker socket path (macOS vs Linux)
-  DOCKER_SOCK="/var/run/docker.sock"
-  if [ -S "/Users/grammatonic/.docker/run/docker.sock" ]; then
-    DOCKER_SOCK="/Users/grammatonic/.docker/run/docker.sock"
-  fi
-  echo "[INFO] Using Docker socket: $DOCKER_SOCK"
-  docker run --rm \
-    -v "$DOCKER_SOCK:/var/run/docker.sock" \
-    -v "$(pwd)/test-results/docker:/output" \
-    aquasec/trivy:latest image "$LOCAL_IMAGE" --scanners vuln --format json --output /output/trivy_scan_"${TIMESTAMP}".txt || echo "[WARN] Trivy scan via Docker encountered issues; continuing."
-  echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
+	echo "[INFO] Running Trivy via Docker..."
+	# Detect Docker socket path (macOS vs Linux)
+	DOCKER_SOCK="/var/run/docker.sock"
+	if [ -S "/Users/grammatonic/.docker/run/docker.sock" ]; then
+		DOCKER_SOCK="/Users/grammatonic/.docker/run/docker.sock"
+	fi
+	echo "[INFO] Using Docker socket: $DOCKER_SOCK"
+	docker run --rm \
+		-v "$DOCKER_SOCK:/var/run/docker.sock" \
+		-v "$(pwd)/test-results/docker:/output" \
+		aquasec/trivy:latest image "$LOCAL_IMAGE" --scanners vuln --format json --output /output/trivy_scan_"${TIMESTAMP}".txt || echo "[WARN] Trivy scan via Docker encountered issues; continuing."
+	echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
 else
-  echo "[WARNING] Trivy not available. Skipping security scan."
+	echo "[WARNING] Trivy not available. Skipping security scan."
 fi
 
 echo "[INFO] Creating Docker Compose override file for local image..."
