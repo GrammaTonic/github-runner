@@ -29,7 +29,7 @@ docker build --platform=linux/amd64 -f docker/Dockerfile -t "$LOCAL_IMAGE" ./doc
 	printf 'services:\n'
 	printf '  %s:\n' "$SERVICE_NAME"
 	printf '    image: %s\n' "$LOCAL_IMAGE"
-} > "$OVERRIDE_FILE"
+} >"$OVERRIDE_FILE"
 if command -v trivy &>/dev/null; then
 		mkdir -p test-results/docker
 		trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_"${TIMESTAMP}".txt
