@@ -17,8 +17,8 @@ is_truthy() {
 	v="$1"
 	v_lc=$(printf '%s' "$v" | tr '[:upper:]' '[:lower:]')
 	case "$v_lc" in
-		1|true|yes|y|on) return 0;;
-		*) return 1;;
+		1 | true | yes | y | on) return 0 ;;
+		*) return 1 ;;
 	esac
 }
 
@@ -54,8 +54,8 @@ fi
 
 # Load env file locally so this script knows about RUNNER_SKIP_REGISTRATION, etc.
 if [ -f "$ENV_FILE" ]; then
-	# shellcheck disable=SC1090
 	set -a
+	# shellcheck disable=SC1090
 	. "$ENV_FILE"
 	set +a
 fi

@@ -5,8 +5,8 @@ set -e
 
 is_truthy() {
 	case "${1,,}" in
-		1|true|yes|y|on) return 0;;
-		*) return 1;;
+		1 | true | yes | y | on) return 0 ;;
+		*) return 1 ;;
 	esac
 }
 
@@ -30,7 +30,7 @@ while true; do sleep 3600; done
 EOF
 	chmod +x /tmp/runner/Runner.Listener
 	/tmp/runner/Runner.Listener &
-	echo $! > /tmp/runner/dummy-listener.pid
+	echo $! >/tmp/runner/dummy-listener.pid
 }
 
 stop_dummy_listener() {
@@ -54,7 +54,8 @@ if is_truthy "$RUNNER_SKIP_REGISTRATION"; then
 	touch "/actions-runner/.runner_configured" || true
 	start_dummy_listener
 	trap 'stop_dummy_listener; exit 0' SIGTERM SIGINT
-	tail -f /dev/null & wait $!
+	tail -f /dev/null &
+	wait $!
 	exit 0
 fi
 
