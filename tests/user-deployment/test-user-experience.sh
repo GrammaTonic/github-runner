@@ -27,43 +27,43 @@ mkdir -p "$TEST_RESULTS_DIR"
 
 # Logging functions
 log_info() {
-  echo -e "${GREEN}[INFO]${NC} $1"
+	echo -e "${GREEN}[INFO]${NC} $1"
 }
 
 log_warn() {
-  echo -e "${YELLOW}[WARN]${NC} $1"
+	echo -e "${YELLOW}[WARN]${NC} $1"
 }
 
 log_error() {
-  echo -e "${RED}[ERROR]${NC} $1"
+	echo -e "${RED}[ERROR]${NC} $1"
 }
 
 log_test() {
-  echo -e "${BLUE}[TEST]${NC} $1"
+	echo -e "${BLUE}[TEST]${NC} $1"
 }
 
 # Test tracking functions
 start_test() {
-  local test_name="$1"
-  TESTS_TOTAL=$((TESTS_TOTAL + 1))
-  log_test "Starting: $test_name"
-  echo "$(date -Iseconds): START $test_name" >>"$TEST_RESULTS_DIR/user-deployment.log"
+	local test_name="$1"
+	TESTS_TOTAL=$((TESTS_TOTAL + 1))
+	log_test "Starting: $test_name"
+	echo "$(date -Iseconds): START $test_name" >>"$TEST_RESULTS_DIR/user-deployment.log"
 }
 
 pass_test() {
-  local test_name="$1"
-  TESTS_PASSED=$((TESTS_PASSED + 1))
-  log_info "✓ PASSED: $test_name"
-  echo "$(date -Iseconds): PASS $test_name" >>"$TEST_RESULTS_DIR/user-deployment.log"
+	local test_name="$1"
+	TESTS_PASSED=$((TESTS_PASSED + 1))
+	log_info "✓ PASSED: $test_name"
+	echo "$(date -Iseconds): PASS $test_name" >>"$TEST_RESULTS_DIR/user-deployment.log"
 }
 
 fail_test() {
-  local test_name="$1"
-  local reason="${2:-Unknown error}"
-  TESTS_FAILED=$((TESTS_FAILED + 1))
-  FAILED_TESTS+=("$test_name: $reason")
-  log_error "✗ FAILED: $test_name - $reason"
-  echo "$(date -Iseconds): FAIL $test_name - $reason" >>"$TEST_RESULTS_DIR/user-deployment.log"
+	local test_name="$1"
+	local reason="${2:-Unknown error}"
+	TESTS_FAILED=$((TESTS_FAILED + 1))
+	FAILED_TESTS+=("$test_name: $reason")
+	log_error "✗ FAILED: $test_name - $reason"
+	echo "$(date -Iseconds): FAIL $test_name - $reason" >>"$TEST_RESULTS_DIR/user-deployment.log"
 }
 
 # Test 1: Production Docker Compose files exist and are valid
@@ -585,22 +585,22 @@ EOF
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
-  case $1 in
-    -h | --help)
-      show_help
-      exit 0
-      ;;
-    -r | --results)
-      TEST_RESULTS_DIR="$2"
-      shift 2
-      ;;
-    *)
-      log_error "Unknown option: $1"
-      show_help
-      exit 2
-      ;;
-  esac
-  shift
+	case $1 in
+	-h | --help)
+		show_help
+		exit 0
+		;;
+	-r | --results)
+		TEST_RESULTS_DIR="$2"
+		shift 2
+		;;
+	*)
+		log_error "Unknown option: $1"
+		show_help
+		exit 2
+		;;
+	esac
+	shift
 done
 
 # Run main function

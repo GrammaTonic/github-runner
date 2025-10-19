@@ -33,12 +33,12 @@ check_architecture() {
 check_prerequisites() {
 	log_info "Checking prerequisites..."
 
-	if ! command -v docker > /dev/null 2>&1; then
+	if ! command -v docker >/dev/null 2>&1; then
 		log_error "Docker is not installed. Please install Docker first."
 		exit 1
 	fi
 
-	if ! docker info > /dev/null 2>&1; then
+	if ! docker info >/dev/null 2>&1; then
 		log_error "Docker daemon is not running. Please start Docker."
 		exit 1
 	fi
@@ -95,7 +95,7 @@ deploy_runner() {
 	log_info "Deploying Chrome runner..."
 
 	# Create networks and volumes
-	docker network create runner-network 2> /dev/null || true
+	docker network create runner-network 2>/dev/null || true
 
 	# Start the runner
 	docker compose -f docker/docker-compose.chrome.yml --env-file config/chrome-runner.env up -d
@@ -113,7 +113,7 @@ show_status() {
 
 	echo ""
 	echo "=== Runner Logs (last 10 lines) ==="
-	docker logs github-runner-chrome --tail 10 2> /dev/null || echo "No logs available yet"
+	docker logs github-runner-chrome --tail 10 2>/dev/null || echo "No logs available yet"
 
 	echo ""
 	log_success "Status check complete"
@@ -145,20 +145,20 @@ main() {
 
 # Handle command line arguments
 case "${1:-}" in
-	"status")
-		show_status
-		;;
-	"stop")
-		log_info "Stopping Chrome runner..."
-		docker compose -f docker/docker-compose.chrome.yml down
-		log_success "Chrome runner stopped"
-		;;
-	"restart")
-		log_info "Restarting Chrome runner..."
-		docker compose -f docker/docker-compose.chrome.yml restart
-		show_status
-		;;
-	*)
-		main
-		;;
+"status")
+	show_status
+	;;
+"stop")
+	log_info "Stopping Chrome runner..."
+	docker compose -f docker/docker-compose.chrome.yml down
+	log_success "Chrome runner stopped"
+	;;
+"restart")
+	log_info "Restarting Chrome runner..."
+	docker compose -f docker/docker-compose.chrome.yml restart
+	show_status
+	;;
+*)
+	main
+	;;
 esac

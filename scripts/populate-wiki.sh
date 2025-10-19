@@ -20,29 +20,29 @@ echo ""
 
 # Function to create wiki pages
 create_wiki_pages() {
-  if [ ! -d "wiki-repo" ]; then
-    echo "Cloning wiki repository..."
-    git clone https://github.com/GrammaTonic/github-runner.wiki.git wiki-repo
-    cd wiki-repo || exit 1
-  else
-    cd wiki-repo || exit 1
-    git pull origin main
-  fi
+	if [ ! -d "wiki-repo" ]; then
+		echo "Cloning wiki repository..."
+		git clone https://github.com/GrammaTonic/github-runner.wiki.git wiki-repo
+		cd wiki-repo || exit 1
+	else
+		cd wiki-repo || exit 1
+		git pull origin main
+	fi
 
-  echo "Copying wiki content..."
+	echo "Copying wiki content..."
 
-  # Copy all wiki pages
-  for file in ../wiki-content/*.md; do
-    if [ -f "$file" ]; then
-      filename=$(basename "$file")
-      echo "Creating page: $filename"
-      cp "$file" "./$(basename "$filename" .md).md"
-    fi
-  done
+	# Copy all wiki pages
+	for file in ../wiki-content/*.md; do
+		if [ -f "$file" ]; then
+			filename=$(basename "$file")
+			echo "Creating page: $filename"
+			cp "$file" "./$(basename "$filename" .md).md"
+		fi
+	done
 
-  # Commit and push
-  git add .
-  git commit -m "docs: populate wiki with comprehensive documentation
+	# Commit and push
+	git add .
+	git commit -m "docs: populate wiki with comprehensive documentation
 
 - Add comprehensive home page with navigation
 - Add detailed installation guide
@@ -50,35 +50,35 @@ create_wiki_pages() {
 - Add common issues and troubleshooting guide
 - Include quick start links and external resources"
 
-  git push origin main
+	git push origin main
 
-  echo ""
-  echo "✅ Wiki populated successfully!"
-  echo "📖 View at: https://github.com/GrammaTonic/github-runner/wiki"
+	echo ""
+	echo "✅ Wiki populated successfully!"
+	echo "📖 View at: https://github.com/GrammaTonic/github-runner/wiki"
 }
 
 # Check if wiki exists
-if curl -s -f -I "https://github.com/GrammaTonic/github-runner.wiki.git" > /dev/null 2>&1; then
-  echo "Wiki repository exists. Populating pages..."
-  create_wiki_pages
+if curl -s -f -I "https://github.com/GrammaTonic/github-runner.wiki.git" >/dev/null 2>&1; then
+	echo "Wiki repository exists. Populating pages..."
+	create_wiki_pages
 else
-  echo "📝 Manual step required:"
-  echo "   1. Visit: https://github.com/GrammaTonic/github-runner/wiki"
-  echo "   2. Click 'Create the first page'"
-  echo "   3. Use title: 'Home'"
-  echo "   4. Copy content from: wiki-content/Home.md"
-  echo "   5. Save the page"
-  echo "   6. Run this script again: ./scripts/populate-wiki.sh"
+	echo "📝 Manual step required:"
+	echo "   1. Visit: https://github.com/GrammaTonic/github-runner/wiki"
+	echo "   2. Click 'Create the first page'"
+	echo "   3. Use title: 'Home'"
+	echo "   4. Copy content from: wiki-content/Home.md"
+	echo "   5. Save the page"
+	echo "   6. Run this script again: ./scripts/populate-wiki.sh"
 fi
 
 echo ""
 echo "📋 Available wiki pages to create:"
 echo "=================================="
 for file in wiki-content/*.md; do
-  if [ -f "$file" ]; then
-    filename=$(basename "$file" .md)
-    echo "  - $filename"
-  fi
+	if [ -f "$file" ]; then
+		filename=$(basename "$file" .md)
+		echo "  - $filename"
+	fi
 done
 
 echo ""

@@ -59,7 +59,7 @@ NO_CACHE=false
 VERBOSE=false
 
 usage() {
-	cat << EOF
+	cat <<EOF
 Usage: $0 [OPTIONS]
 
 Build GitHub Actions Runner Docker image
@@ -94,44 +94,44 @@ EOF
 # Parse arguments
 while [[ $# -gt 0 ]]; do
 	case $1 in
-		-p | --push)
-			PUSH=true
-			shift
-			;;
-		-m | --multi-platform)
-			MULTI_PLATFORM=true
-			shift
-			;;
-		-d | --dev)
-			DEV_MODE=true
-			shift
-			;;
-		-n | --no-cache)
-			NO_CACHE=true
-			shift
-			;;
-		-v | --verbose)
-			VERBOSE=true
-			shift
-			;;
-		-t | --tag)
-			IMAGE_TAG="$2"
-			shift 2
-			;;
-		-r | --runner-version)
-			RUNNER_VERSION="$2"
-			BUILD_ARGS+=("--build-arg" "RUNNER_VERSION=${RUNNER_VERSION}")
-			shift 2
-			;;
-		-h | --help)
-			usage
-			exit 0
-			;;
-		*)
-			log_error "Unknown option: $1"
-			usage
-			exit 1
-			;;
+	-p | --push)
+		PUSH=true
+		shift
+		;;
+	-m | --multi-platform)
+		MULTI_PLATFORM=true
+		shift
+		;;
+	-d | --dev)
+		DEV_MODE=true
+		shift
+		;;
+	-n | --no-cache)
+		NO_CACHE=true
+		shift
+		;;
+	-v | --verbose)
+		VERBOSE=true
+		shift
+		;;
+	-t | --tag)
+		IMAGE_TAG="$2"
+		shift 2
+		;;
+	-r | --runner-version)
+		RUNNER_VERSION="$2"
+		BUILD_ARGS+=("--build-arg" "RUNNER_VERSION=${RUNNER_VERSION}")
+		shift 2
+		;;
+	-h | --help)
+		usage
+		exit 0
+		;;
+	*)
+		log_error "Unknown option: $1"
+		usage
+		exit 1
+		;;
 	esac
 done
 
@@ -143,14 +143,14 @@ check_prerequisites() {
 	log_info "Checking prerequisites..."
 
 	# Check Docker
-	if ! command -v docker &> /dev/null; then
+	if ! command -v docker &>/dev/null; then
 		log_error "Docker is not installed or not in PATH"
 		exit 1
 	fi
 
 	# Check Docker buildx for multi-platform builds
 	if [[ "$MULTI_PLATFORM" == "true" ]]; then
-		if ! docker buildx version &> /dev/null; then
+		if ! docker buildx version &>/dev/null; then
 			log_error "Docker buildx is required for multi-platform builds"
 			exit 1
 		fi
@@ -160,14 +160,14 @@ check_prerequisites() {
 	if [[ "$PUSH" == "true" ]]; then
 		# More reliable registry authentication check using docker pull of a test image
 		TEST_IMAGE="${REGISTRY}/alpine:latest"
-		if ! docker pull "$TEST_IMAGE" > /dev/null 2>&1; then
+		if ! docker pull "$TEST_IMAGE" >/dev/null 2>&1; then
 			log_warning "Docker registry authentication check failed (unable to pull test image). Attempting login..."
 			if ! docker login "${REGISTRY}"; then
 				log_error "Failed to login to registry. Use: docker login ${REGISTRY}"
 				exit 1
 			fi
 			# Try pulling again after login
-			if ! docker pull "$TEST_IMAGE" > /dev/null 2>&1; then
+			if ! docker pull "$TEST_IMAGE" >/dev/null 2>&1; then
 				log_error "Authentication to registry failed even after login. Please check your credentials."
 				exit 1
 			fi
@@ -191,7 +191,7 @@ setup_buildx() {
 		log_info "Setting up Docker buildx for multi-platform build..."
 
 		# Create or use existing builder
-		if ! docker buildx inspect github-runner-builder &> /dev/null; then
+		if ! docker buildx inspect github-runner-builder &>/dev/null; then
 			docker buildx create --name github-runner-builder --use
 		else
 			docker buildx use github-runner-builder
@@ -253,7 +253,7 @@ build_image() {
 	if [[ "$VERBOSE" == "true" ]]; then
 		"${build_cmd[@]}"
 	else
-		"${build_cmd[@]}" > /dev/null 2>&1
+		"${build_cmd[@]}" >/dev/null 2>&1
 	fi
 
 	log_success "Image built successfully: ${FULL_IMAGE_NAME}"
@@ -272,9 +272,9 @@ push_image() {
 security_scan() {
 	log_info "Running security scan on built image..."
 
-	if command -v trivy &> /dev/null; then
+	if command -v trivy &>/dev/null; then
 		trivy image --severity HIGH,CRITICAL "${FULL_IMAGE_NAME}"
-	elif command -v docker &> /dev/null && docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest --version &> /dev/null; then
+	elif command -v docker &>/dev/null && docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest --version &>/dev/null; then
 		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 			aquasec/trivy:latest image --severity HIGH,CRITICAL "${FULL_IMAGE_NAME}"
 	else
@@ -297,10 +297,10 @@ show_summary() {
 	fi
 
 	# Show image size
-	if [[ "$MULTI_PLATFORM" != "true" ]] && docker image inspect "${FULL_IMAGE_NAME}" &> /dev/null; then
+	if [[ "$MULTI_PLATFORM" != "true" ]] && docker image inspect "${FULL_IMAGE_NAME}" &>/dev/null; then
 		local size raw_size
 		raw_size=$(docker image inspect "${FULL_IMAGE_NAME}" --format='{{.Size}}')
-		if command -v numfmt &> /dev/null; then
+		if command -v numfmt &>/dev/null; then
 			size=$(echo "$raw_size" | numfmt --to=iec-i --suffix=B)
 		else
 			size="${raw_size} bytes"

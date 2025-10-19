@@ -22,32 +22,32 @@ mkdir -p "$TEST_RESULTS_DIR"
 
 # Logging functions
 log_info() {
-  echo -e "${GREEN}[INFO]${NC} $1"
+	echo -e "${GREEN}[INFO]${NC} $1"
 }
 
 log_warn() {
-  echo -e "${YELLOW}[WARN]${NC} $1"
+	echo -e "${YELLOW}[WARN]${NC} $1"
 }
 
 log_error() {
-  echo -e "${RED}[ERROR]${NC} $1"
+	echo -e "${RED}[ERROR]${NC} $1"
 }
 
 # Function to extract packages from a Dockerfile
 extract_packages_from_dockerfile() {
-  local dockerfile="$1"
-  local temp_file
-  temp_file="$TEST_RESULTS_DIR/packages_$(basename "$dockerfile").txt"
+	local dockerfile="$1"
+	local temp_file
+	temp_file="$TEST_RESULTS_DIR/packages_$(basename "$dockerfile").txt"
 
-  log_info "Extracting packages from $dockerfile..." >&2
+	log_info "Extracting packages from $dockerfile..." >&2
 
-  # Ensure temp file exists even if no packages found
-  touch "$temp_file"
+	# Ensure temp file exists even if no packages found
+	touch "$temp_file"
 
-  # Extract apt-get install commands with better multi-line handling
-  if grep -q "apt-get install" "$dockerfile"; then
-    # Extract packages by finding apt-get install lines and collecting until no backslash
-    awk '
+	# Extract apt-get install commands with better multi-line handling
+	if grep -q "apt-get install" "$dockerfile"; then
+		# Extract packages by finding apt-get install lines and collecting until no backslash
+		awk '
         /^RUN.*apt-get install/ {
             # Start collecting install command
             install_cmd = $0
@@ -74,45 +74,45 @@ extract_packages_from_dockerfile() {
             }
         }
         ' "$dockerfile" |
-      # Filter and clean package names
-      grep -v "^#" |
-      grep -v "rm -rf" |
-      grep -v "apt-get" |
-      sed 's/^[[:space:]]*//' |
-      sed 's/[[:space:]]*$//' |
-      sed 's/^-.*$//' |
-      grep -v "^$" |
-      grep -v "^--" |
-      grep -v "^&&" |
-      grep -v ')"' |
-      grep -v '";' |
-      grep -v 'case' |
-      grep -v 'esac' |
-      grep -v 'RUNNER_ARCH' |
-      grep -v 'curl' |
-      grep -v 'wget' |
-      grep -v 'echo' |
-      grep -v 'http' |
-      grep -E '^[a-zA-Z0-9][a-zA-Z0-9.+_-]*$' |
-      sort | uniq > "$temp_file"
-  else
-    log_warn "No apt-get install commands found in $dockerfile" >&2
-  fi
+			# Filter and clean package names
+			grep -v "^#" |
+			grep -v "rm -rf" |
+			grep -v "apt-get" |
+			sed 's/^[[:space:]]*//' |
+			sed 's/[[:space:]]*$//' |
+			sed 's/^-.*$//' |
+			grep -v "^$" |
+			grep -v "^--" |
+			grep -v "^&&" |
+			grep -v ')"' |
+			grep -v '";' |
+			grep -v 'case' |
+			grep -v 'esac' |
+			grep -v 'RUNNER_ARCH' |
+			grep -v 'curl' |
+			grep -v 'wget' |
+			grep -v 'echo' |
+			grep -v 'http' |
+			grep -E '^[a-zA-Z0-9][a-zA-Z0-9.+_-]*$' |
+			sort | uniq >"$temp_file"
+	else
+		log_warn "No apt-get install commands found in $dockerfile" >&2
+	fi
 
-  echo "$temp_file"
+	echo "$temp_file"
 }
 
 # Function to validate packages against Ubuntu repositories
 validate_packages() {
-  local package_file="$1"
-  local dockerfile_name="$2"
+	local package_file="$1"
+	local dockerfile_name="$2"
 
-  log_info "Validating packages for $dockerfile_name against Ubuntu $UBUNTU_VERSION..."
+	log_info "Validating packages for $dockerfile_name against Ubuntu $UBUNTU_VERSION..."
 
-  # Use a Docker container to test package availability
-  local validation_script="$TEST_RESULTS_DIR/validate_${dockerfile_name}.sh"
+	# Use a Docker container to test package availability
+	local validation_script="$TEST_RESULTS_DIR/validate_${dockerfile_name}.sh"
 
-  cat > "$validation_script" << 'EOF'
+	cat >"$validation_script" <<'EOF'
 #!/bin/bash
 set -e
 
@@ -174,159 +174,159 @@ fi
 exit ${#failed_packages[@]}
 EOF
 
-  chmod +x "$validation_script"
+	chmod +x "$validation_script"
 
-  if [[ "$DRY_RUN" == "true" ]]; then
-    log_info "DRY_RUN: Would validate packages using Docker container"
-    return 0
-  fi
+	if [[ "$DRY_RUN" == "true" ]]; then
+		log_info "DRY_RUN: Would validate packages using Docker container"
+		return 0
+	fi
 
-  # Run validation in Docker container
-  local exit_code=0
-  docker run --rm -v "$package_file:/packages.txt" -v "$validation_script:/validate.sh" \
-    "ubuntu:$UBUNTU_VERSION" bash /validate.sh > "$TEST_RESULTS_DIR/validation_${dockerfile_name}.log" 2>&1 || exit_code=$?
+	# Run validation in Docker container
+	local exit_code=0
+	docker run --rm -v "$package_file:/packages.txt" -v "$validation_script:/validate.sh" \
+		"ubuntu:$UBUNTU_VERSION" bash /validate.sh >"$TEST_RESULTS_DIR/validation_${dockerfile_name}.log" 2>&1 || exit_code=$?
 
-  # Parse results
-  local log_file="$TEST_RESULTS_DIR/validation_${dockerfile_name}.log"
-  cat "$log_file"
+	# Parse results
+	local log_file="$TEST_RESULTS_DIR/validation_${dockerfile_name}.log"
+	cat "$log_file"
 
-  if [[ $exit_code -ne 0 ]]; then
-    log_error "Package validation failed for $dockerfile_name (exit code: $exit_code)"
+	if [[ $exit_code -ne 0 ]]; then
+		log_error "Package validation failed for $dockerfile_name (exit code: $exit_code)"
 
-    # Extract failed packages from log
-    if grep -q "FAILED_PACKAGES:" "$log_file"; then
-      log_error "Failed packages:"
-      sed -n '/FAILED_PACKAGES:/,/OBSOLETE_PACKAGES:/p' "$log_file" | grep -v "FAILED_PACKAGES:" | grep -v "OBSOLETE_PACKAGES:" | while read -r failed_pkg; do
-        echo "  - $failed_pkg"
-        suggest_alternatives "$failed_pkg"
-      done
-    fi
+		# Extract failed packages from log
+		if grep -q "FAILED_PACKAGES:" "$log_file"; then
+			log_error "Failed packages:"
+			sed -n '/FAILED_PACKAGES:/,/OBSOLETE_PACKAGES:/p' "$log_file" | grep -v "FAILED_PACKAGES:" | grep -v "OBSOLETE_PACKAGES:" | while read -r failed_pkg; do
+				echo "  - $failed_pkg"
+				suggest_alternatives "$failed_pkg"
+			done
+		fi
 
-    # Extract obsolete packages from log
-    if grep -q "OBSOLETE_PACKAGES:" "$log_file"; then
-      log_warn "Obsolete packages found:"
-      sed -n '/OBSOLETE_PACKAGES:/,$p' "$log_file" | grep -v "OBSOLETE_PACKAGES:" || true
-    fi
+		# Extract obsolete packages from log
+		if grep -q "OBSOLETE_PACKAGES:" "$log_file"; then
+			log_warn "Obsolete packages found:"
+			sed -n '/OBSOLETE_PACKAGES:/,$p' "$log_file" | grep -v "OBSOLETE_PACKAGES:" || true
+		fi
 
-    return $exit_code
-  fi
+		return $exit_code
+	fi
 
-  log_info "All packages validated successfully for $dockerfile_name"
-  return 0
+	log_info "All packages validated successfully for $dockerfile_name"
+	return 0
 }
 
 # Function to suggest package alternatives
 # shellcheck disable=SC2317
 suggest_alternatives() {
-  # shellcheck disable=SC2317
-  local failed_package="$1"
+	# shellcheck disable=SC2317
+	local failed_package="$1"
 
-  # shellcheck disable=SC2317
-  case "$failed_package" in
-    "libgconf-2-4")
-      # shellcheck disable=SC2317
-      echo "Alternative: Remove this package - GConf is obsolete. Use GSettings/dconf instead."
-      # shellcheck disable=SC2317
-      echo "  Modern applications use GSettings which doesn't require additional packages."
-      ;;
-    "python2.7")
-      # shellcheck disable=SC2317
-      echo "Alternative: python3, python3-dev"
-      ;;
-    "libssl1.0.0")
-      # shellcheck disable=SC2317
-      echo "Alternative: libssl3, libssl1.1"
-      ;;
-    "nodejs")
-      # shellcheck disable=SC2317
-      echo "Alternative: Add NodeSource repository or use snap: 'snap install node --classic'"
-      ;;
-    *)
-      # shellcheck disable=SC2317
-      echo "Run 'apt-cache search ${failed_package%%-*}' to find alternatives"
-      ;;
-  esac
+	# shellcheck disable=SC2317
+	case "$failed_package" in
+	"libgconf-2-4")
+		# shellcheck disable=SC2317
+		echo "Alternative: Remove this package - GConf is obsolete. Use GSettings/dconf instead."
+		# shellcheck disable=SC2317
+		echo "  Modern applications use GSettings which doesn't require additional packages."
+		;;
+	"python2.7")
+		# shellcheck disable=SC2317
+		echo "Alternative: python3, python3-dev"
+		;;
+	"libssl1.0.0")
+		# shellcheck disable=SC2317
+		echo "Alternative: libssl3, libssl1.1"
+		;;
+	"nodejs")
+		# shellcheck disable=SC2317
+		echo "Alternative: Add NodeSource repository or use snap: 'snap install node --classic'"
+		;;
+	*)
+		# shellcheck disable=SC2317
+		echo "Run 'apt-cache search ${failed_package%%-*}' to find alternatives"
+		;;
+	esac
 }
 
 # Main validation function
 main() {
-  local dockerfile_dir="${1:-$(dirname "$0")/../../docker}"
-  local exit_code=0
-  local total_failures=0
+	local dockerfile_dir="${1:-$(dirname "$0")/../../docker}"
+	local exit_code=0
+	local total_failures=0
 
-  log_info "Starting Docker package validation for Ubuntu $UBUNTU_VERSION"
-  log_info "Docker directory: $dockerfile_dir"
+	log_info "Starting Docker package validation for Ubuntu $UBUNTU_VERSION"
+	log_info "Docker directory: $dockerfile_dir"
 
-  # Find all Dockerfiles
-  local dockerfiles=()
-  while IFS= read -r -d '' file; do
-    dockerfiles+=("$file")
-  done < <(find "$dockerfile_dir" -name "Dockerfile*" -type f -print0)
+	# Find all Dockerfiles
+	local dockerfiles=()
+	while IFS= read -r -d '' file; do
+		dockerfiles+=("$file")
+	done < <(find "$dockerfile_dir" -name "Dockerfile*" -type f -print0)
 
-  if [[ ${#dockerfiles[@]} -eq 0 ]]; then
-    log_error "No Dockerfiles found in $dockerfile_dir"
-    exit 1
-  fi
+	if [[ ${#dockerfiles[@]} -eq 0 ]]; then
+		log_error "No Dockerfiles found in $dockerfile_dir"
+		exit 1
+	fi
 
-  log_info "Found ${#dockerfiles[@]} Dockerfile(s) to validate"
+	log_info "Found ${#dockerfiles[@]} Dockerfile(s) to validate"
 
-  # Process each Dockerfile
-  for dockerfile in "${dockerfiles[@]}"; do
-    local dockerfile_name
-    dockerfile_name="$(basename "$dockerfile")"
+	# Process each Dockerfile
+	for dockerfile in "${dockerfiles[@]}"; do
+		local dockerfile_name
+		dockerfile_name="$(basename "$dockerfile")"
 
-    log_info "Processing $dockerfile_name..."
+		log_info "Processing $dockerfile_name..."
 
-    # Extract packages
-    local package_file
-    package_file="$(extract_packages_from_dockerfile "$dockerfile")"
+		# Extract packages
+		local package_file
+		package_file="$(extract_packages_from_dockerfile "$dockerfile")"
 
-    if [[ ! -f "$package_file" ]]; then
-      log_error "Failed to create package file: $package_file"
-      total_failures=$((total_failures + 1))
-      exit_code=1
-      continue
-    fi
+		if [[ ! -f "$package_file" ]]; then
+			log_error "Failed to create package file: $package_file"
+			total_failures=$((total_failures + 1))
+			exit_code=1
+			continue
+		fi
 
-    local package_count
-    package_count="$(wc -l < "$package_file" 2> /dev/null || echo 0)"
-    log_info "Found $package_count packages in $dockerfile_name"
+		local package_count
+		package_count="$(wc -l <"$package_file" 2>/dev/null || echo 0)"
+		log_info "Found $package_count packages in $dockerfile_name"
 
-    # Validate packages
-    if ! validate_packages "$package_file" "$dockerfile_name"; then
-      log_error "Validation failed for $dockerfile_name"
-      total_failures=$((total_failures + 1))
-      exit_code=1
-    fi
+		# Validate packages
+		if ! validate_packages "$package_file" "$dockerfile_name"; then
+			log_error "Validation failed for $dockerfile_name"
+			total_failures=$((total_failures + 1))
+			exit_code=1
+		fi
 
-    echo "----------------------------------------"
-  done
+		echo "----------------------------------------"
+	done
 
-  # Summary
-  log_info "Package validation complete"
-  log_info "Dockerfiles processed: ${#dockerfiles[@]}"
-  log_info "Failures: $total_failures"
+	# Summary
+	log_info "Package validation complete"
+	log_info "Dockerfiles processed: ${#dockerfiles[@]}"
+	log_info "Failures: $total_failures"
 
-  if [[ $exit_code -ne 0 ]]; then
-    log_error "Package validation failed! Please fix the issues above."
-    log_info "Check detailed logs in: $TEST_RESULTS_DIR"
+	if [[ $exit_code -ne 0 ]]; then
+		log_error "Package validation failed! Please fix the issues above."
+		log_info "Check detailed logs in: $TEST_RESULTS_DIR"
 
-    echo ""
-    log_info "Common fixes:"
-    echo "  1. Remove obsolete packages (like libgconf-2-4)"
-    echo "  2. Update package names for current Ubuntu version"
-    echo "  3. Add required package repositories"
-    echo "  4. Use alternative packages"
-  else
-    log_info "All package validations passed successfully!"
-  fi
+		echo ""
+		log_info "Common fixes:"
+		echo "  1. Remove obsolete packages (like libgconf-2-4)"
+		echo "  2. Update package names for current Ubuntu version"
+		echo "  3. Add required package repositories"
+		echo "  4. Use alternative packages"
+	else
+		log_info "All package validations passed successfully!"
+	fi
 
-  exit $exit_code
+	exit $exit_code
 }
 
 # Help function
 show_help() {
-  cat << EOF
+	cat <<EOF
 Docker Package Validation Test
 
 Usage: $0 [OPTIONS] [DOCKER_DIR]
@@ -363,32 +363,32 @@ EOF
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
-  case $1 in
-    -h | --help)
-      show_help
-      exit 0
-      ;;
-    -v | --version)
-      UBUNTU_VERSION="$2"
-      shift 2
-      ;;
-    -d | --dry-run)
-      DRY_RUN="true"
-      shift
-      ;;
-    -r | --results)
-      TEST_RESULTS_DIR="$2"
-      shift 2
-      ;;
-    -*)
-      log_error "Unknown option: $1"
-      show_help
-      exit 2
-      ;;
-    *)
-      break
-      ;;
-  esac
+	case $1 in
+	-h | --help)
+		show_help
+		exit 0
+		;;
+	-v | --version)
+		UBUNTU_VERSION="$2"
+		shift 2
+		;;
+	-d | --dry-run)
+		DRY_RUN="true"
+		shift
+		;;
+	-r | --results)
+		TEST_RESULTS_DIR="$2"
+		shift 2
+		;;
+	-*)
+		log_error "Unknown option: $1"
+		show_help
+		exit 2
+		;;
+	*)
+		break
+		;;
+	esac
 done
 
 # Run main function
