@@ -189,6 +189,74 @@ main() {
   return 0
 }
 
+# Test 1: Check for obsolete packages
+test_obsolete_packages() {
+  local test_name="Obsolete Package Detection"
+  local docker_dir
+  docker_dir="$(dirname "$0")/../../docker"
+  local failed=false
+  local warnings=0
+
+  log_info "Starting $test_name..."
+
+  # Find all Dockerfiles
+  while IFS= read -r -d '' dockerfile; do
+    local dockerfile_name
+    dockerfile_name="$(basename "$dockerfile")"
+
+    log_info "Checking $dockerfile_name for obsolete packages..."
+
+    # Extract packages from apt-get install commands
+    local packages
+    packages=$(grep -A 50 "apt-get install" "$dockerfile" |
+      grep -v "^#" |
+      sed 's/.*apt-get install[^\\]*\\//' |
+      sed 's/&&.*//' |
+      sed 's/\\.*//' |
+      sed 's/^[[:space:]]*//' |
+      sed 's/[[:space:]]*$//' |
+      grep -v "^$" |
+      grep -v "^--" || true)
+
+    # Check each package against known obsolete packages
+    while IFS= read -r package; do
+      if [[ -n "$package" ]]; then
+        # Check if package is obsolete
+        local obsolete_reason
+        if obsolete_reason=$(is_obsolete_package "$package"); then
+          log_error "OBSOLETE PACKAGE FOUND in $dockerfile_name: $package"
+          log_error "  Reason: $obsolete_reason"
+          echo "$dockerfile_name: OBSOLETE $package - $obsolete_reason" >>"$TEST_RESULTS_DIR/obsolete-packages.log"
+          failed=true
+        fi
+
+        # Check for warnings
+        local warning_reason
+        if warning_reason=$(get_package_warning "$package"); then
+          log_warn "WARNING in $dockerfile_name: $package"
+          log_warn "  Note: $warning_reason"
+          echo "$dockerfile_name: WARNING $package - $warning_reason" >>"$TEST_RESULTS_DIR/package-warnings.log"
+          warnings=$((warnings + 1))
+        fi
+      fi
+    done <<<"$packages"
+
+  done < <(find "$docker_dir" -name "Dockerfile*" -type f -print0)
+
+  # Results
+  if [[ "$failed" == "true" ]]; then
+    log_error "✗ $test_name FAILED - Obsolete packages found!"
+    log_error "Check $TEST_RESULTS_DIR/obsolete-packages.log for details"
+    return 1
+  else
+    log_info "✓ $test_name PASSED - No obsolete packages found"
+    if [[ $warnings -gt 0 ]]; then
+      log_warn "Found $warnings package warnings - check $TEST_RESULTS_DIR/package-warnings.log"
+    fi
+    return 0
+  fi
+}
+
 # Test 2: Check for duplicate packages across Dockerfiles
 test_duplicate_packages() {
   local test_name="Duplicate Package Detection"
