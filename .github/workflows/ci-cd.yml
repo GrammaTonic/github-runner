@@ -441,7 +441,7 @@ jobs:
           format: "sarif"
           output: "trivy-results.sarif"
       - name: Upload Trivy scan results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
@@ -1071,7 +1071,7 @@ jobs:
           format: "sarif"
           output: "trivy-container-results.sarif"
       - name: Upload container scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: "trivy-container-results.sarif"
@@ -1095,7 +1095,7 @@ jobs:
           format: "sarif"
           output: "trivy-chrome-results.sarif"
       - name: Upload Chrome container scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: "trivy-chrome-results.sarif"
@@ -1119,7 +1119,7 @@ jobs:
           format: "sarif"
           output: "trivy-chrome-go-results.sarif"
       - name: Upload Chrome-Go container scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: "trivy-chrome-go-results.sarif"
