@@ -57,38 +57,38 @@ Usage: $0 ACTION [OPTIONS]
 Manage GitHub Actions Runner deployments
 
 ACTIONS:
-    start               Start runner containers
-    stop                Stop runner containers
-    restart             Restart runner containers
-    scale               Scale runner containers
-    status              Show runner status
-    logs                Show runner logs
-    cleanup             Clean up stopped containers and unused resources
-    update              Update and restart runners
-    health              Check runner health
+		start               Start runner containers
+		stop                Stop runner containers
+		restart             Restart runner containers
+		scale               Scale runner containers
+		status              Show runner status
+		logs                Show runner logs
+		cleanup             Clean up stopped containers and unused resources
+		update              Update and restart runners
+		health              Check runner health
 
 OPTIONS:
-    -s, --scale NUM     Number of runner instances (default: ${DEFAULT_SCALE})
-    -e, --env ENV       Environment (dev|staging|production) (default: ${ENVIRONMENT})
-    -f, --force         Force action without confirmation
-    -n, --no-build      Skip building images for update action
-    -v, --verbose       Verbose output
-    -h, --help          Show this help message
+		-s, --scale NUM     Number of runner instances (default: ${DEFAULT_SCALE})
+		-e, --env ENV       Environment (dev|staging|production) (default: ${ENVIRONMENT})
+		-f, --force         Force action without confirmation
+		-n, --no-build      Skip building images for update action
+		-v, --verbose       Verbose output
+		-h, --help          Show this help message
 
 EXAMPLES:
-    $0 start                    # Start single runner
-    $0 start -s 3               # Start 3 runners
-    $0 scale -s 5               # Scale to 5 runners
-    $0 stop                     # Stop all runners
-    $0 logs runner              # Show logs for runner service
-    $0 update -f                # Force update without confirmation
-    $0 health                   # Check health of all runners
+		$0 start                    # Start single runner
+		$0 start -s 3               # Start 3 runners
+		$0 scale -s 5               # Scale to 5 runners
+		$0 stop                     # Stop all runners
+		$0 logs runner              # Show logs for runner service
+		$0 update -f                # Force update without confirmation
+		$0 health                   # Check health of all runners
 
 ENVIRONMENT VARIABLES:
-    GITHUB_TOKEN               GitHub Personal Access Token
-    GITHUB_REPOSITORY          Target repository (org/repo)
-    RUNNER_LABELS              Custom labels for runners
-    COMPOSE_FILE               Docker Compose file path
+		GITHUB_TOKEN               GitHub Personal Access Token
+		GITHUB_REPOSITORY          Target repository (org/repo)
+		RUNNER_LABELS              Custom labels for runners
+		COMPOSE_FILE               Docker Compose file path
 
 EOF
 }

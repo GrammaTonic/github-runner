@@ -46,32 +46,32 @@ extract_packages_from_dockerfile() {
 
 	# Extract apt-get install commands with better multi-line handling
 	if grep -q "apt-get install" "$dockerfile"; then
-		# Find RUN commands with apt-get install and extract package names more carefully
+		# Extract packages by finding apt-get install lines and collecting until no backslash
 		awk '
         /^RUN.*apt-get install/ {
-            in_install_block = 1
-            line = $0
-            # Remove RUN and everything up to apt-get install
-            gsub(/^RUN.*apt-get install[^\\]*\\?/, "", line)
-            print line
-            next
-        }
-        in_install_block && /\\$/ {
-            # Continuation line in install block
-            line = $0
-            gsub(/^[[:space:]]*/, "", line)  # Remove leading whitespace
-            gsub(/\\$/, "", line)          # Remove trailing backslash
-            print line
-            next
-        }
-        in_install_block && !/\\$/ {
-            # Last line of install block
-            line = $0
-            gsub(/^[[:space:]]*/, "", line)
-            gsub(/&&.*/, "", line)         # Remove everything after &&
-            print line
-            in_install_block = 0
-            next
+            # Start collecting install command
+            install_cmd = $0
+            # Keep reading continuation lines
+            while (install_cmd ~ /\\$/ && getline next_line > 0) {
+                install_cmd = install_cmd " " next_line
+            }
+            # Now extract packages from the full command
+            # Remove everything before apt-get install and its flags
+            gsub(/^.*apt-get[[:space:]]+install[[:space:]]+/, "", install_cmd)
+            # Remove flags
+            gsub(/-[a-z]([[:space:]]+|$)/, "", install_cmd)
+            gsub(/--[a-z-]+([[:space:]]+|$)/, "", install_cmd)
+            # Remove backslashes
+            gsub(/\\/, "", install_cmd)
+            # Remove everything after &&
+            gsub(/&&.*/, "", install_cmd)
+            # Print one package per line
+            n = split(install_cmd, packages, /[[:space:]]+/)
+            for (i = 1; i <= n; i++) {
+                if (length(packages[i]) > 0) {
+                    print packages[i]
+                }
+            }
         }
         ' "$dockerfile" |
 			# Filter and clean package names
@@ -93,7 +93,7 @@ extract_packages_from_dockerfile() {
 			grep -v 'wget' |
 			grep -v 'echo' |
 			grep -v 'http' |
-			grep -E '^[a-zA-Z0-9][a-zA-Z0-9\.\-\+]*$' |
+			grep -E '^[a-zA-Z0-9][a-zA-Z0-9.+_-]*$' |
 			sort | uniq >"$temp_file"
 	else
 		log_warn "No apt-get install commands found in $dockerfile" >&2

@@ -65,28 +65,28 @@ Usage: $0 [OPTIONS]
 Build GitHub Actions Runner Docker image
 
 OPTIONS:
-    -p, --push              Push image to registry after build
-    -m, --multi-platform    Build for multiple platforms
-    -d, --dev               Development mode (local only, faster build)
-    -n, --no-cache          Disable Docker build cache
-    -v, --verbose           Verbose output
-    -t, --tag TAG           Custom image tag (default: ${IMAGE_TAG})
-    -r, --runner-version    Runner version (default: ${RUNNER_VERSION})
-    -h, --help              Show this help message
+		-p, --push              Push image to registry after build
+		-m, --multi-platform    Build for multiple platforms
+		-d, --dev               Development mode (local only, faster build)
+		-n, --no-cache          Disable Docker build cache
+		-v, --verbose           Verbose output
+		-t, --tag TAG           Custom image tag (default: ${IMAGE_TAG})
+		-r, --runner-version    Runner version (default: ${RUNNER_VERSION})
+		-h, --help              Show this help message
 
 EXAMPLES:
-    $0                      # Build local image
-    $0 -p                   # Build and push to registry
-    $0 -m -p                # Build multi-platform and push
-    $0 -d                   # Development build (fast, local only)
-    $0 -t v1.0.0 -p         # Build with custom tag and push
+		$0                      # Build local image
+		$0 -p                   # Build and push to registry
+		$0 -m -p                # Build multi-platform and push
+		$0 -d                   # Development build (fast, local only)
+		$0 -t v1.0.0 -p         # Build with custom tag and push
 
 ENVIRONMENT VARIABLES:
-    DOCKER_REGISTRY         Container registry (default: ghcr.io)
-    DOCKER_NAMESPACE        Registry namespace (default: grammatonic)
-    IMAGE_NAME              Image name (default: github-runner)
-    PLATFORMS               Target platforms for multi-platform builds
-    RUNNER_VERSION          GitHub Actions runner version
+		DOCKER_REGISTRY         Container registry (default: ghcr.io)
+		DOCKER_NAMESPACE        Registry namespace (default: grammatonic)
+		IMAGE_NAME              Image name (default: github-runner)
+		PLATFORMS               Target platforms for multi-platform builds
+		RUNNER_VERSION          GitHub Actions runner version
 
 EOF
 }

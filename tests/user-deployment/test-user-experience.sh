@@ -600,6 +600,7 @@ while [[ $# -gt 0 ]]; do
 		exit 2
 		;;
 	esac
+	shift
 done
 
 # Run main function

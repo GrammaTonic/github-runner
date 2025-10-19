@@ -483,19 +483,19 @@ Usage: $0 [OPTIONS]
 This script helps you deploy GitHub self-hosted runners in Docker containers.
 
 OPTIONS:
-    -h, --help          Show this help message
-    --reconfigure       Force reconfiguration of environment
-    --pull-only         Only pull latest images, don't deploy
-    --status-only       Only show current status
+		-h, --help          Show this help message
+		--reconfigure       Force reconfiguration of environment
+		--pull-only         Only pull latest images, don't deploy
+		--status-only       Only show current status
 
 EXAMPLES:
-    $0                  # Full deployment with interactive setup
-    $0 --reconfigure    # Reconfigure and redeploy
-    $0 --status-only    # Check current deployment status
+		$0                  # Full deployment with interactive setup
+		$0 --reconfigure    # Reconfigure and redeploy
+		$0 --status-only    # Check current deployment status
 
 ENVIRONMENT:
-    The script uses config/runner.env for configuration.
-    Run with --reconfigure to update settings.
+		The script uses config/runner.env for configuration.
+		Run with --reconfigure to update settings.
 
 EOF
 }
