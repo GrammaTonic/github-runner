@@ -30,67 +30,67 @@ mkdir -p "$TEST_RESULTS_DIR"
 
 # Logging functions
 log_info() {
-	echo -e "${GREEN}[INFO]${NC} $1"
+  echo -e "${GREEN}[INFO]${NC} $1"
 }
 
 log_warn() {
-	echo -e "${YELLOW}[WARN]${NC} $1"
+  echo -e "${YELLOW}[WARN]${NC} $1"
 }
 
 log_error() {
-	echo -e "${RED}[ERROR]${NC} $1"
+  echo -e "${RED}[ERROR]${NC} $1"
 }
 
 log_test() {
-	echo -e "${BLUE}[TEST]${NC} $1"
+  echo -e "${BLUE}[TEST]${NC} $1"
 }
 
 # Test tracking functions
 start_test() {
-	local test_name="$1"
-	TESTS_TOTAL=$((TESTS_TOTAL + 1))
-	log_test "Starting: $test_name"
-	mkdir -p "$TEST_RESULTS_DIR"
-	echo "$(date -Iseconds): START $test_name" >>"$TEST_RESULTS_DIR/startup.log"
+  local test_name="$1"
+  TESTS_TOTAL=$((TESTS_TOTAL + 1))
+  log_test "Starting: $test_name"
+  mkdir -p "$TEST_RESULTS_DIR"
+  echo "$(date -Iseconds): START $test_name" >>"$TEST_RESULTS_DIR/startup.log"
 }
 
 pass_test() {
-	local test_name="$1"
-	TESTS_PASSED=$((TESTS_PASSED + 1))
-	log_info "✓ PASSED: $test_name"
-	echo "$(date -Iseconds): PASS $test_name" >>"$TEST_RESULTS_DIR/startup.log"
+  local test_name="$1"
+  TESTS_PASSED=$((TESTS_PASSED + 1))
+  log_info "✓ PASSED: $test_name"
+  echo "$(date -Iseconds): PASS $test_name" >>"$TEST_RESULTS_DIR/startup.log"
 }
 
 fail_test() {
-	local test_name="$1"
-	local reason="${2:-Unknown error}"
-	TESTS_FAILED=$((TESTS_FAILED + 1))
-	FAILED_TESTS+=("$test_name: $reason")
-	log_error "✗ FAILED: $test_name - $reason"
-	echo "$(date -Iseconds): FAIL $test_name - $reason" >>"$TEST_RESULTS_DIR/startup.log"
+  local test_name="$1"
+  local reason="${2:-Unknown error}"
+  TESTS_FAILED=$((TESTS_FAILED + 1))
+  FAILED_TESTS+=("$test_name: $reason")
+  log_error "✗ FAILED: $test_name - $reason"
+  echo "$(date -Iseconds): FAIL $test_name - $reason" >>"$TEST_RESULTS_DIR/startup.log"
 }
 
 # Cleanup function
 # shellcheck disable=SC2317,SC2329
 cleanup() {
-	# shellcheck disable=SC2317
-	if [[ "$CLEANUP" == "true" ]]; then
-		log_info "Cleaning up test containers..."
+  # shellcheck disable=SC2317
+  if [[ "$CLEANUP" == "true" ]]; then
+    log_info "Cleaning up test containers..."
 
-		# Stop and remove test containers
-		# shellcheck disable=SC2317
-		docker ps -q --filter "name=test-startup-*" | xargs -r docker stop >/dev/null 2>&1 || true
-		# shellcheck disable=SC2317
-		docker ps -aq --filter "name=test-startup-*" | xargs -r docker rm >/dev/null 2>&1 || true
+    # Stop and remove test containers
+    # shellcheck disable=SC2317
+    docker ps -q --filter "name=test-startup-*" | xargs -r docker stop >/dev/null 2>&1 || true
+    # shellcheck disable=SC2317
+    docker ps -aq --filter "name=test-startup-*" | xargs -r docker rm >/dev/null 2>&1 || true
 
-		# Clean up compose projects
-		# shellcheck disable=SC2317
-		cd "$(dirname "$0")/../../docker" || return
-		# shellcheck disable=SC2317
-		docker compose -p test-startup-main down >/dev/null 2>&1 || true
-		# shellcheck disable=SC2317
-		docker compose -f docker-compose.chrome.yml -p test-startup-chrome down >/dev/null 2>&1 || true
-	fi
+    # Clean up compose projects
+    # shellcheck disable=SC2317
+    cd "$(dirname "$0")/../../docker" || return
+    # shellcheck disable=SC2317
+    docker compose -p test-startup-main down >/dev/null 2>&1 || true
+    # shellcheck disable=SC2317
+    docker compose -f docker-compose.chrome.yml -p test-startup-chrome down >/dev/null 2>&1 || true
+  fi
 }
 
 # Signal handler for cleanup

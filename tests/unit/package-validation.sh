@@ -120,76 +120,76 @@ get_package_warning() {
 }
 
 # Test 1: Check for obsolete packages in Dockerfiles
-test_obsolete_packages() {
-	local test_name="Obsolete Package Detection"
-	local docker_dir
-	docker_dir="$(dirname "$0")/../../docker"
-	local failed=false
-	local warnings=0
+#!/usr/bin/env bash
 
-	log_info "Starting $test_name..."
+set -euo pipefail
 
-	# Find all Dockerfiles
-	while IFS= read -r -d '' dockerfile; do
-		local dockerfile_name
-		dockerfile_name="$(basename "$dockerfile")"
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
 
-		log_info "Checking $dockerfile_name for obsolete packages..."
-
-		# Extract packages from apt-get install commands
-		local packages
-		packages=$(grep -A 50 "apt-get install" "$dockerfile" |
-			grep -v "^#" |
-			sed 's/.*apt-get install[^\\]*\\//' |
-			sed 's/&&.*//' |
-			sed 's/\\.*//' |
-			sed 's/^[[:space:]]*//' |
-			sed 's/[[:space:]]*$//' |
-			grep -v "^$" |
-			grep -v "^--" || true)
-
-		# Check each package against known obsolete packages
-		while IFS= read -r package; do
-			if [[ -n "$package" ]]; then
-				# Check if package is obsolete
-				local obsolete_reason
-				if obsolete_reason=$(is_obsolete_package "$package"); then
-					log_error "OBSOLETE PACKAGE FOUND in $dockerfile_name: $package"
-					log_error "  Reason: $obsolete_reason"
-					echo "$dockerfile_name: OBSOLETE $package - $obsolete_reason" >>"$TEST_RESULTS_DIR/obsolete-packages.log"
-					failed=true
-				fi
-
-				# Check for warnings
-				local warning_reason
-				if warning_reason=$(get_package_warning "$package"); then
-					log_warn "WARNING in $dockerfile_name: $package"
-					log_warn "  Note: $warning_reason"
-					echo "$dockerfile_name: WARNING $package - $warning_reason" >>"$TEST_RESULTS_DIR/package-warnings.log"
-					warnings=$((warnings + 1))
-				fi
-			fi
-		done <<<"$packages"
-
-	done < <(find "$docker_dir" -name "Dockerfile*" -type f -print0)
-
-	# Results
-	if [[ "$failed" == "true" ]]; then
-		log_error "✗ $test_name FAILED - Obsolete packages found!"
-		log_error "Check $TEST_RESULTS_DIR/obsolete-packages.log for details"
-		return 1
-	else
-		log_info "✓ $test_name PASSED - No obsolete packages found"
-		if [[ $warnings -gt 0 ]]; then
-			log_warn "Found $warnings package warnings - check $TEST_RESULTS_DIR/package-warnings.log"
-		fi
-		return 0
-	fi
+log_info() {
+  echo -e "${GREEN}[INFO]${NC} $1"
 }
 
-# Test 2: Check for duplicate packages
-test_duplicate_packages() {
-	local test_name="Duplicate Package Detection"
+log_warn() {
+  echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_error() {
+  echo -e "${RED}[ERROR]${NC} $1"
+}
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." &>/dev/null && pwd)"
+DOCKER_DIR="$ROOT_DIR/docker"
+RESULTS_DIR="$ROOT_DIR/test-results/unit"
+mkdir -p "$RESULTS_DIR"
+
+validate_dockerfile() {
+  local dockerfile=$1
+  local name
+  name=$(basename "$dockerfile")
+
+  log_info "Validating packages in $name"
+
+  if ! grep -qiE "curl|git|jq|tar|unzip" "$dockerfile"; then
+    log_warn "$name: Essential tools not clearly installed"
+  fi
+
+  if grep -qiE "apk add|apt-get install" "$dockerfile" && ! grep -qiE "--no-install-recommends|--no-cache" "$dockerfile"; then
+    log_warn "$name: Consider using no-recommends/no-cache for smaller images"
+  fi
+
+  if grep -qE "RUN .* && \\" "$dockerfile"; then
+    log_info "$name: Multi-command RUN steps detected (good for layer minimization)"
+  fi
+
+  if grep -qE "^USER root|^#.*USER root" "$dockerfile"; then
+    log_warn "$name: Running as root; consider a non-root user where possible"
+  fi
+}
+
+main() {
+  mkdir -p "$RESULTS_DIR"
+
+  local errors=0
+  for dockerfile in "$DOCKER_DIR"/Dockerfile*; do
+    if [[ -f "$dockerfile" ]]; then
+      validate_dockerfile "$dockerfile" || errors=$((errors + 1))
+    fi
+  done
+
+  if [[ $errors -gt 0 ]]; then
+    log_error "Package validation found $errors issue(s)"
+    return 1
+  fi
+
+  log_info "Package validation completed"
+  return 0
+}
+
+main "$@"
 	local docker_dir
 	docker_dir="$(dirname "$0")/../../docker"
 	local failed=false

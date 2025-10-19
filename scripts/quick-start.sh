@@ -63,31 +63,31 @@ select_runner_type() {
 	while true; do
 		read -r -p "Select runner type [1-3]: " choice
 		case $choice in
-		1)
-			RUNNER_TYPE="standard"
-			ENV_FILE="$CONFIG_DIR/runner.env"
-			ENV_EXAMPLE="$CONFIG_DIR/runner.env.example"
-			COMPOSE_FILE="$DOCKER_DIR/docker-compose.production.yml"
-			log_info "Selected: Standard Runner"
-			break
-			;;
-		2)
-			RUNNER_TYPE="chrome"
-			ENV_FILE="$CONFIG_DIR/chrome-runner.env"
-			ENV_EXAMPLE="$CONFIG_DIR/chrome-runner.env.example"
-			COMPOSE_FILE="$DOCKER_DIR/docker-compose.chrome.yml"
-			log_info "Selected: Chrome Runner"
-			break
-			;;
-		3)
-			RUNNER_TYPE="both"
-			log_info "Selected: Both Runners"
-			log_info "Will deploy both standard and Chrome runners"
-			break
-			;;
-		*)
-			log_error "Invalid choice. Please select 1, 2, or 3."
-			;;
+			1)
+				RUNNER_TYPE="standard"
+				ENV_FILE="$CONFIG_DIR/runner.env"
+				ENV_EXAMPLE="$CONFIG_DIR/runner.env.example"
+				COMPOSE_FILE="$DOCKER_DIR/docker-compose.production.yml"
+				log_info "Selected: Standard Runner"
+				break
+				;;
+			2)
+				RUNNER_TYPE="chrome"
+				ENV_FILE="$CONFIG_DIR/chrome-runner.env"
+				ENV_EXAMPLE="$CONFIG_DIR/chrome-runner.env.example"
+				COMPOSE_FILE="$DOCKER_DIR/docker-compose.chrome.yml"
+				log_info "Selected: Chrome Runner"
+				break
+				;;
+			3)
+				RUNNER_TYPE="both"
+				log_info "Selected: Both Runners"
+				log_info "Will deploy both standard and Chrome runners"
+				break
+				;;
+			*)
+				log_error "Invalid choice. Please select 1, 2, or 3."
+				;;
 		esac
 	done
 	echo ""
@@ -483,51 +483,51 @@ Usage: $0 [OPTIONS]
 This script helps you deploy GitHub self-hosted runners in Docker containers.
 
 OPTIONS:
-    -h, --help          Show this help message
-    --reconfigure       Force reconfiguration of environment
-    --pull-only         Only pull latest images, don't deploy
-    --status-only       Only show current status
+		-h, --help          Show this help message
+		--reconfigure       Force reconfiguration of environment
+		--pull-only         Only pull latest images, don't deploy
+		--status-only       Only show current status
 
 EXAMPLES:
-    $0                  # Full deployment with interactive setup
-    $0 --reconfigure    # Reconfigure and redeploy
-    $0 --status-only    # Check current deployment status
+		$0                  # Full deployment with interactive setup
+		$0 --reconfigure    # Reconfigure and redeploy
+		$0 --status-only    # Check current deployment status
 
 ENVIRONMENT:
-    The script uses config/runner.env for configuration.
-    Run with --reconfigure to update settings.
+		The script uses config/runner.env for configuration.
+		Run with --reconfigure to update settings.
 
 EOF
 }
 
 # Parse command line arguments
 case "${1:-}" in
--h | --help)
-	show_help
-	exit 0
-	;;
---reconfigure)
-	rm -f "$ENV_FILE"
-	main
-	;;
---pull-only)
-	show_banner
-	check_prerequisites
-	validate_configuration
-	pull_images
-	log_info "Images updated successfully"
-	;;
---status-only)
-	show_banner
-	check_prerequisites
-	show_status
-	;;
-"")
-	main
-	;;
-*)
-	log_error "Unknown option: $1"
-	show_help
-	exit 1
-	;;
+	-h | --help)
+		show_help
+		exit 0
+		;;
+	--reconfigure)
+		rm -f "$ENV_FILE"
+		main
+		;;
+	--pull-only)
+		show_banner
+		check_prerequisites
+		validate_configuration
+		pull_images
+		log_info "Images updated successfully"
+		;;
+	--status-only)
+		show_banner
+		check_prerequisites
+		show_status
+		;;
+	"")
+		main
+		;;
+	*)
+		log_error "Unknown option: $1"
+		show_help
+		exit 1
+		;;
 esac

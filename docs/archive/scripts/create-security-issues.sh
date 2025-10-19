@@ -37,15 +37,15 @@ log_error() {
 # Check requirements
 check_requirements() {
     local missing_tools=()
-    
-    if ! command -v gh >/dev/null 2>&1; then
+
+    if ! command -v gh > /dev/null 2>&1; then
         missing_tools+=("gh (GitHub CLI)")
     fi
-    
-    if ! command -v jq >/dev/null 2>&1; then
+
+    if ! command -v jq > /dev/null 2>&1; then
         missing_tools+=("jq")
     fi
-    
+
     if [[ ${#missing_tools[@]} -gt 0 ]]; then
         log_error "Missing required tools: ${missing_tools[*]}"
         echo "Install with:"
@@ -62,7 +62,7 @@ severity_to_priority() {
         "CRITICAL") echo "P0 - Critical (Fix immediately)" ;;
         "HIGH") echo "P1 - High (Fix within 1 week)" ;;
         "MEDIUM") echo "P2 - Medium (Fix within 1 month)" ;;
-        "LOW"|"UNKNOWN") echo "P3 - Low (Fix when convenient)" ;;
+        "LOW" | "UNKNOWN") echo "P3 - Low (Fix when convenient)" ;;
         *) echo "P2 - Medium (Fix within 1 month)" ;;
     esac
 }
@@ -71,12 +71,12 @@ severity_to_priority() {
 issue_exists() {
     local cve_id="$1"
     local package="$2"
-    
+
     # Search for existing issues with the CVE ID or package vulnerability
     if [[ -n "$cve_id" && "$cve_id" != "null" ]]; then
-        gh issue list --repo "$REPO_OWNER/$REPO_NAME" --search "$cve_id in:title" --json number --jq 'length' 2>/dev/null || echo "0"
+        gh issue list --repo "$REPO_OWNER/$REPO_NAME" --search "$cve_id in:title" --json number --jq 'length' 2> /dev/null || echo "0"
     else
-        gh issue list --repo "$REPO_OWNER/$REPO_NAME" --search "$package vulnerability" --json number --jq 'length' 2>/dev/null || echo "0"
+        gh issue list --repo "$REPO_OWNER/$REPO_NAME" --search "$package vulnerability" --json number --jq 'length' 2> /dev/null || echo "0"
     fi
 }
 
@@ -84,7 +84,7 @@ issue_exists() {
 create_security_issue() {
     local vuln_data="$1"
     local scan_target="$2"
-    
+
     # Extract vulnerability details
     local cve_id
     local severity
@@ -93,7 +93,7 @@ create_security_issue() {
     local fixed_version
     local title
     local description
-    
+
     cve_id=$(echo "$vuln_data" | jq -r '.VulnerabilityID // "N/A"')
     severity=$(echo "$vuln_data" | jq -r '.Severity // "UNKNOWN"')
     pkg_name=$(echo "$vuln_data" | jq -r '.PkgName // "unknown"')
@@ -101,7 +101,7 @@ create_security_issue() {
     fixed_version=$(echo "$vuln_data" | jq -r '.FixedVersion // "N/A"')
     title=$(echo "$vuln_data" | jq -r '.Title // "Unknown vulnerability"')
     description=$(echo "$vuln_data" | jq -r '.Description // "No description available"')
-    
+
     # Skip if below minimum severity
     case "$severity" in
         "CRITICAL") severity_num=4 ;;
@@ -110,7 +110,7 @@ create_security_issue() {
         "LOW") severity_num=1 ;;
         *) severity_num=0 ;;
     esac
-    
+
     case "$MIN_SEVERITY" in
         "CRITICAL") min_severity_num=4 ;;
         "HIGH") min_severity_num=3 ;;
@@ -118,12 +118,12 @@ create_security_issue() {
         "LOW") min_severity_num=1 ;;
         *) min_severity_num=0 ;;
     esac
-    
+
     if [[ $severity_num -lt $min_severity_num ]]; then
         log_info "Skipping $cve_id ($severity) - below minimum severity threshold"
         return 0
     fi
-    
+
     # Check if issue already exists
     local existing_count
     existing_count=$(issue_exists "$cve_id" "$pkg_name")
@@ -131,13 +131,13 @@ create_security_issue() {
         log_warning "Issue for $cve_id already exists, skipping"
         return 0
     fi
-    
+
     # Create issue title
     local issue_title="[Security]: $severity vulnerability in $pkg_name"
     if [[ "$cve_id" != "N/A" && "$cve_id" != "null" ]]; then
         issue_title="[Security]: $cve_id - $severity vulnerability in $pkg_name"
     fi
-    
+
     # Create issue body
     local priority
     priority=$(severity_to_priority "$severity")
@@ -158,13 +158,13 @@ $title
 
 ### Remediation
 "
-    
+
     if [[ "$fixed_version" != "N/A" && "$fixed_version" != "null" ]]; then
         issue_body+="Update $pkg_name from version $installed_version to $fixed_version or later."
     else
         issue_body+="No fix available yet. Monitor for updates to $pkg_name."
     fi
-    
+
     issue_body+="
 
 ### Trivy Scan Output
@@ -184,7 +184,7 @@ $priority
 *This issue was automatically created from Trivy security scan results.*
 *Scan Target: $scan_target*
 *Scan Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')*"
-    
+
     # Create the issue
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "DRY RUN: Would create issue:"
@@ -194,15 +194,15 @@ $priority
         echo ""
     else
         log_info "Creating issue for $cve_id ($severity)"
-        
+
         local labels
         labels="security,vulnerability,trivy,$(echo "$severity" | tr '[:upper:]' '[:lower:]')"
-        
+
         if gh issue create \
             --repo "$REPO_OWNER/$REPO_NAME" \
             --title "$issue_title" \
             --body "$issue_body" \
-            --label "$labels" >/dev/null 2>&1; then
+            --label "$labels" > /dev/null 2>&1; then
             log_success "Created issue for $cve_id"
         else
             log_error "Failed to create issue for $cve_id"
@@ -214,30 +214,30 @@ $priority
 process_trivy_json() {
     local json_file="$1"
     local scan_target="$2"
-    
+
     if [[ ! -f "$json_file" ]]; then
         log_warning "Trivy results file not found: $json_file"
         return 1
     fi
-    
+
     log_info "Processing Trivy results from: $json_file"
     log_info "Scan target: $scan_target"
-    
+
     # Extract vulnerabilities from JSON
     local vuln_count
-    vuln_count=$(jq -r '[.Results[]?.Vulnerabilities[]?] | length' "$json_file" 2>/dev/null || echo "0")
-    
+    vuln_count=$(jq -r '[.Results[]?.Vulnerabilities[]?] | length' "$json_file" 2> /dev/null || echo "0")
+
     if [[ "$vuln_count" -eq 0 ]]; then
         log_success "No vulnerabilities found in $json_file"
         return 0
     fi
-    
+
     log_info "Found $vuln_count vulnerabilities in $json_file"
-    
+
     # Process each vulnerability - use a more robust approach
     local temp_vulns
-    temp_vulns=$(jq -c '.Results[]?.Vulnerabilities[]?' "$json_file" 2>/dev/null || echo "")
-    
+    temp_vulns=$(jq -c '.Results[]?.Vulnerabilities[]?' "$json_file" 2> /dev/null || echo "")
+
     if [[ -n "$temp_vulns" ]]; then
         echo "$temp_vulns" | while read -r vuln_data; do
             if [[ -n "$vuln_data" ]]; then
@@ -256,12 +256,12 @@ main() {
     log_info "Minimum Severity: $MIN_SEVERITY"
     log_info "Dry Run: $DRY_RUN"
     echo ""
-    
+
     check_requirements
-    
+
     # Process different scan result files
     local processed_files=0
-    
+
     # Filesystem scan results
     if [[ -f "$TRIVY_RESULTS_DIR/trivy-results.json" ]]; then
         log_info "DEBUG: About to process filesystem scan"
@@ -269,9 +269,9 @@ main() {
         log_info "DEBUG: Finished processing filesystem scan"
         processed_files=$((processed_files + 1))
     fi
-    
+
     log_info "DEBUG: Checking for container scan results"
-    
+
     # Container scan results
     if [[ -f "$TRIVY_RESULTS_DIR/trivy-container-results.json" ]]; then
         log_info "DEBUG: About to process container scan"
@@ -279,9 +279,9 @@ main() {
         log_info "DEBUG: Finished processing container scan"
         processed_files=$((processed_files + 1))
     fi
-    
+
     log_info "DEBUG: Checking for Chrome container scan results"
-    
+
     # Chrome container scan results
     if [[ -f "$TRIVY_RESULTS_DIR/trivy-chrome-results.json" ]]; then
         log_info "DEBUG: About to process Chrome container scan"
@@ -289,7 +289,7 @@ main() {
         log_info "DEBUG: Finished processing Chrome container scan"
         processed_files=$((processed_files + 1))
     fi
-    
+
     # Check for any JSON files in the directory
     if [[ $processed_files -eq 0 ]]; then
         log_warning "No Trivy result files found in $TRIVY_RESULTS_DIR"

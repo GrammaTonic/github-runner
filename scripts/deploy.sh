@@ -51,44 +51,44 @@ NO_BUILD=false
 VERBOSE=false
 
 usage() {
-	cat <<EOF
+	cat << EOF
 Usage: $0 ACTION [OPTIONS]
 
 Manage GitHub Actions Runner deployments
 
 ACTIONS:
-    start               Start runner containers
-    stop                Stop runner containers
-    restart             Restart runner containers
-    scale               Scale runner containers
-    status              Show runner status
-    logs                Show runner logs
-    cleanup             Clean up stopped containers and unused resources
-    update              Update and restart runners
-    health              Check runner health
+		start               Start runner containers
+		stop                Stop runner containers
+		restart             Restart runner containers
+		scale               Scale runner containers
+		status              Show runner status
+		logs                Show runner logs
+		cleanup             Clean up stopped containers and unused resources
+		update              Update and restart runners
+		health              Check runner health
 
 OPTIONS:
-    -s, --scale NUM     Number of runner instances (default: ${DEFAULT_SCALE})
-    -e, --env ENV       Environment (dev|staging|production) (default: ${ENVIRONMENT})
-    -f, --force         Force action without confirmation
-    -n, --no-build      Skip building images for update action
-    -v, --verbose       Verbose output
-    -h, --help          Show this help message
+		-s, --scale NUM     Number of runner instances (default: ${DEFAULT_SCALE})
+		-e, --env ENV       Environment (dev|staging|production) (default: ${ENVIRONMENT})
+		-f, --force         Force action without confirmation
+		-n, --no-build      Skip building images for update action
+		-v, --verbose       Verbose output
+		-h, --help          Show this help message
 
 EXAMPLES:
-    $0 start                    # Start single runner
-    $0 start -s 3               # Start 3 runners
-    $0 scale -s 5               # Scale to 5 runners
-    $0 stop                     # Stop all runners
-    $0 logs runner              # Show logs for runner service
-    $0 update -f                # Force update without confirmation
-    $0 health                   # Check health of all runners
+		$0 start                    # Start single runner
+		$0 start -s 3               # Start 3 runners
+		$0 scale -s 5               # Scale to 5 runners
+		$0 stop                     # Stop all runners
+		$0 logs runner              # Show logs for runner service
+		$0 update -f                # Force update without confirmation
+		$0 health                   # Check health of all runners
 
 ENVIRONMENT VARIABLES:
-    GITHUB_TOKEN               GitHub Personal Access Token
-    GITHUB_REPOSITORY          Target repository (org/repo)
-    RUNNER_LABELS              Custom labels for runners
-    COMPOSE_FILE               Docker Compose file path
+		GITHUB_TOKEN               GitHub Personal Access Token
+		GITHUB_REPOSITORY          Target repository (org/repo)
+		RUNNER_LABELS              Custom labels for runners
+		COMPOSE_FILE               Docker Compose file path
 
 EOF
 }
@@ -96,46 +96,46 @@ EOF
 # Parse arguments
 while [[ $# -gt 0 ]]; do
 	case $1 in
-	start | stop | restart | scale | status | logs | cleanup | update | health)
-		ACTION="$1"
-		shift
-		;;
-	-s | --scale)
-		SCALE="$2"
-		shift 2
-		;;
-	-e | --env)
-		ENVIRONMENT_FLAG="$2"
-		shift 2
-		;;
-	-f | --force)
-		FORCE=true
-		shift
-		;;
-	-n | --no-build)
-		NO_BUILD=true
-		shift
-		;;
-	-v | --verbose)
-		VERBOSE=true
-		export VERBOSE # Export for potential use by other scripts
-		shift
-		;;
-	-h | --help)
-		usage
-		exit 0
-		;;
-	*)
-		if [[ -z "$ACTION" ]]; then
-			log_error "Unknown action: $1"
-			usage
-			exit 1
-		else
-			# Additional argument for logs command
-			SERVICE="$1"
+		start | stop | restart | scale | status | logs | cleanup | update | health)
+			ACTION="$1"
 			shift
-		fi
-		;;
+			;;
+		-s | --scale)
+			SCALE="$2"
+			shift 2
+			;;
+		-e | --env)
+			ENVIRONMENT_FLAG="$2"
+			shift 2
+			;;
+		-f | --force)
+			FORCE=true
+			shift
+			;;
+		-n | --no-build)
+			NO_BUILD=true
+			shift
+			;;
+		-v | --verbose)
+			VERBOSE=true
+			export VERBOSE # Export for potential use by other scripts
+			shift
+			;;
+		-h | --help)
+			usage
+			exit 0
+			;;
+		*)
+			if [[ -z "$ACTION" ]]; then
+				log_error "Unknown action: $1"
+				usage
+				exit 1
+			else
+				# Additional argument for logs command
+				SERVICE="$1"
+				shift
+			fi
+			;;
 	esac
 done
 
@@ -149,12 +149,12 @@ check_prerequisites() {
 	log_info "Checking prerequisites..."
 
 	# Check Docker and Docker Compose
-	if ! command -v docker &>/dev/null; then
+	if ! command -v docker &> /dev/null; then
 		log_error "Docker is not installed or not in PATH"
 		exit 1
 	fi
 
-	if ! docker compose version &>/dev/null && ! command -v docker-compose &>/dev/null; then
+	if ! docker compose version &> /dev/null && ! command -v docker-compose &> /dev/null; then
 		log_error "Docker Compose is not installed or not in PATH"
 		exit 1
 	fi
@@ -185,7 +185,7 @@ check_prerequisites() {
 
 # Get Docker Compose command
 get_compose_cmd() {
-	if docker compose version &>/dev/null; then
+	if docker compose version &> /dev/null; then
 		echo "docker compose"
 	else
 		echo "docker-compose"
@@ -284,7 +284,7 @@ show_status() {
 	echo ""
 	log_info "Container Resource Usage:"
 	# Get container names and handle empty result safely
-	container_names=$(docker ps --filter "name=github-runner" --format "{{.Names}}" 2>/dev/null || echo "")
+	container_names=$(docker ps --filter "name=github-runner" --format "{{.Names}}" 2> /dev/null || echo "")
 	if [[ -n "$container_names" ]]; then
 		echo "$container_names" | xargs docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"
 	else
@@ -391,7 +391,7 @@ health_check() {
 
 	# Get running containers
 	local containers
-	containers=$(docker ps --filter "name=github-runner" --format "{{.Names}}" 2>/dev/null || echo "")
+	containers=$(docker ps --filter "name=github-runner" --format "{{.Names}}" 2> /dev/null || echo "")
 
 	if [[ -z "$containers" ]]; then
 		log_warning "No runner containers found"
@@ -407,7 +407,7 @@ health_check() {
 		echo -n "Checking $container... "
 
 		health_output=$(docker exec "$container" "$ENTRYPOINT_PATH" health-check 2>&1)
-		if docker exec "$container" "$ENTRYPOINT_PATH" health-check >/dev/null 2>&1; then
+		if docker exec "$container" "$ENTRYPOINT_PATH" health-check > /dev/null 2>&1; then
 			echo -e "${GREEN}HEALTHY${NC}"
 			healthy=$((healthy + 1))
 		else
@@ -444,42 +444,42 @@ main() {
 
 	# Execute action
 	case "$ACTION" in
-	start)
-		start_runners
-		;;
-	stop)
-		stop_runners
-		;;
-	restart)
-		restart_runners
-		;;
-	scale)
-		if [[ -z "$SCALE" ]]; then
-			log_error "Scale count required. Use -s/--scale option"
+		start)
+			start_runners
+			;;
+		stop)
+			stop_runners
+			;;
+		restart)
+			restart_runners
+			;;
+		scale)
+			if [[ -z "$SCALE" ]]; then
+				log_error "Scale count required. Use -s/--scale option"
+				exit 1
+			fi
+			scale_runners
+			;;
+		status)
+			show_status
+			;;
+		logs)
+			show_logs
+			;;
+		cleanup)
+			cleanup_resources
+			;;
+		update)
+			update_runners
+			;;
+		health)
+			health_check
+			;;
+		*)
+			log_error "Unknown action: $ACTION"
+			usage
 			exit 1
-		fi
-		scale_runners
-		;;
-	status)
-		show_status
-		;;
-	logs)
-		show_logs
-		;;
-	cleanup)
-		cleanup_resources
-		;;
-	update)
-		update_runners
-		;;
-	health)
-		health_check
-		;;
-	*)
-		log_error "Unknown action: $ACTION"
-		usage
-		exit 1
-		;;
+			;;
 	esac
 }
 

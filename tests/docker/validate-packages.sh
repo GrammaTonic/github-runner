@@ -18,9 +18,16 @@ TEST_RESULTS_DIR="${TEST_RESULTS_DIR:-/tmp/package-validation}"
 DRY_RUN="${DRY_RUN:-false}"
 
 # Create test results directory
-mkdir -p "$TEST_RESULTS_DIR"
+#!/usr/bin/env bash
 
-# Logging functions
+set -euo pipefail
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
 log_info() {
 	echo -e "${GREEN}[INFO]${NC} $1"
 }
@@ -33,15 +40,8 @@ log_error() {
 	echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Function to extract packages from a Dockerfile
-extract_packages_from_dockerfile() {
-	local dockerfile="$1"
-	local temp_file
-	temp_file="$TEST_RESULTS_DIR/packages_$(basename "$dockerfile").txt"
-
-	log_info "Extracting packages from $dockerfile..." >&2
-
-	# Ensure temp file exists even if no packages found
+usage() {
+	cat <<EOF
 	touch "$temp_file"
 
 	# Extract apt-get install commands with better multi-line handling
@@ -49,108 +49,108 @@ extract_packages_from_dockerfile() {
 		# Find RUN commands with apt-get install and extract package names more carefully
 		awk '
         /^RUN.*apt-get install/ {
-            in_install_block = 1
-            line = $0
-            # Remove RUN and everything up to apt-get install
-            gsub(/^RUN.*apt-get install[^\\]*\\?/, "", line)
-            print line
-            next
-        }
-        in_install_block && /\\$/ {
-            # Continuation line in install block
-            line = $0
-            gsub(/^[[:space:]]*/, "", line)  # Remove leading whitespace
-            gsub(/\\$/, "", line)          # Remove trailing backslash
-            print line
-            next
-        }
-        in_install_block && !/\\$/ {
-            # Last line of install block
-            line = $0
-            gsub(/^[[:space:]]*/, "", line)
-            gsub(/&&.*/, "", line)         # Remove everything after &&
-            print line
-            in_install_block = 0
-            next
-        }
-        ' "$dockerfile" |
 			# Filter and clean package names
-			grep -v "^#" |
-			grep -v "rm -rf" |
-			grep -v "apt-get" |
-			sed 's/^[[:space:]]*//' |
-			sed 's/[[:space:]]*$//' |
-			sed 's/^-.*$//' |
-			grep -v "^$" |
-			grep -v "^--" |
-			grep -v "^&&" |
 			grep -v ')"' |
-			grep -v '";' |
-			grep -v 'case' |
-			grep -v 'esac' |
-			grep -v 'RUNNER_ARCH' |
-			grep -v 'curl' |
-			grep -v 'wget' |
-			grep -v 'echo' |
-			grep -v 'http' |
-			grep -E '^[a-zA-Z0-9][a-zA-Z0-9\.\-\+]*$' |
-			sort | uniq >"$temp_file"
-	else
-		log_warn "No apt-get install commands found in $dockerfile" >&2
-	fi
-
-	echo "$temp_file"
 }
+
+DRY_RUN=false
+
+# Detect project root
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+ROOT_DIR="$(cd -- "$SCRIPT_DIR/../.." &>/dev/null && pwd)"
+DOCKER_DIR="$ROOT_DIR/docker"
+
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+		--dry-run)
+			DRY_RUN=true
+			shift
+			;;
+		-h | --help)
+			usage
+			exit 0
+			;;
+		*)
+			log_error "Unknown argument: $1"
+			usage
+			exit 1
+			;;
+	esac
+	echo "$temp_file"
+
+# Basic host checks
+log_info "Checking host tools..."
+required_tools=(docker grep awk sed)
+for tool in "${required_tools[@]}"; do
+	if ! command -v "$tool" &>/dev/null; then
+		log_error "Missing required tool on host: $tool"
+		exit 1
+	fi
+}
+
+# Validate Dockerfiles exist
+if [[ ! -f "$DOCKER_DIR/Dockerfile" ]]; then
+	log_error "Missing Dockerfile in $DOCKER_DIR"
+	exit 1
+fi
+if [[ ! -f "$DOCKER_DIR/Dockerfile.chrome" ]]; then
+	log_warn "Missing Dockerfile.chrome in $DOCKER_DIR (Chrome runner tests will be skipped)"
+fi
+
+# If dry-run, print what would be checked and exit
+if [[ "$DRY_RUN" == true ]]; then
+	log_info "DRY RUN: Would validate presence of essential packages in images:"
+	cat <<EOT
 
 # Function to validate packages against Ubuntu repositories
 validate_packages() {
-	local package_file="$1"
+	exit 0
 	local dockerfile_name="$2"
 
 	log_info "Validating packages for $dockerfile_name against Ubuntu $UBUNTU_VERSION..."
+	local image=$1
+	shift
+	local -a pkgs=("$@")
 
-	# Use a Docker container to test package availability
-	local validation_script="$TEST_RESULTS_DIR/validate_${dockerfile_name}.sh"
+	log_info "Validating packages in image: $image"
 
-	cat >"$validation_script" <<'EOF'
-#!/bin/bash
-set -e
+	for pkg in "${pkgs[@]}"; do
+		if ! docker run --rm "$image" sh -lc "command -v $pkg >/dev/null 2>&1 || dpkg -s $pkg >/dev/null 2>&1 || apk info -e $pkg >/dev/null 2>&1"; then
+			log_error "Missing package in $image: $pkg"
+			return 1
+		fi
+	done
 
-# Update package lists
-apt-get update > /dev/null 2>&1
-
-failed_packages=()
-obsolete_packages=()
-total=0
-
+	log_info "All required packages found in $image"
+	return 0
 while IFS= read -r package; do
     if [[ -n "$package" && "$package" != \#* ]]; then
         total=$((total + 1))
         echo "Testing package: $package"
-        
-        # Check if package exists
-        if apt-cache show "$package" > /dev/null 2>&1; then
+if ! docker build -t test-github-runner:core -f "$DOCKER_DIR/Dockerfile" "$DOCKER_DIR" >/dev/null; then
+	log_error "Failed to build core image"
+	exit 1
             echo "✓ $package - Available"
-        else
-            echo "✗ $package - NOT AVAILABLE"
-            failed_packages+=("$package")
-            
+if [[ -f "$DOCKER_DIR/Dockerfile.chrome" ]]; then
+	if ! docker build -t test-github-runner:chrome -f "$DOCKER_DIR/Dockerfile.chrome" "$DOCKER_DIR" >/dev/null; then
+		log_warn "Failed to build chrome image; skipping chrome checks"
+	fi
             # Check if it's a known obsolete package
             case "$package" in
                 "libgconf-2-4")
-                    obsolete_packages+=("$package - Replaced by gsettings/dconf in Ubuntu 20.04+")
-                    ;;
-                "python2.7")
+core_pkgs=(bash curl jq tar git docker unzip ca-certificates)
+if ! check_image test-github-runner:core "${core_pkgs[@]}"; then
+	exit 1
                     obsolete_packages+=("$package - Python 2 deprecated, use python3")
                     ;;
                 "libssl1.0.0")
-                    obsolete_packages+=("$package - Use libssl3 or libssl1.1")
-                    ;;
-                *)
-                    # Try to find alternatives
-                    echo "  Searching for alternatives..."
+if docker image inspect test-github-runner:chrome >/dev/null 2>&1; then
+	chrome_pkgs=(google-chrome chromedriver Xvfb node npm)
+	if ! check_image test-github-runner:chrome "${chrome_pkgs[@]}"; then
+		exit 1
+	fi
                     apt-cache search "$(echo "$package" | sed 's/[0-9]*$//')" | head -3 || true
-                    ;;
+	log_warn "Chrome image not available; skipping chrome checks"
             esac
         fi
     fi

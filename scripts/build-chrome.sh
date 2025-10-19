@@ -35,35 +35,35 @@ log_error() {
 
 # Show usage
 usage() {
-	cat <<EOF
+	cat << EOF
 Chrome Runner Build Script
 
 USAGE:
-    $0 [OPTIONS]
+		$0 [OPTIONS]
 
 OPTIONS:
-    -t, --tag           Image tag (default: chrome-latest)
-    -r, --registry      Registry (default: ghcr.io)
-    -n, --namespace     Registry namespace (default: grammatonic)
-    -p, --platforms     Target platforms (default: linux/amd64,linux/arm64)
-    -v, --runner-version Runner version (default: 2.328.0)
-    --push              Push image to registry
-    --no-cache          Build without cache
-    --multi-arch        Build multi-architecture image
-    -h, --help          Show this help message
+		-t, --tag           Image tag (default: chrome-latest)
+		-r, --registry      Registry (default: ghcr.io)
+		-n, --namespace     Registry namespace (default: grammatonic)
+		-p, --platforms     Target platforms (default: linux/amd64,linux/arm64)
+		-v, --runner-version Runner version (default: 2.328.0)
+		--push              Push image to registry
+		--no-cache          Build without cache
+		--multi-arch        Build multi-architecture image
+		-h, --help          Show this help message
 
 EXAMPLES:
-    # Basic build
-    $0
+		# Basic build
+		$0
 
-    # Build and push to registry
-    $0 --push
+		# Build and push to registry
+		$0 --push
 
-    # Build with custom tag
-    $0 --tag chrome-v1.0.0 --push
+		# Build with custom tag
+		$0 --tag chrome-v1.0.0 --push
 
-    # Build multi-architecture
-    $0 --multi-arch --push
+		# Build multi-architecture
+		$0 --multi-arch --push
 
 EOF
 }
@@ -82,47 +82,47 @@ MULTI_ARCH=false
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
 	case $1 in
-	-t | --tag)
-		IMAGE_TAG="$2"
-		shift 2
-		;;
-	-r | --registry)
-		REGISTRY="$2"
-		shift 2
-		;;
-	-n | --namespace)
-		NAMESPACE="$2"
-		shift 2
-		;;
-	-p | --platforms)
-		PLATFORMS="$2"
-		shift 2
-		;;
-	-v | --runner-version)
-		RUNNER_VERSION="$2"
-		shift 2
-		;;
-	--push)
-		PUSH_IMAGE=true
-		shift
-		;;
-	--no-cache)
-		NO_CACHE=true
-		shift
-		;;
-	--multi-arch)
-		MULTI_ARCH=true
-		shift
-		;;
-	-h | --help)
-		usage
-		exit 0
-		;;
-	*)
-		log_error "Unknown option: $1"
-		usage
-		exit 1
-		;;
+		-t | --tag)
+			IMAGE_TAG="$2"
+			shift 2
+			;;
+		-r | --registry)
+			REGISTRY="$2"
+			shift 2
+			;;
+		-n | --namespace)
+			NAMESPACE="$2"
+			shift 2
+			;;
+		-p | --platforms)
+			PLATFORMS="$2"
+			shift 2
+			;;
+		-v | --runner-version)
+			RUNNER_VERSION="$2"
+			shift 2
+			;;
+		--push)
+			PUSH_IMAGE=true
+			shift
+			;;
+		--no-cache)
+			NO_CACHE=true
+			shift
+			;;
+		--multi-arch)
+			MULTI_ARCH=true
+			shift
+			;;
+		-h | --help)
+			usage
+			exit 0
+			;;
+		*)
+			log_error "Unknown option: $1"
+			usage
+			exit 1
+			;;
 	esac
 done
 
@@ -145,19 +145,19 @@ log_info "  No Cache: ${NO_CACHE}"
 check_prerequisites() {
 	log_info "Checking prerequisites..."
 
-	if ! command -v docker &>/dev/null; then
+	if ! command -v docker &> /dev/null; then
 		log_error "Docker is not installed or not in PATH"
 		exit 1
 	fi
 
 	if [[ "$MULTI_ARCH" == true ]]; then
-		if ! docker buildx version &>/dev/null; then
+		if ! docker buildx version &> /dev/null; then
 			log_error "Docker buildx is required for multi-architecture builds"
 			exit 1
 		fi
 
 		# Create or use existing buildx builder
-		if ! docker buildx inspect chrome-builder &>/dev/null; then
+		if ! docker buildx inspect chrome-builder &> /dev/null; then
 			log_info "Creating buildx builder instance..."
 			docker buildx create --name chrome-builder --driver docker-container --use
 		else
@@ -252,11 +252,11 @@ validate_image() {
 
 	log_info "Checking testing frameworks..."
 	docker run --rm "${FULL_IMAGE_NAME}" bash -c "
-        echo 'Node.js version:' && node --version &&
-        echo 'Python version:' && python3 --version &&
-        echo 'Playwright:' && npx playwright --version &&
-        echo 'Selenium:' && python3 -c 'import selenium; print(selenium.__version__)'
-    "
+				echo 'Node.js version:' && node --version &&
+				echo 'Python version:' && python3 --version &&
+				echo 'Playwright:' && npx playwright --version &&
+				echo 'Selenium:' && python3 -c 'import selenium; print(selenium.__version__)'
+		"
 
 	log_success "Image validation completed"
 }
@@ -289,7 +289,7 @@ main() {
 	validate_image
 	show_summary
 
-	log_success "Chrome Runner build completed successfully! 🎉"
+	log_success "Chrome Runner build completed successfully! \ud83c\udf89"
 }
 
 # Run main function
