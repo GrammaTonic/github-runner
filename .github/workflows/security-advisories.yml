@@ -62,7 +62,7 @@ jobs:
 
       - name: Upload filesystem scan to Security tab
         if: contains(steps.params.outputs.scan_targets, 'filesystem')
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "trivy-results/filesystem.sarif"
           category: "filesystem-scan"
@@ -118,7 +118,7 @@ jobs:
 
       - name: Upload container scan to Security tab
         if: contains(steps.params.outputs.scan_targets, 'container')
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "trivy-results/container.sarif"
           category: "container-scan"
@@ -169,7 +169,7 @@ jobs:
 
       - name: Upload Chrome scan to Security tab
         if: contains(steps.params.outputs.scan_targets, 'chrome')
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "trivy-results/chrome.sarif"
           category: "chrome-container-scan"
