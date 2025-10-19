@@ -21,14 +21,17 @@ UBUNTU_VERSION="${UBUNTU_VERSION:-24.04}"
 mkdir -p "$TEST_RESULTS_DIR"
 
 # Logging functions
+# shellcheck disable=SC2329
 log_info() {
 	echo -e "${GREEN}[INFO]${NC} $1"
 }
 
+# shellcheck disable=SC2329
 log_warn() {
 	echo -e "${YELLOW}[WARN]${NC} $1"
 }
 
+# shellcheck disable=SC2329
 log_error() {
 	echo -e "${RED}[ERROR]${NC} $1"
 }
@@ -148,6 +151,7 @@ DOCKER_DIR="$ROOT_DIR/docker"
 RESULTS_DIR="$ROOT_DIR/test-results/unit"
 mkdir -p "$RESULTS_DIR"
 
+# shellcheck disable=SC2329
 validate_dockerfile() {
 	local dockerfile=$1
 	local name
@@ -172,6 +176,7 @@ validate_dockerfile() {
 	fi
 }
 
+# shellcheck disable=SC2329
 main() {
 	mkdir -p "$RESULTS_DIR"
 
@@ -541,6 +546,7 @@ test_package_dependencies() {
 }
 
 # Main test execution
+# shellcheck disable=SC2329
 main() {
 	local exit_code=0
 
