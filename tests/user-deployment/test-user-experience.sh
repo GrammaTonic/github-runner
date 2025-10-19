@@ -585,7 +585,6 @@ EOF
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
-done
   case $1 in
     -h | --help)
       show_help
@@ -595,12 +594,14 @@ done
       TEST_RESULTS_DIR="$2"
       shift 2
       ;;
-    * )
+    *)
       log_error "Unknown option: $1"
       show_help
       exit 2
       ;;
   esac
+  shift
+done
 
 # Run main function
 main "$@"

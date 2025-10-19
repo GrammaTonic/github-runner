@@ -189,34 +189,36 @@ main() {
   return 0
 }
 
-main "$@"
-	local docker_dir
-	docker_dir="$(dirname "$0")/../../docker"
-	local failed=false
+# Test 2: Check for duplicate packages across Dockerfiles
+test_duplicate_packages() {
+  local test_name="Duplicate Package Detection"
+  local docker_dir
+  docker_dir="$(dirname "$0")/../../docker"
+  local failed=false
 
-	log_info "Starting $test_name..."
+  log_info "Starting $test_name..."
 
-	# Find all Dockerfiles
-	while IFS= read -r -d '' dockerfile; do
-		local dockerfile_name
-		dockerfile_name="$(basename "$dockerfile")"
+  # Find all Dockerfiles
+  while IFS= read -r -d '' dockerfile; do
+    local dockerfile_name
+    dockerfile_name="$(basename "$dockerfile")"
 
-		log_info "Checking $dockerfile_name for duplicate packages..."
+    log_info "Checking $dockerfile_name for duplicate packages..."
 
-		# Check if this is a multi-stage build
-		if grep -q "FROM.*AS" "$dockerfile"; then
-			log_info "$dockerfile_name is a multi-stage build - duplicates between stages are expected"
-			# Skip duplicate check for multi-stage builds since packages often need to be installed in multiple stages
-			continue
-		fi
+    # Check if this is a multi-stage build
+    if grep -q "FROM.*AS" "$dockerfile"; then
+      log_info "$dockerfile_name is a multi-stage build - duplicates between stages are expected"
+      # Skip duplicate check for multi-stage builds since packages often need to be installed in multiple stages
+      continue
+    fi
 
-		# Extract packages and check for duplicates (single-stage builds only)
-		local packages_file="$TEST_RESULTS_DIR/packages-$dockerfile_name.txt"
+    # Extract packages and check for duplicates (single-stage builds only)
+    local packages_file="$TEST_RESULTS_DIR/packages-$dockerfile_name.txt"
 
-		# Use improved package extraction logic (same as integration tests)
-		if grep -q "apt-get install" "$dockerfile"; then
-			# Find RUN commands with apt-get install and extract package names more carefully
-			awk '
+    # Use improved package extraction logic (same as integration tests)
+    if grep -q "apt-get install" "$dockerfile"; then
+      # Find RUN commands with apt-get install and extract package names more carefully
+      awk '
             /^RUN.*apt-get install/ {
                 in_install_block = 1
                 line = $0
@@ -243,58 +245,58 @@ main "$@"
                 next
             }
             ' "$dockerfile" |
-				# Filter and clean package names
-				grep -v "^#" |
-				grep -v "rm -rf" |
-				grep -v "apt-get" |
-				sed 's/^[[:space:]]*//' |
-				sed 's/[[:space:]]*$//' |
-				sed 's/^-.*$//' |
-				grep -v "^$" |
-				grep -v "^--" |
-				grep -v "^&&" |
-				grep -v ')"' |
-				grep -v '";' |
-				grep -v 'case' |
-				grep -v 'esac' |
-				grep -v 'RUNNER_ARCH' |
-				grep -v 'curl' |
-				grep -v 'wget' |
-				grep -v 'echo' |
-				grep -v 'http' |
-				grep -E '^[a-zA-Z0-9][a-zA-Z0-9\.\-\+]*$' |
-				sort >"$packages_file"
-		else
-			# No apt-get install commands found
-			touch "$packages_file"
-		fi
+        # Filter and clean package names
+        grep -v "^#" |
+        grep -v "rm -rf" |
+        grep -v "apt-get" |
+        sed 's/^[[:space:]]*//' |
+        sed 's/[[:space:]]*$//' |
+        sed 's/^-.*$//' |
+        grep -v "^$" |
+        grep -v "^--" |
+        grep -v "^&&" |
+        grep -v ')"' |
+        grep -v '";' |
+        grep -v 'case' |
+        grep -v 'esac' |
+        grep -v 'RUNNER_ARCH' |
+        grep -v 'curl' |
+        grep -v 'wget' |
+        grep -v 'echo' |
+        grep -v 'http' |
+        grep -E '^[a-zA-Z0-9][a-zA-Z0-9\.\-\+]*$' |
+        sort >"$packages_file"
+    else
+      # No apt-get install commands found
+      touch "$packages_file"
+    fi
 
-		# Find duplicates
-		local duplicates
-		duplicates=$(uniq -d "$packages_file" || true)
+    # Find duplicates
+    local duplicates
+    duplicates=$(uniq -d "$packages_file" || true)
 
-		if [[ -n "$duplicates" ]]; then
-			log_error "DUPLICATE PACKAGES FOUND in $dockerfile_name:"
-			while IFS= read -r duplicate; do
-				if [[ -n "$duplicate" ]]; then
-					log_error "  - $duplicate"
-					echo "$dockerfile_name: DUPLICATE $duplicate" >>"$TEST_RESULTS_DIR/duplicate-packages.log"
-				fi
-			done <<<"$duplicates"
-			failed=true
-		fi
+    if [[ -n "$duplicates" ]]; then
+      log_error "DUPLICATE PACKAGES FOUND in $dockerfile_name:"
+      while IFS= read -r duplicate; do
+        if [[ -n "$duplicate" ]]; then
+          log_error "  - $duplicate"
+          echo "$dockerfile_name: DUPLICATE $duplicate" >>"$TEST_RESULTS_DIR/duplicate-packages.log"
+        fi
+      done <<<"$duplicates"
+      failed=true
+    fi
 
-	done < <(find "$docker_dir" -name "Dockerfile*" -type f -print0)
+  done < <(find "$docker_dir" -name "Dockerfile*" -type f -print0)
 
-	# Results
-	if [[ "$failed" == "true" ]]; then
-		log_error "✗ $test_name FAILED - Duplicate packages found!"
-		log_error "Check $TEST_RESULTS_DIR/duplicate-packages.log for details"
-		return 1
-	else
-		log_info "✓ $test_name PASSED - No duplicate packages found"
-		return 0
-	fi
+  # Results
+  if [[ "$failed" == "true" ]]; then
+    log_error "✗ $test_name FAILED - Duplicate packages found!"
+    log_error "Check $TEST_RESULTS_DIR/duplicate-packages.log for details"
+    return 1
+  else
+    log_info "✓ $test_name PASSED - No duplicate packages found"
+    return 0
+  fi
 }
 
 # Function to check Ubuntu version compatibility
