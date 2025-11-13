@@ -17,7 +17,11 @@ LABEL version="2.0.9"
 ARG TARGETARCH
 ARG RUNNER_VERSION="2.329.0"
 ARG CHROME_VERSION="140.0.7339.80"
-ARG NODE_VERSION="24.7.0"
+ARG NODE_VERSION="24.11.1"
+ARG NPM_VERSION="11.6.2"
+ARG PLAYWRIGHT_VERSION="1.55.1"
+ARG PLAYWRIGHT_TEST_VERSION="1.55.1"
+ARG CROSS_SPAWN_VERSION="7.0.6"
 
 # Environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -29,6 +33,10 @@ ENV DISPLAY=:99
 ENV PATH="/home/runner/.npm/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/sbin:/bin:/opt/chrome-linux64:/actions-runner:/usr/local/go/bin"
 ENV NODE_PATH="/home/runner/.npm/lib/node_modules"
 ENV PLAYWRIGHT_BROWSERS_PATH="/home/runner/.cache/ms-playwright"
+ENV NPM_VERSION=${NPM_VERSION}
+ENV PLAYWRIGHT_VERSION=${PLAYWRIGHT_VERSION}
+ENV PLAYWRIGHT_TEST_VERSION=${PLAYWRIGHT_TEST_VERSION}
+ENV CROSS_SPAWN_VERSION=${CROSS_SPAWN_VERSION}
 
 # Set SHELL to handle pipe errors correctly
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -94,10 +102,14 @@ RUN useradd -m -s /bin/bash runner \
 # --- INSTALL NODE.JS ---
 RUN curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" -o /tmp/node.tar.xz \
     && tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 --no-same-owner \
-    && rm -rf /tmp/node.tar.xz 
+    && rm -rf /tmp/node.tar.xz \
+    && npm install -g npm@${NPM_VERSION} \
+    && npm install -g cross-spawn@${CROSS_SPAWN_VERSION} \
+    && npm explore npm -g -- npm install cross-spawn@${CROSS_SPAWN_VERSION} --omit=dev --package-lock=false \
+    && npm cache clean --force
 
 # --- INSTALL GO ---
-RUN GO_VERSION="1.25.1" \
+RUN GO_VERSION="1.25.4" \
     && curl -fsSL "https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o /tmp/go.tar.gz \
     && tar -C /usr/local -xzf /tmp/go.tar.gz \
     && rm /tmp/go.tar.gz \
@@ -117,13 +129,16 @@ ENV PATH="/home/runner/venv/bin:$PATH"
 RUN npm config set prefix /home/runner/.npm \
     && npm config set cache /home/runner/.npm-cache \
     && npm install -g \
-    npm@11.6.0 \
-    playwright@1.49.1 \
-    @playwright/test@1.49.1 \
+    npm@${NPM_VERSION} \
+    cross-spawn@${CROSS_SPAWN_VERSION} \
+    playwright@${PLAYWRIGHT_VERSION} \
+    @playwright/test@${PLAYWRIGHT_TEST_VERSION} \
     cypress@13.15.0 \
+    && npm explore npm -g -- npm install cross-spawn@${CROSS_SPAWN_VERSION} --omit=dev --package-lock=false \
     && rm -rf /home/runner/.cache/Cypress \
-    && npm install playwright@1.49.1 \
-    && npx playwright install chromium firefox --only-shell
+    && npm install playwright@${PLAYWRIGHT_VERSION} \
+    && npx playwright install chromium firefox --only-shell \
+    && npm cache clean --force
 
 # --- INSTALL GITHUB ACTIONS RUNNER ---
 ARG RUNNER_VERSION
@@ -131,6 +146,16 @@ WORKDIR /actions-runner
 RUN curl -o "actions-runner.tar.gz" -L "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
     && tar xzf "./actions-runner.tar.gz" \
     && rm "./actions-runner.tar.gz"
+
+# --- PATCH EMBEDDED NODE DISTRIBUTIONS ---
+RUN for NODE_ROOT in /actions-runner/externals/node*/ ; do \
+            if [ -x "${NODE_ROOT}bin/node" ] && [ -d "${NODE_ROOT}lib/node_modules/npm" ]; then \
+                NPM_DIR="${NODE_ROOT}lib/node_modules/npm"; \
+                rm -rf "${NPM_DIR}/node_modules/cross-spawn"; \
+                "${NODE_ROOT}bin/node" "${NPM_DIR}/bin/npm-cli.js" install cross-spawn@${CROSS_SPAWN_VERSION} --omit=dev --no-save --cache /tmp/npm-cache; \
+                rm -rf "${NPM_DIR}/node_modules/.npm" /tmp/npm-cache; \
+            fi; \
+        done
 WORKDIR /home/runner
 
 # --- VERIFICATION, HEALTHCHECK AND ENTRYPOINT ---
