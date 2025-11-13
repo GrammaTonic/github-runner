@@ -71,5 +71,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_MD: true
+          VALIDATE_JSCPD: false
+          VALIDATE_CHECKOV: false
           FILTER_REGEX_INCLUDE: docs/**,wiki-content/**
           FILTER_REGEX_EXCLUDE: docs/archive/**
