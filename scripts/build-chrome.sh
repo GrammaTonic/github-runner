@@ -46,7 +46,7 @@ OPTIONS:
     -r, --registry      Registry (default: ghcr.io)
     -n, --namespace     Registry namespace (default: grammatonic)
     -p, --platforms     Target platforms (default: linux/amd64,linux/arm64)
-    -v, --runner-version Runner version (default: 2.328.0)
+    -v, --runner-version Runner version (default: 2.329.0)
     --push              Push image to registry
     --no-cache          Build without cache
     --multi-arch        Build multi-architecture image
@@ -74,7 +74,7 @@ NAMESPACE="${DOCKER_NAMESPACE:-grammatonic}"
 IMAGE_NAME="github-runner"
 IMAGE_TAG="chrome-latest"
 PLATFORMS="linux/amd64,linux/arm64"
-RUNNER_VERSION="2.328.0"
+RUNNER_VERSION="2.329.0"
 PUSH_IMAGE=false
 NO_CACHE=false
 MULTI_ARCH=false

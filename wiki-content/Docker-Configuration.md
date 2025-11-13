@@ -168,7 +168,7 @@ RUN apt-get update && apt-get install -y \
 # GitHub Actions Runner stage
 FROM base as runner
 
-ARG RUNNER_VERSION=2.328.0
+ARG RUNNER_VERSION=2.329.0
 ARG TARGETPLATFORM
 
 # Create runner user
@@ -211,7 +211,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Download runner
-ARG RUNNER_VERSION=2.328.0
+ARG RUNNER_VERSION=2.329.0
 WORKDIR /tmp
 RUN curl -o actions-runner.tar.gz \
     -L https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz
