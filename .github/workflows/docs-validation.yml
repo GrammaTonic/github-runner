@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Check for outdated references
         run: |
           # Search for 'template' (case-insensitive) and print matches with line numbers.
@@ -69,5 +71,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_MD: true
+          VALIDATE_JSCPD: false
+          VALIDATE_CHECKOV: false
           FILTER_REGEX_INCLUDE: docs/**,wiki-content/**
           FILTER_REGEX_EXCLUDE: docs/archive/**

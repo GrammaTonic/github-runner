@@ -4,6 +4,12 @@
 
 This repository is for setting up and managing GitHub Actions self-hosted runners using Docker containers for a single repository. The project focuses on automating containerized runner deployment, configuration, and lifecycle management with Docker and Docker Compose.
 
+## RULES AND STANDARDS
+- USE Non interactive gh CLI commands for all GitHub operations
+- ALWAYS follow the established development workflow and branch protection rules
+- NEVER create .md files in the root directory; all documentation must go in `/docs/` subdirectories
+- ALWAYS use the provided scripts for setup, deployment, and validation tasks
+
 ## 🚨 CRITICAL WORKFLOW & BRANCH PROTECTION RULES
 
 ### Branch Protection Status - ENFORCED
