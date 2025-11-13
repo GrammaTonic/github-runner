@@ -82,11 +82,11 @@ jobs:
       - name: Provision normal runner container in staging
         env:
           RUNNER_LABELS: staging,ci,self-hosted
-          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.REG_TOKEN }}
         run: |
           echo "Provisioning normal runner container in staging..."
           echo "Using labels: $RUNNER_LABELS"
-          echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
+          echo "Injecting GITHUB_TOKEN from secrets.REG_TOKEN"
           docker compose -f docker/docker-compose.production.yml up -d
           echo "Checking if normal runner container is running..."
           if [ "$(docker ps -q -f name=github-runner-main)" ]; then
@@ -175,11 +175,11 @@ jobs:
       - name: Provision Chrome runner container in staging
         env:
           RUNNER_LABELS: chrome,ui-tests,extra-label
-          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.REG_TOKEN }}
         run: |
           echo "Provisioning Chrome runner container in staging..."
           echo "Using labels: $RUNNER_LABELS"
-          echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
+          echo "Injecting GITHUB_TOKEN from secrets.REG_TOKEN"
           docker compose -f docker/docker-compose.chrome.yml up -d
           echo "Checking if Chrome runner container is running..."
           RUNNING=$(docker ps --filter "name=github-runner-chrome" --filter "status=running" -q)
@@ -278,7 +278,7 @@ jobs:
           echo "Pulled Chrome-Go runner image: $CHROME_GO_IMAGE_TAG"
       - name: Provision Chrome-Go runner container in staging
         env:
-          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.REG_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           echo "Setting up Chrome-Go runner configuration..."
@@ -291,7 +291,7 @@ jobs:
           
           echo "Provisioning Chrome-Go runner container in staging..."
           echo "Using configuration from config/chrome-go-runner.env"
-          echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
+          echo "Injecting GITHUB_TOKEN from secrets.REG_TOKEN"
           
           # Use --env-file to load configuration
           docker compose --env-file config/chrome-go-runner.env -f docker/docker-compose.chrome-go.yml up -d

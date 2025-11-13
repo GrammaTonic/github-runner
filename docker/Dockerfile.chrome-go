@@ -15,7 +15,7 @@ LABEL version="2.0.9"
 
 # Define arguments at the top for easy management
 ARG TARGETARCH
-ARG RUNNER_VERSION="2.328.0"
+ARG RUNNER_VERSION="2.329.0"
 ARG CHROME_VERSION="140.0.7339.80"
 ARG NODE_VERSION="24.7.0"
 

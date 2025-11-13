@@ -29,7 +29,7 @@ Note: Documentation workflows and repo prompts were recently improved — see
 | Component                 | Standard Runner  | Chrome Runner    | Status            |
 | ------------------------- | ---------------- | ---------------- | ----------------- |
 | **Image Version**         | v2.0.9           | v2.0.9           | ✅ Latest         |
-| **GitHub Actions Runner** | v2.328.0         | v2.328.0         | ✅ Latest         |
+| **GitHub Actions Runner** | v2.329.0         | v2.329.0         | ✅ Latest         |
 | **Base OS**               | Ubuntu 25.10 Questing | Ubuntu 25.10 Questing | ✅ Supported/Pre-release |
 | **Node.js**               |                  | 24.7.0           | ✅ Chrome Only    |
 | **Python**                | 3.10+            | 3.10+            | ✅ Latest         |

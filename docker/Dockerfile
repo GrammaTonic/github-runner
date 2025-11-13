@@ -8,7 +8,7 @@ LABEL version="2.0.9"
 
 # Use TARGETPLATFORM which contains the full OS/architecture string (e.g., linux/amd64)
 ARG TARGETPLATFORM
-ARG RUNNER_VERSION="2.328.0"
+ARG RUNNER_VERSION="2.329.0"
 ENV RUNNER_VERSION=${RUNNER_VERSION}
 
 # --- ENVIRONMENT VARIABLES ---
