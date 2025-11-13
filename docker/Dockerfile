@@ -9,6 +9,7 @@ LABEL version="2.0.9"
 # Use TARGETPLATFORM which contains the full OS/architecture string (e.g., linux/amd64)
 ARG TARGETPLATFORM
 ARG RUNNER_VERSION="2.328.0"
+ENV RUNNER_VERSION=${RUNNER_VERSION}
 
 # --- ENVIRONMENT VARIABLES ---
 ENV DEBIAN_FRONTEND=noninteractive
@@ -38,12 +39,19 @@ RUN useradd -m -s /bin/bash runner \
     && chown -R runner:runner /home/runner /actions-runner
 # --- INSTALL GITHUB ACTIONS RUNNER ---
 
+# Keep RUNNER_VERSION available in this stage
 ARG RUNNER_VERSION
 USER runner
 WORKDIR /actions-runner
-RUN curl -o "actions-runner.tar.gz" -L "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
-    && tar xzf "./actions-runner.tar.gz" \
-    && rm "./actions-runner.tar.gz"
+RUN set -e; \
+        url="https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"; \
+        for i in 1 2 3; do \
+            echo "Downloading GitHub Actions Runner v${RUNNER_VERSION} (attempt $i)..."; \
+            if curl -fSL -o actions-runner.tar.gz "$url"; then break; fi; \
+            echo "Download failed, retrying in 3s..."; sleep 3; \
+        done; \
+        tar xzf "./actions-runner.tar.gz"; \
+        rm "./actions-runner.tar.gz"
 WORKDIR /home/runner
 
 # Copy the dedicated entrypoint

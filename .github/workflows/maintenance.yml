@@ -193,7 +193,7 @@ jobs:
           output: "dependency-security-scan.sarif"
 
       - name: Upload security scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "dependency-security-scan.sarif"
           category: "filesystem-scan"
@@ -328,7 +328,7 @@ jobs:
           fi
 
       - name: Upload security report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: security-status-report
           path: security-status.md
@@ -696,7 +696,7 @@ jobs:
           EOF
 
       - name: Upload comprehensive health report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: comprehensive-health-report
           path: comprehensive-health-report.md
@@ -777,7 +777,7 @@ jobs:
           exit 0
 
       - name: Upload maintenance summary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: maintenance-summary
           path: maintenance-summary.md
