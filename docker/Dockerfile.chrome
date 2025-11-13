@@ -16,7 +16,6 @@ LABEL version="2.0.9"
 # Define arguments at the top for easy management
 ARG TARGETARCH
 ARG RUNNER_VERSION="2.328.0"
-ENV RUNNER_VERSION=${RUNNER_VERSION}
 ARG CHROME_VERSION="140.0.7339.80"
 ARG NODE_VERSION="24.7.0"
 
@@ -47,26 +46,25 @@ RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# --- INSTALL ESSENTIAL TOOLS FIRST ---
+# --- INSTALL SYSTEM, NODE.JS, PYTHON, CHROME AND DRIVERS ---
 # hadolint ignore=DL3008,DL3015
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-    # Essential tools needed for subsequent steps
+    # Essential tools
     curl ca-certificates gnupg wget unzip xz-utils \
-    && rm -rf /var/lib/apt/lists/*
-
-# --- INSTALL SYSTEM, NODE.JS, PYTHON, CHROME DEPENDENCIES ---
-# hadolint ignore=DL3008,DL3015
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+    # System utilities
     sudo \
     lsb-release \
     git \
     jq \
     libicu-dev \
-    libnss3 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxtst6 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgbm1 libasound2-dev libatspi2.0-0 libgtk-3-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 fonts-liberation fonts-noto-color-emoji fonts-noto-cjk xvfb procps \
+    # Chrome & UI testing dependencies (existing)
+    libnss3 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxtst6 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgbm1 libasound2-dev libatspi2.0-0 libgtk-3-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf2.0-0 fonts-liberation fonts-noto-color-emoji fonts-noto-cjk xvfb procps \
+    # Python
     python3 python3-pip python3-venv \
+    # Playwright/Chromium/Chrome required libraries (Ubuntu 24.04 compatible)
     libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libgstreamer-plugins-good1.0-0 libgstreamer-plugins-bad1.0-0 gstreamer1.0-plugins-ugly libgtk-4-1 libgraphene-1.0-0 libatomic1 libxslt1.1 libwoff1 libvpx9 libevent-2.1-7 libopus0 libwebpdemux2 libavif16 libharfbuzz-icu0 libwebpmux3 libenchant-2-2 libsecret-1-0 libhyphen0 libmanette-0.2-0 libgles2 libx264-164 flite \
+    # Clean up APT cache, downloaded archives, and temporary files
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/log/* \
@@ -121,15 +119,9 @@ RUN npm config set prefix /home/runner/.npm \
 # --- INSTALL GITHUB ACTIONS RUNNER ---
 ARG RUNNER_VERSION
 WORKDIR /actions-runner
-RUN set -e; \
-        url="https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"; \
-        for i in 1 2 3; do \
-            echo "Downloading GitHub Actions Runner v${RUNNER_VERSION} (attempt $i)..."; \
-            if curl -fSL -o actions-runner.tar.gz "$url"; then break; fi; \
-            echo "Download failed, retrying in 3s..."; sleep 3; \
-        done; \
-        tar xzf "./actions-runner.tar.gz"; \
-        rm "./actions-runner.tar.gz"
+RUN curl -o "actions-runner.tar.gz" -L "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
+    && tar xzf "./actions-runner.tar.gz" \
+    && rm "./actions-runner.tar.gz"
 WORKDIR /home/runner
 
 # --- VERIFICATION, HEALTHCHECK AND ENTRYPOINT ---

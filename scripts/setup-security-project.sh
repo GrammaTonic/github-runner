@@ -145,7 +145,7 @@ test_security_script() {
 EOF
 
 	log_info "Running security script in dry-run mode"
-	DRY_RUN=true ./docs/archive/scripts/create-security-issues.sh || {
+	DRY_RUN=true ./scripts/create-security-issues.sh || {
 		log_error "Security script test failed"
 		return 1
 	}
@@ -191,7 +191,7 @@ main() {
 	echo ""
 	echo "🔧 Manual Commands:"
 	echo "# Test security script (dry run)"
-	echo "DRY_RUN=true ./docs/archive/scripts/create-security-issues.sh"
+	echo "DRY_RUN=true ./scripts/create-security-issues.sh"
 	echo ""
 	echo "# Run security workflow manually"
 	echo "gh workflow run security-issues.yml"

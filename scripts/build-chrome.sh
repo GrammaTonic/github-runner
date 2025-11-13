@@ -39,31 +39,31 @@ usage() {
 Chrome Runner Build Script
 
 USAGE:
-		$0 [OPTIONS]
+    $0 [OPTIONS]
 
 OPTIONS:
-		-t, --tag           Image tag (default: chrome-latest)
-		-r, --registry      Registry (default: ghcr.io)
-		-n, --namespace     Registry namespace (default: grammatonic)
-		-p, --platforms     Target platforms (default: linux/amd64,linux/arm64)
-		-v, --runner-version Runner version (default: 2.328.0)
-		--push              Push image to registry
-		--no-cache          Build without cache
-		--multi-arch        Build multi-architecture image
-		-h, --help          Show this help message
+    -t, --tag           Image tag (default: chrome-latest)
+    -r, --registry      Registry (default: ghcr.io)
+    -n, --namespace     Registry namespace (default: grammatonic)
+    -p, --platforms     Target platforms (default: linux/amd64,linux/arm64)
+    -v, --runner-version Runner version (default: 2.328.0)
+    --push              Push image to registry
+    --no-cache          Build without cache
+    --multi-arch        Build multi-architecture image
+    -h, --help          Show this help message
 
 EXAMPLES:
-		# Basic build
-		$0
+    # Basic build
+    $0
 
-		# Build and push to registry
-		$0 --push
+    # Build and push to registry
+    $0 --push
 
-		# Build with custom tag
-		$0 --tag chrome-v1.0.0 --push
+    # Build with custom tag
+    $0 --tag chrome-v1.0.0 --push
 
-		# Build multi-architecture
-		$0 --multi-arch --push
+    # Build multi-architecture
+    $0 --multi-arch --push
 
 EOF
 }
@@ -252,11 +252,11 @@ validate_image() {
 
 	log_info "Checking testing frameworks..."
 	docker run --rm "${FULL_IMAGE_NAME}" bash -c "
-				echo 'Node.js version:' && node --version &&
-				echo 'Python version:' && python3 --version &&
-				echo 'Playwright:' && npx playwright --version &&
-				echo 'Selenium:' && python3 -c 'import selenium; print(selenium.__version__)'
-		"
+        echo 'Node.js version:' && node --version &&
+        echo 'Python version:' && python3 --version &&
+        echo 'Playwright:' && npx playwright --version &&
+        echo 'Selenium:' && python3 -c 'import selenium; print(selenium.__version__)'
+    "
 
 	log_success "Image validation completed"
 }
@@ -289,7 +289,7 @@ main() {
 	validate_image
 	show_summary
 
-	log_success "Chrome Runner build completed successfully! \ud83c\udf89"
+	log_success "Chrome Runner build completed successfully! 🎉"
 }
 
 # Run main function

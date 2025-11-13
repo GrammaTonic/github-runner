@@ -46,17 +46,12 @@ RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# --- INSTALL ESSENTIAL TOOLS FIRST ---
-# hadolint ignore=DL3008,DL3015
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    curl ca-certificates gnupg wget unzip xz-utils \
-    && rm -rf /var/lib/apt/lists/*
-
 # --- INSTALL SYSTEM, NODE.JS, PYTHON, CHROME AND DRIVERS ---
 # hadolint ignore=DL3008,DL3015
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+    # Essential tools
+    curl ca-certificates gnupg wget unzip xz-utils \
     # System utilities
     sudo \
     lsb-release \
@@ -64,7 +59,7 @@ RUN apt-get update \
     jq \
     libicu-dev \
     # Chrome & UI testing dependencies (existing)
-    libnss3 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxtst6 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgbm1 libasound2-dev libatspi2.0-0 libgtk-3-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 fonts-liberation fonts-noto-color-emoji fonts-noto-cjk xvfb procps \
+    libnss3 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxtst6 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgbm1 libasound2-dev libatspi2.0-0 libgtk-3-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf2.0-0 fonts-liberation fonts-noto-color-emoji fonts-noto-cjk xvfb procps \
     # Python
     python3 python3-pip python3-venv \
     # Playwright/Chromium/Chrome required libraries (Ubuntu 24.04 compatible)

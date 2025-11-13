@@ -94,7 +94,7 @@ jobs:
           format: spdx-json
           output-file: sbom.spdx.json
       - name: Upload SBOM as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: sbom
           path: sbom.spdx.json
@@ -147,7 +147,7 @@ jobs:
           format: spdx-json
           output-file: sbom-chrome.spdx.json
       - name: Upload SBOM as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: sbom-chrome
           path: sbom-chrome.spdx.json
@@ -162,7 +162,7 @@ jobs:
       image-digest: ${{ steps.build.outputs.digest }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -201,7 +201,7 @@ jobs:
           format: spdx-json
           output-file: sbom-chrome-go.spdx.json
       - name: Upload SBOM as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: sbom-chrome-go
           path: sbom-chrome-go.spdx.json
@@ -239,19 +239,19 @@ jobs:
           output: "release-chrome-go-security-scan.sarif"
       - name: Upload security scan results (standard)
         if: matrix.scan == 'standard'
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: "release-security-scan.sarif"
           category: "container-scan"
       - name: Upload security scan results (chrome)
         if: matrix.scan == 'chrome'
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: "release-chrome-security-scan.sarif"
           category: "container-scan-chrome"
       - name: Upload security scan results (chrome-go)
         if: matrix.scan == 'chrome-go'
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: "release-chrome-go-security-scan.sarif"
           category: "container-scan-chrome-go"

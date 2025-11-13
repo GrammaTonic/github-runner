@@ -5,8 +5,6 @@
 
 set -euo pipefail
 
-# shellcheck disable=SC2329  # Functions are invoked by main() at the end of the script
-
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -21,17 +19,14 @@ UBUNTU_VERSION="${UBUNTU_VERSION:-24.04}"
 mkdir -p "$TEST_RESULTS_DIR"
 
 # Logging functions
-# shellcheck disable=SC2329
 log_info() {
 	echo -e "${GREEN}[INFO]${NC} $1"
 }
 
-# shellcheck disable=SC2329
 log_warn() {
 	echo -e "${YELLOW}[WARN]${NC} $1"
 }
 
-# shellcheck disable=SC2329
 log_error() {
 	echo -e "${RED}[ERROR]${NC} $1"
 }
@@ -125,78 +120,6 @@ get_package_warning() {
 }
 
 # Test 1: Check for obsolete packages in Dockerfiles
-#!/usr/bin/env bash
-
-set -euo pipefail
-
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-
-log_info() {
-	echo -e "${GREEN}[INFO]${NC} $1"
-}
-
-log_warn() {
-	echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-log_error() {
-	echo -e "${RED}[ERROR]${NC} $1"
-}
-
-ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." &>/dev/null && pwd)"
-DOCKER_DIR="$ROOT_DIR/docker"
-RESULTS_DIR="$ROOT_DIR/test-results/unit"
-mkdir -p "$RESULTS_DIR"
-
-# shellcheck disable=SC2329
-validate_dockerfile() {
-	local dockerfile=$1
-	local name
-	name=$(basename "$dockerfile")
-
-	log_info "Validating packages in $name"
-
-	if ! grep -qiE "curl|git|jq|tar|unzip" "$dockerfile"; then
-		log_warn "$name: Essential tools not clearly installed"
-	fi
-
-	if grep -qiE "apk add|apt-get install" "$dockerfile" && ! grep -qiE "--no-install-recommends|--no-cache" "$dockerfile"; then
-		log_warn "$name: Consider using no-recommends/no-cache for smaller images"
-	fi
-
-	if grep -qE "RUN .* && \\" "$dockerfile"; then
-		log_info "$name: Multi-command RUN steps detected (good for layer minimization)"
-	fi
-
-	if grep -qE "^USER root|^#.*USER root" "$dockerfile"; then
-		log_warn "$name: Running as root; consider a non-root user where possible"
-	fi
-}
-
-# shellcheck disable=SC2329
-main() {
-	mkdir -p "$RESULTS_DIR"
-
-	local errors=0
-	for dockerfile in "$DOCKER_DIR"/Dockerfile*; do
-		if [[ -f "$dockerfile" ]]; then
-			validate_dockerfile "$dockerfile" || errors=$((errors + 1))
-		fi
-	done
-
-	if [[ $errors -gt 0 ]]; then
-		log_error "Package validation found $errors issue(s)"
-		return 1
-	fi
-
-	log_info "Package validation completed"
-	return 0
-}
-
-# Test 1: Check for obsolete packages
 test_obsolete_packages() {
 	local test_name="Obsolete Package Detection"
 	local docker_dir
@@ -264,7 +187,7 @@ test_obsolete_packages() {
 	fi
 }
 
-# Test 2: Check for duplicate packages across Dockerfiles
+# Test 2: Check for duplicate packages
 test_duplicate_packages() {
 	local test_name="Duplicate Package Detection"
 	local docker_dir
@@ -546,7 +469,6 @@ test_package_dependencies() {
 }
 
 # Main test execution
-# shellcheck disable=SC2329
 main() {
 	local exit_code=0
 

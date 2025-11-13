@@ -6,7 +6,6 @@ services:
     environment:
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
-      - RUNNER_SKIP_REGISTRATION=${RUNNER_SKIP_REGISTRATION:-false}
       - RUNNER_NAME=${RUNNER_NAME:-chrome-go-runner}
       - RUNNER_LABELS=${RUNNER_LABELS:-docker,chrome,go,self-hosted,linux,x64,ui-tests}
       - RUNNER_GROUP=${RUNNER_GROUP:-default}

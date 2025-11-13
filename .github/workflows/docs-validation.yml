@@ -11,8 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
       - name: Check for outdated references
         run: |
           # Search for 'template' (case-insensitive) and print matches with line numbers.
@@ -60,12 +58,12 @@ jobs:
         run: |
           git diff origin/main -- docs/ wiki-content/ > docs-full-patch.diff || echo "No doc changes detected."
       - name: Upload Patch Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: docs-full-patch
           path: docs-full-patch.diff
       - name: Run GitHub Super Linter for Docs
-        uses: github/super-linter@v7
+        uses: github/super-linter@v6
         env:
           DEFAULT_BRANCH: develop
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

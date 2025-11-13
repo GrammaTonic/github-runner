@@ -14,14 +14,12 @@ LOCAL_IMAGE="github-runner-chrome:test-local"
 
 echo "[INFO] Building Chrome runner Docker image locally..."
 docker build --platform=linux/amd64 -f docker/Dockerfile.chrome -t "$LOCAL_IMAGE" ./docker --progress=plain
-
-# Single, lightweight Trivy scan (vulnerabilities only) to reduce memory usage
-mkdir -p test-results/docker
 if command -v trivy &>/dev/null; then
-	trivy image "$LOCAL_IMAGE" --scanners vuln --format table --output test-results/docker/trivy_scan_"${TIMESTAMP}".txt || echo "[WARN] Trivy scan encountered issues; continuing."
+	trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_"${TIMESTAMP}".txt
 	echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
 elif docker --version &>/dev/null; then
 	echo "[INFO] Running Trivy via Docker..."
+	mkdir -p test-results/docker
 	# Detect Docker socket path (macOS vs Linux)
 	DOCKER_SOCK="/var/run/docker.sock"
 	if [ -S "/Users/grammatonic/.docker/run/docker.sock" ]; then
@@ -31,18 +29,31 @@ elif docker --version &>/dev/null; then
 	docker run --rm \
 		-v "$DOCKER_SOCK:/var/run/docker.sock" \
 		-v "$(pwd)/test-results/docker:/output" \
-		aquasec/trivy:latest image "$LOCAL_IMAGE" --scanners vuln --format json --output /output/trivy_scan_"${TIMESTAMP}".txt || echo "[WARN] Trivy scan via Docker encountered issues; continuing."
+		aquasec/trivy:latest image "$LOCAL_IMAGE" --format json --output /output/trivy_scan_"${TIMESTAMP}".txt
+	echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
+else
+	echo "[WARNING] Trivy not available. Skipping security scan."
+fi
+
+echo "[INFO] Running Trivy security scan on the built image..."
+if command -v trivy &>/dev/null; then
+	trivy image "$LOCAL_IMAGE" --format table --output test-results/docker/trivy_scan_"${TIMESTAMP}".txt
+	echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
+elif docker --version &>/dev/null; then
+	echo "[INFO] Running Trivy via Docker..."
+	mkdir -p test-results/docker
+	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)/test-results/docker:/output" aquasec/trivy:latest image "$LOCAL_IMAGE" --format table --output /output/trivy_scan_"${TIMESTAMP}".txt
 	echo "[INFO] Trivy scan completed. Results saved to test-results/docker/trivy_scan_${TIMESTAMP}.txt"
 else
 	echo "[WARNING] Trivy not available. Skipping security scan."
 fi
 
 echo "[INFO] Creating Docker Compose override file for local image..."
-{
-	printf 'services:\n'
-	printf '  %s:\n' "$SERVICE_NAME"
-	printf '    image: %s\n' "$LOCAL_IMAGE"
-} >"$OVERRIDE_FILE"
+cat >"$OVERRIDE_FILE" <<EOF
+services:
+  $SERVICE_NAME:
+    image: $LOCAL_IMAGE
+EOF
 
 echo "[INFO] Removing any previous test container and associated volumes..."
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$OVERRIDE_FILE" down -v

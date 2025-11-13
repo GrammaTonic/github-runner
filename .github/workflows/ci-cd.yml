@@ -79,14 +79,14 @@ jobs:
         run: |
           docker pull "$NORMAL_IMAGE_TAG"
           echo "Pulled normal runner image: $NORMAL_IMAGE_TAG"
-      - name: Provision normal runner container in staging (skip registration)
+      - name: Provision normal runner container in staging
         env:
           RUNNER_LABELS: staging,ci,self-hosted
-          RUNNER_SKIP_REGISTRATION: true
+          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
         run: |
           echo "Provisioning normal runner container in staging..."
           echo "Using labels: $RUNNER_LABELS"
-          echo "Skip registration enabled for CI provisioning healthcheck"
+          echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
           docker compose -f docker/docker-compose.production.yml up -d
           echo "Checking if normal runner container is running..."
           if [ "$(docker ps -q -f name=github-runner-main)" ]; then
@@ -104,8 +104,8 @@ jobs:
             echo "ERROR: github-runner-main container does not exist. Skipping health check."
             exit 1
           fi
-          MAX_RETRIES=12
-          RETRY_INTERVAL=10
+          MAX_RETRIES=6
+          RETRY_INTERVAL=5
           for i in $(seq 1 $MAX_RETRIES); do
             HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-main)
             echo "Full health JSON: $HEALTH_JSON"
@@ -134,15 +134,15 @@ jobs:
             exit 1
             fi
           done
-      - name: Check normal runner container (skip-mode listener)
+      - name: Check normal runner container for GitHub connection
         run: |
-          echo "Verifying dummy Runner.Listener is present (skip mode)..."
-          if docker exec github-runner-main pgrep -fa Runner.Listener >/dev/null; then
-            echo "✅ Dummy Runner.Listener is running; skip-mode healthcheck satisfied."
+          echo "Checking normal runner container logs for GitHub connection..."
+          if docker logs github-runner-main | grep -q "Connected to GitHub"; then
+          echo "✅ Normal runner successfully connected to GitHub."
           else
-            echo "❌ Dummy Runner.Listener not found. Logs:"
-            docker logs github-runner-main || true
-            exit 1
+          echo "❌ Normal runner did NOT connect to GitHub. Printing logs for diagnostics:"
+          docker logs github-runner-main
+          exit 1
           fi
   provision-chrome-runner:
     name: Provision Chrome Runner For testing
@@ -172,14 +172,14 @@ jobs:
         run: |
           docker pull "$CHROME_IMAGE_TAG"
           echo "Pulled Chrome runner image: $CHROME_IMAGE_TAG"
-      - name: Provision Chrome runner container in staging (skip registration)
+      - name: Provision Chrome runner container in staging
         env:
           RUNNER_LABELS: chrome,ui-tests,extra-label
-          RUNNER_SKIP_REGISTRATION: true
+          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
         run: |
           echo "Provisioning Chrome runner container in staging..."
           echo "Using labels: $RUNNER_LABELS"
-          echo "Skip registration enabled for CI provisioning healthcheck"
+          echo "Injecting GITHUB_TOKEN from secrets.STAGING_GITHUB_TOKEN"
           docker compose -f docker/docker-compose.chrome.yml up -d
           echo "Checking if Chrome runner container is running..."
           RUNNING=$(docker ps --filter "name=github-runner-chrome" --filter "status=running" -q)
@@ -196,45 +196,45 @@ jobs:
           fi
       - name: Health check Chrome runner container
         run: |
-          echo "Checking health of Chrome runner container..."
-          MAX_RETRIES=12
-          RETRY_INTERVAL=10
-          for i in $(seq 1 $MAX_RETRIES); do
-            HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-chrome)
-            echo "Full health JSON: $HEALTH_JSON"
-            STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
-            FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
-            LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
-            echo "Health status: $STATUS"
-            echo "Failing streak: $FAILING_STREAK"
-            echo "Health logs: $LOGS"
-            if [ "$STATUS" = "healthy" ]; then
-              echo "Chrome runner container health is healthy."
-              break
-            elif [ "$STATUS" = "unhealthy" ]; then
-              echo "ERROR: Chrome runner container is unhealthy!"
-              exit 1
-            elif [ "$STATUS" = "starting" ]; then
-              if [ $i -lt $MAX_RETRIES ]; then
-                echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
-                sleep $RETRY_INTERVAL
+            echo "Checking health of Chrome runner container..."
+            MAX_RETRIES=6
+            RETRY_INTERVAL=5
+            for i in $(seq 1 $MAX_RETRIES); do
+              HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-chrome)
+              echo "Full health JSON: $HEALTH_JSON"
+              STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
+              FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
+              LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
+              echo "Health status: $STATUS"
+              echo "Failing streak: $FAILING_STREAK"
+              echo "Health logs: $LOGS"
+              if [ "$STATUS" = "healthy" ]; then
+                echo "Chrome runner container health is healthy."
+                break
+              elif [ "$STATUS" = "unhealthy" ]; then
+                echo "ERROR: Chrome runner container is unhealthy!"
+                exit 1
+              elif [ "$STATUS" = "starting" ]; then
+                if [ $i -lt $MAX_RETRIES ]; then
+                  echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
+                  sleep $RETRY_INTERVAL
+                else
+                  echo "WARNING: Chrome runner container health is still 'starting' after $MAX_RETRIES retries."
+                  exit 1
+                fi
               else
-                echo "WARNING: Chrome runner container health is still 'starting' after $MAX_RETRIES retries."
+                echo "Unknown health status: $STATUS"
                 exit 1
               fi
-            else
-              echo "Unknown health status: $STATUS"
-              exit 1
-            fi
-          done
-      - name: Check Chrome runner container (skip-mode listener)
+            done
+      - name: Check Chrome runner container for GitHub connection
         run: |
-          echo "Verifying dummy Runner.Listener is present (skip mode)..."
-          if docker exec github-runner-chrome pgrep -fa Runner.Listener >/dev/null; then
-            echo "✅ Dummy Runner.Listener is running; skip-mode healthcheck satisfied."
+          echo "Checking Chrome runner container logs for GitHub connection..."
+          if docker logs github-runner-chrome | grep -q "Connected to GitHub"; then
+            echo "✅ Chrome runner successfully connected to GitHub."
           else
-            echo "❌ Dummy Runner.Listener not found. Logs:"
-            docker logs github-runner-chrome || true
+            echo "❌ Chrome runner did NOT connect to GitHub. Printing logs for diagnostics:"
+            docker logs github-runner-chrome
             exit 1
           fi
       - name: Run playwright screenshot test on Chrome runner
@@ -243,7 +243,7 @@ jobs:
           chmod +x tests/integration/playwright_screenshot_integration.sh
           CONTAINER_NAME=github-runner-chrome tests/integration/playwright_screenshot_integration.sh
       - name: Upload Playwright screenshot artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-google-screenshot
           path: test-results/playwright/google_screenshot_*.png
@@ -276,9 +276,9 @@ jobs:
         run: |
           docker pull "$CHROME_GO_IMAGE_TAG"
           echo "Pulled Chrome-Go runner image: $CHROME_GO_IMAGE_TAG"
-      - name: Provision Chrome-Go runner container in staging (skip registration)
+      - name: Provision Chrome-Go runner container in staging
         env:
-          RUNNER_SKIP_REGISTRATION: true
+          GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           echo "Setting up Chrome-Go runner configuration..."
@@ -286,9 +286,8 @@ jobs:
           cp config/chrome-go-runner.env.example config/chrome-go-runner.env
           
           # Update the config file with actual values
-          sed -i.bak "s|GITHUB_TOKEN=ghp_your_personal_access_token_here|GITHUB_TOKEN=dummy|" config/chrome-go-runner.env
+          sed -i.bak "s|GITHUB_TOKEN=ghp_your_personal_access_token_here|GITHUB_TOKEN=$GITHUB_TOKEN|" config/chrome-go-runner.env
           sed -i.bak "s|GITHUB_REPOSITORY=your-username/your-repo-name|GITHUB_REPOSITORY=$GITHUB_REPOSITORY|" config/chrome-go-runner.env
-          sed -i.bak "s|^#\?RUNNER_SKIP_REGISTRATION=.*$|RUNNER_SKIP_REGISTRATION=true|" config/chrome-go-runner.env || echo "RUNNER_SKIP_REGISTRATION=true" >> config/chrome-go-runner.env
           
           echo "Provisioning Chrome-Go runner container in staging..."
           echo "Using configuration from config/chrome-go-runner.env"
@@ -312,45 +311,45 @@ jobs:
           fi
       - name: Health check Chrome-Go runner container
         run: |
-          echo "Checking health of Chrome-Go runner container..."
-          MAX_RETRIES=12
-          RETRY_INTERVAL=10
-          for i in $(seq 1 $MAX_RETRIES); do
-            HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-chrome-go)
-            echo "Full health JSON: $HEALTH_JSON"
-            STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
-            FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
-            LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
-            echo "Health status: $STATUS"
-            echo "Failing streak: $FAILING_STREAK"
-            echo "Health logs: $LOGS"
-            if [ "$STATUS" = "healthy" ]; then
-              echo "Chrome-Go runner container health is healthy."
-              break
-            elif [ "$STATUS" = "unhealthy" ]; then
-              echo "ERROR: Chrome-Go runner container is unhealthy!"
-              exit 1
-            elif [ "$STATUS" = "starting" ]; then
-              if [ $i -lt $MAX_RETRIES ]; then
-                echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
-                sleep $RETRY_INTERVAL
+            echo "Checking health of Chrome-Go runner container..."
+            MAX_RETRIES=6
+            RETRY_INTERVAL=5
+            for i in $(seq 1 $MAX_RETRIES); do
+              HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-chrome-go)
+              echo "Full health JSON: $HEALTH_JSON"
+              STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
+              FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
+              LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
+              echo "Health status: $STATUS"
+              echo "Failing streak: $FAILING_STREAK"
+              echo "Health logs: $LOGS"
+              if [ "$STATUS" = "healthy" ]; then
+                echo "Chrome-Go runner container health is healthy."
+                break
+              elif [ "$STATUS" = "unhealthy" ]; then
+                echo "ERROR: Chrome-Go runner container is unhealthy!"
+                exit 1
+              elif [ "$STATUS" = "starting" ]; then
+                if [ $i -lt $MAX_RETRIES ]; then
+                  echo "Health status is 'starting', waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
+                  sleep $RETRY_INTERVAL
+                else
+                  echo "WARNING: Chrome-Go runner container health is still 'starting' after $MAX_RETRIES retries."
+                  exit 1
+                fi
               else
-                echo "WARNING: Chrome-Go runner container health is still 'starting' after $MAX_RETRIES retries."
+                echo "Unknown health status: $STATUS"
                 exit 1
               fi
-            else
-              echo "Unknown health status: $STATUS"
-              exit 1
-            fi
-          done
-      - name: Check Chrome-Go runner container (skip-mode listener)
+            done
+      - name: Check Chrome-Go runner container for GitHub connection
         run: |
-          echo "Verifying dummy Runner.Listener is present (skip mode)..."
-          if docker exec github-runner-chrome-go pgrep -fa Runner.Listener >/dev/null; then
-            echo "✅ Dummy Runner.Listener is running; skip-mode healthcheck satisfied."
+          echo "Checking Chrome-Go runner container logs for GitHub connection..."
+          if docker logs github-runner-chrome-go | grep -q "Connected to GitHub"; then
+            echo "✅ Chrome-Go runner successfully connected to GitHub."
           else
-            echo "❌ Dummy Runner.Listener not found. Logs:"
-            docker logs github-runner-chrome-go || true
+            echo "❌ Chrome-Go runner did NOT connect to GitHub. Printing logs for diagnostics:"
+            docker logs github-runner-chrome-go
             exit 1
           fi
       - name: Verify Go installation in Chrome-Go runner
@@ -368,7 +367,7 @@ jobs:
           chmod +x tests/integration/playwright_screenshot_integration.sh
           CONTAINER_NAME=github-runner-chrome-go tests/integration/playwright_screenshot_integration.sh
       - name: Upload Playwright screenshot artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-chrome-go-google-screenshot
           path: test-results/playwright/google_screenshot_*.png
@@ -387,7 +386,7 @@ jobs:
           persist-credentials: false
       - name: Run GitHub Super Linter 
         id: lint
-        uses: super-linter/super-linter/slim@v8.2.1
+        uses: super-linter/super-linter/slim@v8.1.0
         env:
           DEFAULT_BRANCH: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref || github.ref_name }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -441,7 +440,7 @@ jobs:
           format: "sarif"
           output: "trivy-results.sarif"
       - name: Upload Trivy scan results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
@@ -538,13 +537,13 @@ jobs:
           echo "$PRIMARY_TAG" > build-normal-image-tag.txt
           echo "${{ steps.build.outputs.digest }}" > build-normal-image-digest.txt
       - name: Upload normal runner build image tag as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: build-normal-image-tag
           path: build-normal-image-tag.txt
           retention-days: 30
       - name: Upload normal runner build image digest as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: build-normal-image-digest
           path: build-normal-image-digest.txt
@@ -634,13 +633,13 @@ jobs:
           echo "$PRIMARY_TAG" > build-chrome-image-tag.txt
           echo "${{ steps.build-chrome.outputs.digest }}" > build-chrome-image-digest.txt
       - name: Upload Chrome build image tag as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: build-chrome-image-tag
           path: build-chrome-image-tag.txt
           retention-days: 30
       - name: Upload Chrome build image digest as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: build-chrome-image-digest
           path: build-chrome-image-digest.txt
@@ -730,13 +729,13 @@ jobs:
           echo "$PRIMARY_TAG" > build-chrome-go-image-tag.txt
           echo "${{ steps.build-chrome-go.outputs.digest }}" > build-chrome-go-image-digest.txt
       - name: Upload Chrome-Go build image tag as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: build-chrome-go-image-tag
           path: build-chrome-go-image-tag.txt
           retention-days: 30
       - name: Upload Chrome-Go build image digest as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: build-chrome-go-image-digest
           path: build-chrome-go-image-digest.txt
@@ -765,7 +764,7 @@ jobs:
           echo "Running unit tests for obsolete package detection..."
           tests/unit/package-validation.sh
       - name: Upload package validation results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: package-validation-results
@@ -1004,7 +1003,7 @@ jobs:
             exit 1
           fi
       - name: Upload comprehensive test results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test-results-${{ matrix.test-suite }}
@@ -1045,7 +1044,7 @@ jobs:
           chmod +x tests/user-deployment/test-user-experience.sh
           tests/user-deployment/test-user-experience.sh
       - name: Upload user deployment test results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: user-deployment-test-results
@@ -1071,7 +1070,7 @@ jobs:
           format: "sarif"
           output: "trivy-container-results.sarif"
       - name: Upload container scan results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: "trivy-container-results.sarif"
@@ -1095,7 +1094,7 @@ jobs:
           format: "sarif"
           output: "trivy-chrome-results.sarif"
       - name: Upload Chrome container scan results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: "trivy-chrome-results.sarif"
@@ -1119,7 +1118,7 @@ jobs:
           format: "sarif"
           output: "trivy-chrome-go-results.sarif"
       - name: Upload Chrome-Go container scan results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: "trivy-chrome-go-results.sarif"
@@ -1170,7 +1169,7 @@ jobs:
           fi
           cat deployment-report.md
       - name: Upload deployment report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: deployment-report
           path: deployment-report.md
