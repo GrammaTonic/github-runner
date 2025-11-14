@@ -35,7 +35,7 @@ Note: Documentation workflows and repo prompts were recently improved — see
 | **Python**                | 3.10+            | 3.10+            | ✅ Latest         |
 | **Playwright**            | -                | v1.55.0          | ✅ Latest         |
 | **Cypress**               | -                | v15.1.0          | ✅ Security Fixed |
-| **Chrome**                | -                | 140.0.7339.80    | ✅ Latest         |
+| **Chrome**                | -                | 142.0.7444.162   | ✅ Latest         |
 
 > 📋 For detailed version information, see [Version Overview](docs/VERSION_OVERVIEW.md)
 
@@ -66,7 +66,7 @@ Note: Documentation workflows and repo prompts were recently improved — see
 
 -- ✅ Applied critical security patches for prototype pollution and DoS vulnerabilities
 -- ✅ Optimized Docker image sizes with comprehensive cache cleaning
--- ✅ Enhanced Chrome Runner with latest Playwright (1.55.0), Cypress (15.1.0), and Chrome (140.0.7339.80)
+-- ✅ Enhanced Chrome Runner with latest Playwright (1.55.0), Cypress (15.1.0), and Chrome (142.0.7444.162)
 -- ✅ Standardized Docker build contexts for consistent CI/CD pipeline execution
 -- ✅ Implemented automated security advisory workflow with Trivy scanning (filesystem, container, Chrome runner)
 -- ✅ All security scan jobs and workflow files are now kept in sync across branches for reliable code scanning and compliance
