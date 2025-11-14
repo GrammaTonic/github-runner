@@ -71,7 +71,7 @@ This feature branch implements a **specialized Chrome runner** for GitHub Action
 ✅ **Playwright** - Microsoft's modern browser automation
 ✅ **Cypress** - JavaScript end-to-end testing framework
 ✅ **Selenium** - Industry standard web automation
-✅ **Node.js 24.7.0** - For npm-based testing tools (Chrome Runner only)
+✅ **Node.js 24.11.1** - For npm-based testing tools (Chrome Runner only)
 ✅ **Python 3** - For Python-based testing frameworks
 
 ### Performance Optimizations

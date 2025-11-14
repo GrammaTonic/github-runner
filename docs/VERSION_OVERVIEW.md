@@ -42,7 +42,7 @@ This document provides a comprehensive overview of all software versions, depend
 
 | Package           | Version                            | Purpose                |
 | ----------------- | ---------------------------------- | ---------------------- |
-| `nodejs`          | 24.7.0 (Chrome Runner only)        | JavaScript runtime     |
+| `nodejs`          | 24.11.1 (Chrome Runner only)       | JavaScript runtime     |
 | `npm`             | Latest available                   | Package manager        |
 | `python3`         | 3.10+ (Ubuntu 25.10 default)       | Python runtime         |
 | `python3-pip`     | Latest available                   | Python package manager |
@@ -76,7 +76,7 @@ This document provides a comprehensive overview of all software versions, depend
 | `flat`             | **5.0.2**  | ✅ **Security Fix** (VDB-216777, CVE-2020-36632) |
 | `sha.js`           | **2.4.12** | ✅ **Security Fix** (CVE-2025-9288)              |
 | `ws`               | **8.17.1** | ✅ **Security Fix** (CVE-2024-37890)             |
-| `nodejs`           | **24.7.0** | ✅ Latest LTS for Chrome Runner                  |
+| `nodejs`           | **24.11.1** | ✅ Latest LTS for Chrome Runner                  |
 
 ### Python Ecosystem
 
@@ -267,8 +267,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 ### Recent Changes
 
-- **2025-09-14**: Updated to Ubuntu 25.10 Questing, image version v2.0.9, Chrome 140.0.7339.80, Playwright 1.55.0, Cypress 15.1.0, Node.js 24.7.0 (Chrome Runner only), and architecture enforcement (amd64 only)
-- **2025-09-10**: Extensive documentation update for Ubuntu 24.04 LTS, image version v2.0.2, Node.js 24.7.0 (Chrome Runner only), and architecture enforcement (amd64 only)
+- **2025-09-14**: Updated to Ubuntu 25.10 Questing, image version v2.0.9, Chrome 140.0.7339.80, Playwright 1.55.0, Cypress 15.1.0, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
+- **2025-09-10**: Extensive documentation update for Ubuntu 24.04 LTS, image version v2.0.2, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
 - **2025-01-15**: Applied VDB-216777/CVE-2020-36632 flat package security fix
 - **2025-01-15**: Added comprehensive security patches for Chrome Runner
 - **2025-01-15**: Implemented comprehensive cache cleaning strategy

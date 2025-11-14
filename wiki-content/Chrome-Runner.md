@@ -98,7 +98,7 @@ jobs:
 - ✅ **Playwright v1.55.0** - Microsoft's modern browser automation (latest stable)
 - ✅ **Cypress v15.1.0** - JavaScript end-to-end testing (security patched)
 - ✅ **Selenium** - Industry standard web automation with webdriver-manager
-✅ **Node.js 24.7.0** - For npm-based testing tools (Chrome Runner only)
+✅ **Node.js 24.11.1** - For npm-based testing tools (Chrome Runner only)
 - ✅ **Python 3** - For Python-based testing frameworks
 
 #### **Security Patches Applied** 🔒

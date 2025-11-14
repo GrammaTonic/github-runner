@@ -301,6 +301,7 @@ security-scan-results/
 *.sarif
 trivy-results.json
 snyk-results.json
+.trivy-tmp
 
 # ===============================
 # Local Development Overrides

@@ -28,7 +28,7 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 | ------------------------- | --------------- | ------------- | ----------------- |
 | **Image Version**         | v2.0.2          | v2.0.2        | ✅ Latest         |
 | **GitHub Actions Runner** | v2.329.0        | v2.329.0      | ✅ Latest         |
-| **Node.js**               | -               | 24.7.0        | ✅ Chrome Runner Only |
+| **Node.js**               | -               | 24.11.1       | ✅ Chrome Runner Only |
 | **Playwright**            | -               | v1.55.0       | ✅ Latest         |
 | **Cypress**               | -               | v15.1.0       | ✅ Security Fixed |
 
