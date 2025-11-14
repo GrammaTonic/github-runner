@@ -4,7 +4,7 @@ FROM ubuntu:questing
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"
 LABEL description="Base image for GitHub Actions Self-Hosted Runners"
-LABEL version="2.0.9"
+LABEL version="2.2.0"
 
 # Use TARGETPLATFORM which contains the full OS/architecture string (e.g., linux/amd64)
 ARG TARGETPLATFORM

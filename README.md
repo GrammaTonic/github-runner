@@ -28,13 +28,13 @@ Note: Documentation workflows and repo prompts were recently improved — see
 
 | Component                 | Standard Runner  | Chrome Runner    | Status            |
 | ------------------------- | ---------------- | ---------------- | ----------------- |
-| **Image Version**         | v2.0.9           | v2.0.9           | ✅ Latest         |
+| **Image Version**         | v2.2.0           | v2.2.0           | ✅ Latest         |
 | **GitHub Actions Runner** | v2.329.0         | v2.329.0         | ✅ Latest         |
 | **Base OS**               | Ubuntu 25.10 Questing | Ubuntu 25.10 Questing | ✅ Supported/Pre-release |
 | **Node.js**               |                  | 24.11.1          | ✅ Chrome Only    |
 | **Python**                | 3.10+            | 3.10+            | ✅ Latest         |
-| **Playwright**            | -                | v1.55.0          | ✅ Latest         |
-| **Cypress**               | -                | v15.1.0          | ✅ Security Fixed |
+| **Playwright**            | -                | v1.55.1          | ✅ Latest         |
+| **Cypress**               | -                | v13.15.0         | ✅ Security Fixed |
 | **Chrome**                | -                | 142.0.7444.162   | ✅ Latest         |
 
 > 📋 For detailed version information, see [Version Overview](docs/VERSION_OVERVIEW.md)
@@ -62,14 +62,12 @@ Note: Documentation workflows and repo prompts were recently improved — see
   - **Security Scanning**: Weekly Trivy scans (filesystem, container, Chrome runner) with automated SARIF reporting and GitHub Security tab integration
   - **Architecture Enforcement**: Chrome runner image only supports `linux/amd64` (x86_64). Builds on ARM (Apple Silicon) will fail with a clear error.
 
-### 🆕 Recent Improvements (September 2025)
+### 🆕 Recent Improvements (November 2025)
 
--- ✅ Applied critical security patches for prototype pollution and DoS vulnerabilities
--- ✅ Optimized Docker image sizes with comprehensive cache cleaning
--- ✅ Enhanced Chrome Runner with latest Playwright (1.55.0), Cypress (15.1.0), and Chrome (142.0.7444.162)
--- ✅ Standardized Docker build contexts for consistent CI/CD pipeline execution
--- ✅ Implemented automated security advisory workflow with Trivy scanning (filesystem, container, Chrome runner)
--- ✅ All security scan jobs and workflow files are now kept in sync across branches for reliable code scanning and compliance
+- ✅ Added npm override to force `tar@7.5.2` inside all embedded npm distributions, closing CVE-2024-47554 exposure paths.
+- ✅ Chrome runners updated to Chrome `142.0.7444.162`, Playwright `1.55.1`, and Cypress `13.15.0` with matching `@playwright/test` tooling.
+- ✅ Documentation, version catalog, and wiki refreshed for v2.2.0 with Questing base image guidance and security workflow parity.
+- ✅ Release automation continues to publish SBOMs and Trivy scan SARIF reports for every tagged build.
 
 ## 📦 Installation
 
@@ -93,9 +91,9 @@ cd github-runner
 ### Using Release Archive
 
 ```bash
-wget https://github.com/GrammaTonic/github-runner/archive/v2.0.2.tar.gz
-tar -xzf v2.0.2.tar.gz
-cd github-runner-2.0.2
+wget https://github.com/GrammaTonic/github-runner/archive/v2.2.0.tar.gz
+tar -xzf v2.2.0.tar.gz
+cd github-runner-2.2.0
 ```
 
 ### Using Docker Images
@@ -104,18 +102,18 @@ Pre-built Docker images are available for each release:
 
 ```bash
 # Standard Runner (latest)
-docker pull ghcr.io/grammatonic/github-runner:v2.0.2
+docker pull ghcr.io/grammatonic/github-runner:v2.2.0
 
 # Chrome Runner (latest)
-docker pull ghcr.io/grammatonic/github-runner-chrome:v2.0.2
+docker pull ghcr.io/grammatonic/github-runner-chrome:v2.2.0
 
 # Development versions
 docker pull ghcr.io/grammatonic/github-runner:develop
 docker pull ghcr.io/grammatonic/github-runner-chrome:develop
 
 # Semantic versioning
-docker pull ghcr.io/grammatonic/github-runner:2.0.2
-docker pull ghcr.io/grammatonic/github-runner:2.0
+docker pull ghcr.io/grammatonic/github-runner:2.2.0
+docker pull ghcr.io/grammatonic/github-runner:2.2
 docker pull ghcr.io/grammatonic/github-runner:2
 ```
 

@@ -14,7 +14,7 @@ This page covers the most frequently encountered issues and their solutions.
 - Error: "This version of ChromeDriver only supports Chrome version X"
 - ChromeDriver download failures from deprecated endpoints
 
-**Solution Applied** (Sep 4, 2025):
+**Solution Applied** (Nov 14, 2025):
 
 ```bash
 # Fixed implementation now using Chrome for Testing API
@@ -479,11 +479,11 @@ docker ps --filter "name=runner"
 gh api repos/OWNER/REPO/actions/runs --jq '.workflow_runs[] | select(.status=="queued")'
 ```
 
-## 📝 Documentation Parity & Recent Improvements (2025-09-10)
+## 📝 Documentation Parity & Recent Improvements (2025-11-14)
 
-- ChromeDriver installation now uses Chrome for Testing API for version compatibility
+- ChromeDriver installation continues to use Chrome for Testing API for version compatibility
 - Playwright screenshot artifact upload and diagnostics improved for CI/CD
-- All troubleshooting, resource configuration, and quick fixes synced with main documentation
+- All troubleshooting, resource configuration, and quick fixes for v2.2.0 synced with main documentation
 
 See [Home](Home.md) and [Chrome Runner Guide](Chrome-Runner.md) for full details.
 

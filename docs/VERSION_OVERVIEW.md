@@ -8,14 +8,14 @@ This document provides a comprehensive overview of all software versions, depend
 
 ### 1. Standard Runner (`docker/Dockerfile`)
 
-**Image Version**: v2.0.9
+**Image Version**: v2.2.0
 **Base Image**: `ubuntu:questing` (25.10 Pre-release)
 **Purpose**: General-purpose GitHub Actions runner with development tools
 **Target Architectures**: `linux/amd64` only
 
 ### 2. Chrome Runner (`docker/Dockerfile.chrome`)
 
-**Image Version**: v2.0.9
+**Image Version**: v2.2.0
 **Base Image**: `ubuntu:questing` (25.10 Pre-release)
 **Purpose**: Chrome-optimized runner for web UI testing and browser automation
 **Target Architectures**: `linux/amd64` only (ARM builds are blocked for Chrome runner)
@@ -70,9 +70,9 @@ This document provides a comprehensive overview of all software versions, depend
 
 | Package            | Version    | Security Status                                  |
 | ------------------ | ---------- | ------------------------------------------------ |
-| `playwright`       | **1.55.0** | ✅ Latest stable                                 |
-| `cypress`          | **15.1.0** | ✅ **Security Fix** (CVE-2025-9288)              |
-| `@playwright/test` | **1.55.0** | ✅ Test framework                                |
+| `playwright`       | **1.55.1** | ✅ Latest stable                                 |
+| `cypress`          | **13.15.0** | ✅ **Security Fix** (CVE-2025-9288)              |
+| `@playwright/test` | **1.55.1** | ✅ Test framework                                |
 | `flat`             | **5.0.2**  | ✅ **Security Fix** (VDB-216777, CVE-2020-36632) |
 | `sha.js`           | **2.4.12** | ✅ **Security Fix** (CVE-2025-9288)              |
 | `ws`               | **8.17.1** | ✅ **Security Fix** (CVE-2024-37890)             |
@@ -154,7 +154,7 @@ This document provides a comprehensive overview of all software versions, depend
 - **Package**: `sha.js` (JavaScript SHA implementation)
 - **Vulnerability**: Cryptographic weakness in Cypress dependency
 - **Fix Applied**:
-  - Upgraded Cypress to `15.1.0+`
+  - Upgraded Cypress to `13.15.0`
   - Force-installed `sha.js@2.4.12`
 - **Status**: ✅ **RESOLVED**
 - **Applied In**: Chrome Runner only
@@ -267,6 +267,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 ### Recent Changes
 
+- **2025-11-14**: Release v2.2.0 with npm `tar@7.5.2` override, Chrome 142.0.7444.162, Playwright 1.55.1, Cypress 13.15.0, and refreshed Questing-based documentation.
 - **2025-09-14**: Updated to Ubuntu 25.10 Questing, image version v2.0.9, Chrome 142.0.7444.162, Playwright 1.55.0, Cypress 15.1.0, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
 - **2025-09-10**: Extensive documentation update for Ubuntu 24.04 LTS, image version v2.0.2, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
 - **2025-01-15**: Applied VDB-216777/CVE-2020-36632 flat package security fix
@@ -283,6 +284,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 ---
 
-**Last Updated**: September 14, 2025 (Synced with code and workflows)
+**Last Updated**: November 14, 2025 (Synced with code and workflows)
 **Document Version**: 2.0  
 **Maintainer**: GrammaTonic

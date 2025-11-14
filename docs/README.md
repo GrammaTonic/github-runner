@@ -1,6 +1,6 @@
 # GitHub Runner Documentation
 
-This directory contains all project documentation organized by category. All documentation blocks, examples, and API docs are now synced with the latest code and workflow changes (as of 2025-09-14).
+This directory contains all project documentation organized by category. All documentation blocks, examples, and API docs are now synced with the latest code and workflow changes (as of 2025-11-14).
 
 ## 🛠️ Automated Documentation Validation
 
@@ -59,7 +59,8 @@ docs/
 
 ### Releases
 - [Changelog](releases/CHANGELOG.md) - Full release history
-- [Release Notes v2.1.0](releases/RELEASE_NOTES_v2.1.0.md) - Latest release information
+- [Release Notes v2.2.0](releases/RELEASE_NOTES_v2.2.0.md) - Latest release information
+- [Release Notes v2.1.0](releases/RELEASE_NOTES_v2.1.0.md)
 - [Release Notes v2.0.2](releases/RELEASE_NOTES_v2.0.2.md)
 - [Release Notes v1.1.1](releases/RELEASE_NOTES_v1.1.1.md)
 - [Release Notes v1.1.0](releases/RELEASE_NOTES_v1.1.0.md)

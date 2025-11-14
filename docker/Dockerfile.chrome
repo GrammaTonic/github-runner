@@ -11,7 +11,7 @@ FROM ubuntu:questing
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"
 LABEL description="Optimized GitHub Actions Self-Hosted Runner for Chrome and web UI testing"
-LABEL version="2.0.9"
+LABEL version="2.2.0"
 
 # Define arguments at the top for easy management
 ARG TARGETARCH
