@@ -11,9 +11,11 @@ ARG TARGETPLATFORM
 ARG RUNNER_VERSION="2.329.0"
 ARG CROSS_SPAWN_VERSION="7.0.6"
 ARG TAR_VERSION="7.5.2"
+ARG BRACE_EXPANSION_VERSION="2.0.2"
 ENV RUNNER_VERSION=${RUNNER_VERSION}
 ENV CROSS_SPAWN_VERSION=${CROSS_SPAWN_VERSION}
 ENV TAR_VERSION=${TAR_VERSION}
+ENV BRACE_EXPANSION_VERSION=${BRACE_EXPANSION_VERSION}
 
 # --- ENVIRONMENT VARIABLES ---
 ENV DEBIAN_FRONTEND=noninteractive
@@ -62,13 +64,13 @@ RUN set -e; \
         if [ -x "${NODE_ROOT}bin/node" ] && [ -d "${NODE_ROOT}lib/node_modules/npm" ]; then \
             NPM_DIR="${NODE_ROOT}lib/node_modules/npm"; \
             PATCH_DIR="$(mktemp -d)"; \
-            printf '{\n  "name": "runner-patch",\n  "private": true,\n  "version": "1.0.0",\n  "dependencies": {\n    "cross-spawn": "%s",\n    "tar": "%s"\n  }\n}\n' "${CROSS_SPAWN_VERSION}" "${TAR_VERSION}" > "${PATCH_DIR}/package.json"; \
+            printf '{\n  "name": "runner-patch",\n  "private": true,\n  "version": "1.0.0",\n  "dependencies": {\n    "cross-spawn": "%s",\n    "tar": "%s",\n    "brace-expansion": "%s"\n  }\n}\n' "${CROSS_SPAWN_VERSION}" "${TAR_VERSION}" "${BRACE_EXPANSION_VERSION}" > "${PATCH_DIR}/package.json"; \
             "${NODE_ROOT}bin/node" "${NPM_DIR}/bin/npm-cli.js" install --prefix="${PATCH_DIR}" --omit=dev --cache /tmp/npm-cache; \
-            rm -rf "${NPM_DIR}/node_modules/cross-spawn" "${NPM_DIR}/node_modules/tar"; \
+            rm -rf "${NPM_DIR}/node_modules/cross-spawn" "${NPM_DIR}/node_modules/tar" "${NPM_DIR}/node_modules/brace-expansion"; \
             cp -a "${PATCH_DIR}/node_modules/." "${NPM_DIR}/node_modules/"; \
             rm -rf "${PATCH_DIR}" "${NPM_DIR}/node_modules/.npm" /tmp/npm-cache; \
-    	fi; \
-        done
+        fi; \
+    done
 WORKDIR /home/runner
 
 # Copy the dedicated entrypoint
