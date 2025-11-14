@@ -7,10 +7,16 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 
 ## 🎯 **Latest Updates**
 
-### 🔒 **Critical Security Improvements** (January 15, 2025)
+### � **Release v2.2.0 Available** (November 14, 2025)
+
+- **Image Versions**: Standard Runner v2.2.0, Chrome Runner v2.2.0 with npm `tar@7.5.2` override
+- **Browser Stack**: Chrome 142.0.7444.162, Playwright 1.55.1, Cypress 13.15.0, Node.js 24.11.1
+- **Documentation Sync**: README, changelog, wiki, and release notes fully updated — see [Release Notes v2.2.0](../docs/releases/RELEASE_NOTES_v2.2.0.md)
+- **Quality Gates**: Docker validation, security scans, and runner self-tests passing ✅
+
+### �🔒 **Critical Security Improvements** (January 15, 2025)
 
 - **Security Patches**: ✅ VDB-216777/CVE-2020-36632, CVE-2025-9288, CVE-2024-37890 resolved
-**Version Updates**: Standard Runner v2.0.2, Chrome Runner v2.0.2 with latest security fixes
 - **Performance**: Optimized Docker images with comprehensive cache cleaning
 - **CI/CD**: Enhanced pipeline reliability with standardized Docker build contexts
 - **Monitoring**: Weekly Trivy security scans with automated SARIF reporting
@@ -19,18 +25,18 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 
 - **Status**: ✅ Production Ready - All 10/10 CI/CD checks passing
 - **Performance**: 60% faster web UI tests with resource isolation
-- **Latest Versions**: Playwright 1.55.0, Cypress 15.1.0 with security patches
+- **Latest Versions**: Playwright 1.55.1, Cypress 13.15.0 with security patches
 - **Documentation**: [Chrome Runner Guide](Chrome-Runner.md)
 
 ## 📊 **Current Versions**
 
-| Component                 | Standard Runner | Chrome Runner | Security Status   |
-| ------------------------- | --------------- | ------------- | ----------------- |
-| **Image Version**         | v2.0.2          | v2.0.2        | ✅ Latest         |
-| **GitHub Actions Runner** | v2.329.0        | v2.329.0      | ✅ Latest         |
-| **Node.js**               | -               | 24.11.1       | ✅ Chrome Runner Only |
-| **Playwright**            | -               | v1.55.0       | ✅ Latest         |
-| **Cypress**               | -               | v15.1.0       | ✅ Security Fixed |
+| Component                 | Standard Runner | Chrome Runner | Security Status         |
+| ------------------------- | --------------- | ------------- | ----------------------- |
+| **Image Version**         | v2.2.0          | v2.2.0        | ✅ Latest               |
+| **GitHub Actions Runner** | v2.329.0        | v2.329.0      | ✅ Latest               |
+| **Node.js**               | -               | 24.11.1       | ✅ Chrome Runner Only   |
+| **Playwright**            | -               | 1.55.1        | ✅ Latest               |
+| **Cypress**               | -               | 13.15.0       | ✅ Security Patched |
 
 > 📋 **Full Version Details**: [Version Overview](../docs/VERSION_OVERVIEW.md)
 
@@ -96,14 +102,13 @@ docker-compose up -d
 - [Docker Documentation](https://docs.docker.com/)
 - [Docker Compose Reference](https://docs.docker.com/compose/)
 
-## 📝 Documentation Parity & Recent Improvements (2025-09-10)
+## 📝 Documentation Parity & Recent Improvements (2025-11-14)
 
-- Playwright screenshot artifact upload now copies from container to host for reliable CI/CD artifact collection
-- Image verification added for both Chrome and normal runners in CI/CD workflows
-- Diagnostics and health checks improved for runner startup and container validation
-- Chrome runner documentation updated for Playwright, Cypress, Selenium, and browser automation best practices
-- Normal runner Dockerfile and entrypoint improved for diagnostics and healthcheck reliability
-- All documentation blocks, examples, and API docs synced with latest code and workflow changes
+- Release v2.2.0 documentation refreshed across README, changelog, wiki, and release notes
+- npm `tar@7.5.2` override documented for reproducible package installs and security posture
+- Chrome runner guidance updated for Playwright 1.55.1, Cypress 13.15.0, and Chrome 142.0.7444.162
+- Validation scripts and runner self-tests rerun to confirm Docker image health for release
+- Troubleshooting, quick start, and version tables synced with latest component inventory
 
 See [Chrome Runner Guide](Chrome-Runner.md) and [Version Overview](../docs/VERSION_OVERVIEW.md) for full details.
 
@@ -117,4 +122,4 @@ Found something missing or incorrect? We welcome contributions to improve this d
 
 ---
 
-_Last updated: September 4, 2025_
+_Last updated: November 14, 2025_

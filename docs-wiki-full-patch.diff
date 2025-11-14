@@ -47,7 +47,7 @@ index 5a676bc..e6a603d 100644
  # GitHub Runner Documentation
  
 -This directory contains all project documentation organized by category. All documentation blocks, examples, and API docs are now synced with the latest code and workflow changes (as of 2025-09-10).
-+This directory contains all project documentation organized by category. All documentation blocks, examples, and API docs are now synced with the latest code and workflow changes (as of 2025-09-14).
++This directory contains all project documentation organized by category. All documentation blocks, examples, and API docs are now synced with the latest code and workflow changes (as of 2025-11-14).
 +
 +## 🛠️ Automated Documentation Validation
 +
@@ -111,7 +111,8 @@ index 5a676bc..e6a603d 100644
  
  ### Releases
 +- [Changelog](releases/CHANGELOG.md) - Full release history
-+- [Release Notes v2.1.0](releases/RELEASE_NOTES_v2.1.0.md) - Latest release information
++- [Release Notes v2.2.0](releases/RELEASE_NOTES_v2.2.0.md) - Latest release information
++- [Release Notes v2.1.0](releases/RELEASE_NOTES_v2.1.0.md)
 +- [Release Notes v2.0.2](releases/RELEASE_NOTES_v2.0.2.md)
 +- [Release Notes v1.1.1](releases/RELEASE_NOTES_v1.1.1.md)
 +- [Release Notes v1.1.0](releases/RELEASE_NOTES_v1.1.0.md)
@@ -174,7 +175,7 @@ index 1a51ac1..c7d1da2 100644
  
 -**Image Version**: v2.0.2
 -**Base Image**: `ubuntu:24.04`
-+**Image Version**: v2.0.9
++**Image Version**: v2.2.0
 +**Base Image**: `ubuntu:questing` (25.10 Pre-release)
  **Purpose**: General-purpose GitHub Actions runner with development tools
  **Target Architectures**: `linux/amd64` only
@@ -183,7 +184,7 @@ index 1a51ac1..c7d1da2 100644
  
 -**Image Version**: v2.0.2
 -**Base Image**: `ubuntu:24.04`
-+**Image Version**: v2.0.9
++**Image Version**: v2.2.0
 +**Base Image**: `ubuntu:questing` (25.10 Pre-release)
  **Purpose**: Chrome-optimized runner for web UI testing and browser automation
  **Target Architectures**: `linux/amd64` only (ARM builds are blocked for Chrome runner)
@@ -313,7 +314,8 @@ index 1a51ac1..c7d1da2 100644
 +
  ### Recent Changes
  
-+- **2025-09-14**: Updated to Ubuntu 25.10 Questing, image version v2.0.9, Chrome 142.0.7444.162, Playwright 1.55.0, Cypress 15.1.0, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
++- **2025-11-14**: Release v2.2.0 with npm `tar@7.5.2` override, Chrome 142.0.7444.162, Playwright 1.55.1, Cypress 13.15.0, and refreshed Questing-based documentation.
++- **2025-09-14**: Updated to Ubuntu 25.10 Questing, image version v2.0.9, Chrome 142.0.7444.162, Playwright 1.55.0, Cypress 13.15.0, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
 - **2025-09-10**: Extensive documentation update for Ubuntu 24.04 LTS, image version v2.0.2, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
  - **2025-01-15**: Applied VDB-216777/CVE-2020-36632 flat package security fix
  - **2025-01-15**: Added comprehensive security patches for Chrome Runner
@@ -322,7 +324,7 @@ index 1a51ac1..c7d1da2 100644
  ---
  
 -**Last Updated**: September 10, 2025  
-+**Last Updated**: September 14, 2025 (Synced with code and workflows)
++**Last Updated**: November 14, 2025 (Synced with code and workflows)
  **Document Version**: 2.0  
  **Maintainer**: GrammaTonic
 diff --git a/docs/features/CHROME_RUNNER_FEATURE.md b/docs/features/CHROME_RUNNER_FEATURE.md

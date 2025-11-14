@@ -95,10 +95,10 @@ jobs:
 
 #### **Testing Frameworks**
 
-- ✅ **Playwright v1.55.0** - Microsoft's modern browser automation (latest stable)
-- ✅ **Cypress v15.1.0** - JavaScript end-to-end testing (security patched)
+- ✅ **Playwright 1.55.1** - Microsoft's modern browser automation (latest stable)
+- ✅ **Cypress 13.15.0** - JavaScript end-to-end testing (security patched)
 - ✅ **Selenium** - Industry standard web automation with webdriver-manager
-✅ **Node.js 24.11.1** - For npm-based testing tools (Chrome Runner only)
+- ✅ **Node.js 24.11.1** - For npm-based testing tools (Chrome Runner only)
 - ✅ **Python 3** - For Python-based testing frameworks
 
 #### **Security Patches Applied** 🔒
@@ -111,8 +111,8 @@ jobs:
 #### **GitHub Actions Runner**
 
 - ✅ **Version**: 2.329.0 (Latest stable)
-✅ **Image Version**: v2.0.2 (Chrome Runner)
-✅ **Architecture**: AMD64 only
+- ✅ **Image Version**: v2.2.0 (Chrome Runner)
+- ✅ **Architecture**: AMD64 only
 - ✅ **Auto-registration**: Automatic GitHub registration and cleanup
 - ✅ **Security**: Container hardening with non-root execution
 
@@ -456,24 +456,23 @@ The Chrome runner is automatically built and tested in the CI/CD pipeline:
 
 | Component        | Status       | Last Updated | Workflow               |
 | ---------------- | ------------ | ------------ | ---------------------- |
-| Docker Image     | ✅ Ready     | Sep 4, 2025  | 17475302211 ✅         |
-| CI/CD Pipeline   | ✅ Passing   | Sep 4, 2025  | 10/10 checks ✅        |
-| Security Scan    | ✅ Complete  | Sep 4, 2025  | Chrome Container ✅    |
-| Documentation    | ✅ Complete  | Sep 4, 2025  | Wiki Updated           |
+| Docker Image     | ✅ Ready     | Nov 14, 2025 | Release v2.2.0 ✅      |
+| CI/CD Pipeline   | ✅ Passing   | Nov 14, 2025 | 10/10 checks ✅        |
+| Security Scan    | ✅ Complete  | Nov 14, 2025 | Chrome Container ✅    |
+| Documentation    | ✅ Complete  | Nov 14, 2025 | Wiki Updated           |
 | ChromeDriver Fix | ✅ Resolved  | Sep 4, 2025  | Chrome for Testing API |
-| Testing Suite    | ✅ Validated | Sep 4, 2025  | All Tests Pass ✅      |
+| Testing Suite    | ✅ Validated | Nov 14, 2025 | Runner self-test ✅    |
 
-**Latest Achievement**: ✅ All CI/CD checks passing (10/10) - ChromeDriver installation issue resolved with modern Chrome for Testing API
+**Latest Achievement**: ✅ Release v2.2.0 shipped with npm tar override and refreshed Chrome 142 stack validated across runner self-tests.
 
 🎉 **The Chrome Runner is production-ready and successfully addresses web UI testing performance issues with 60% performance improvement!**
 
-## 📝 Documentation Parity & Recent Improvements (2025-09-10)
+## 📝 Documentation Parity & Recent Improvements (2025-11-14)
 
-- Playwright screenshot artifact upload now copies from container to host for reliable CI/CD artifact collection
-- Image verification added for both Chrome and normal runners in CI/CD workflows
-- Diagnostics and health checks improved for runner startup and container validation
-- Chrome runner documentation updated for Playwright, Cypress, Selenium, and browser automation best practices
-- ChromeDriver installation now uses Chrome for Testing API for version compatibility
-- All troubleshooting, quick start, and technical specs synced with main documentation
+- Chrome runner guidance updated for Chrome 142.0.7444.162, Playwright 1.55.1, and Cypress 13.15.0
+- npm `tar@7.5.2` override documented for deterministic npm installs and security posture
+- Docker validation, Trivy scans, and runner self-tests rerun to certify release v2.2.0
+- Troubleshooting, quick start, and performance guidance refreshed to match latest tooling updates
+- ChromeDriver installation continues to leverage Chrome for Testing API for automatic version alignment
 
-See [Home](Home) and [Version Overview](../docs/VERSION_OVERVIEW.md) for full details.
+See [Home](Home.md) and [Version Overview](../docs/VERSION_OVERVIEW.md) for full details.

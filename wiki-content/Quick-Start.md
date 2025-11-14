@@ -129,11 +129,11 @@ docker system prune -a -f
 
 ---
 
-## 📝 Documentation Parity & Recent Improvements (2025-09-10)
+## 📝 Documentation Parity & Recent Improvements (2025-11-14)
 
-- Quick start instructions, runner configuration, and troubleshooting synced with latest code and documentation
+- Quick start instructions, runner configuration, and troubleshooting synced with release v2.2.0
 - Chrome runner and standard runner setup updated for diagnostics and health checks
-- All workflow and test examples reflect current best practices
+- All workflow and test examples reflect current best practices for the new version
 
 
 See [Home](Home.md) and [Chrome Runner Guide](Chrome-Runner.md) for full details.

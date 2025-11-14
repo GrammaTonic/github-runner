@@ -1,9 +1,13 @@
-# [Unreleased]
-- Documentation updated to reflect use of `ubuntu:questing` (25.10 pre-release) as base image for all runners.
-- Added detailed explanation of CVE mitigation strategy, including npm overrides, Trivy scan automation, and audit workflow.
-- Migration notes for switching to stable Ubuntu LTS for production.
-- Reference: See PR #<PR_NUMBER> or commit <COMMIT_HASH>.
-## Unreleased
+# Changelog
+
+## [Unreleased]
+- Pending items
+
+## [v2.2.0] - 2025-11-14
+- Promote standard, Chrome, and Chrome-Go runner images to **v2.2.0**.
+- Force `tar@7.5.2`, `cross-spawn@7.0.6`, and `brace-expansion@2.0.2` into every npm distribution (system, global, embedded) to mitigate CVE-2024-47554 and related advisories.
+- Update Chrome runner stacks to Chrome **142.0.7444.162**, Playwright **1.55.1**, Cypress **13.15.0**, and Node.js **24.11.1**.
+- Refresh documentation, version overview, and wiki pages for Questing base image guidance and release automation workflow parity.
 
 ## v1.1.1 - 2025-01-15
 
