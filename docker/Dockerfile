@@ -64,7 +64,7 @@ RUN set -e; \
         if [ -x "${NODE_ROOT}bin/node" ] && [ -d "${NODE_ROOT}lib/node_modules/npm" ]; then \
             NPM_DIR="${NODE_ROOT}lib/node_modules/npm"; \
             PATCH_DIR="$(mktemp -d)"; \
-    printf '{\n  "name": "runner-patch",\n  "private": true,\n  "version": "1.0.0",\n  "dependencies": {\n    "cross-spawn": "%s",\n    "tar": "%s",\n    "brace-expansion": "%s"\n  }\n}\n' "${CROSS_SPAWN_VERSION}" "${TAR_VERSION}" "${BRACE_EXPANSION_VERSION}" > "${PATCH_DIR}/package.json"; \
+            printf '{\n  "name": "runner-patch",\n  "private": true,\n  "version": "1.0.0",\n  "dependencies": {\n    "cross-spawn": "%s",\n    "tar": "%s",\n    "brace-expansion": "%s"\n  }\n}\n' "${CROSS_SPAWN_VERSION}" "${TAR_VERSION}" "${BRACE_EXPANSION_VERSION}" > "${PATCH_DIR}/package.json"; \
             "${NODE_ROOT}bin/node" "${NPM_DIR}/bin/npm-cli.js" install --prefix="${PATCH_DIR}" --omit=dev --cache /tmp/npm-cache; \
             rm -rf "${NPM_DIR}/node_modules/cross-spawn" "${NPM_DIR}/node_modules/tar" "${NPM_DIR}/node_modules/brace-expansion"; \
             cp -a "${PATCH_DIR}/node_modules/." "${NPM_DIR}/node_modules/"; \
