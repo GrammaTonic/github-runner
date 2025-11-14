@@ -104,7 +104,7 @@ This document provides a comprehensive overview of all software versions, depend
 
 ### Google Chrome
 
-- **Version**: 140.0.7339.80 (Stable channel)
+- **Version**: 142.0.7444.162 (Stable channel)
 - **Installation**: Official Google repository
 - **GPG Key**: Verified from `dl.google.com`
 - **Binary Path**: `/usr/bin/google-chrome-stable`
@@ -267,7 +267,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 ### Recent Changes
 
-- **2025-09-14**: Updated to Ubuntu 25.10 Questing, image version v2.0.9, Chrome 140.0.7339.80, Playwright 1.55.0, Cypress 15.1.0, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
+- **2025-09-14**: Updated to Ubuntu 25.10 Questing, image version v2.0.9, Chrome 142.0.7444.162, Playwright 1.55.0, Cypress 15.1.0, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
 - **2025-09-10**: Extensive documentation update for Ubuntu 24.04 LTS, image version v2.0.2, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
 - **2025-01-15**: Applied VDB-216777/CVE-2020-36632 flat package security fix
 - **2025-01-15**: Added comprehensive security patches for Chrome Runner
