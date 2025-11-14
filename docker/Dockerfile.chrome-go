@@ -23,6 +23,7 @@ ARG PLAYWRIGHT_VERSION="1.55.1"
 ARG PLAYWRIGHT_TEST_VERSION="1.55.1"
 ARG CROSS_SPAWN_VERSION="7.0.6"
 ARG TAR_VERSION="7.5.2"
+ARG BRACE_EXPANSION_VERSION="2.0.2"
 
 # Environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -39,6 +40,7 @@ ENV PLAYWRIGHT_VERSION=${PLAYWRIGHT_VERSION}
 ENV PLAYWRIGHT_TEST_VERSION=${PLAYWRIGHT_TEST_VERSION}
 ENV CROSS_SPAWN_VERSION=${CROSS_SPAWN_VERSION}
 ENV TAR_VERSION=${TAR_VERSION}
+ENV BRACE_EXPANSION_VERSION=${BRACE_EXPANSION_VERSION}
 
 # Set SHELL to handle pipe errors correctly
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -128,20 +130,28 @@ RUN python3 -m venv /home/runner/venv \
 ENV PATH="/home/runner/venv/bin:$PATH"
 
 # --- INSTALL, NPM, PLAYWRIGHT, CYPRESS ---
-RUN npm config set prefix /home/runner/.npm \
-    && npm config set cache /home/runner/.npm-cache \
-    && npm install -g \
-    npm@${NPM_VERSION} \
-    cross-spawn@${CROSS_SPAWN_VERSION} \
-    tar@${TAR_VERSION} \
-    playwright@${PLAYWRIGHT_VERSION} \
-    @playwright/test@${PLAYWRIGHT_TEST_VERSION} \
-    cypress@13.15.0 \
-    && npm explore npm -g -- npm install cross-spawn@${CROSS_SPAWN_VERSION} tar@${TAR_VERSION} --omit=dev --package-lock=false \
-    && rm -rf /home/runner/.cache/Cypress \
-    && npm install playwright@${PLAYWRIGHT_VERSION} \
-    && npx playwright install chromium firefox --only-shell \
-    && npm cache clean --force
+RUN set -e; \
+    npm config set prefix /home/runner/.npm; \
+    npm config set cache /home/runner/.npm-cache; \
+    npm install -g npm@${NPM_VERSION}; \
+    npm install -g \
+        cross-spawn@${CROSS_SPAWN_VERSION} \
+        tar@${TAR_VERSION} \
+        brace-expansion@${BRACE_EXPANSION_VERSION} \
+        playwright@${PLAYWRIGHT_VERSION} \
+        @playwright/test@${PLAYWRIGHT_TEST_VERSION} \
+        cypress@13.15.0; \
+    PATCH_DIR="$(mktemp -d)"; \
+    printf '{\n  "name": "runner-patch",\n  "private": true,\n  "version": "1.0.0",\n  "dependencies": {\n    "cross-spawn": "%s",\n    "tar": "%s",\n    "brace-expansion": "%s"\n  }\n}\n' "${CROSS_SPAWN_VERSION}" "${TAR_VERSION}" "${BRACE_EXPANSION_VERSION}" > "${PATCH_DIR}/package.json"; \
+    npm install --prefix="${PATCH_DIR}" --omit=dev --cache /tmp/npm-cache; \
+    NPM_GLOBAL_DIR="/home/runner/.npm/lib/node_modules/npm/node_modules"; \
+    rm -rf "${NPM_GLOBAL_DIR}/cross-spawn" "${NPM_GLOBAL_DIR}/tar" "${NPM_GLOBAL_DIR}/brace-expansion"; \
+    cp -a "${PATCH_DIR}/node_modules/." "${NPM_GLOBAL_DIR}/"; \
+    rm -rf "${PATCH_DIR}" "${NPM_GLOBAL_DIR}/.npm" /tmp/npm-cache; \
+    rm -rf /home/runner/.cache/Cypress; \
+    npm install playwright@${PLAYWRIGHT_VERSION}; \
+    npx playwright install chromium firefox --only-shell; \
+    npm cache clean --force
 
 # --- INSTALL GITHUB ACTIONS RUNNER ---
 ARG RUNNER_VERSION
