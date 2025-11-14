@@ -22,6 +22,7 @@ ARG NPM_VERSION="11.6.2"
 ARG PLAYWRIGHT_VERSION="1.55.1"
 ARG PLAYWRIGHT_TEST_VERSION="1.55.1"
 ARG CROSS_SPAWN_VERSION="7.0.6"
+ARG TAR_VERSION="7.5.2"
 
 # Environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -37,6 +38,7 @@ ENV NPM_VERSION=${NPM_VERSION}
 ENV PLAYWRIGHT_VERSION=${PLAYWRIGHT_VERSION}
 ENV PLAYWRIGHT_TEST_VERSION=${PLAYWRIGHT_TEST_VERSION}
 ENV CROSS_SPAWN_VERSION=${CROSS_SPAWN_VERSION}
+ENV TAR_VERSION=${TAR_VERSION}
 
 # Set SHELL to handle pipe errors correctly
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -104,8 +106,8 @@ RUN curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-l
     && tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 --no-same-owner \
     && rm -rf /tmp/node.tar.xz \
     && npm install -g npm@${NPM_VERSION} \
-    && npm install -g cross-spawn@${CROSS_SPAWN_VERSION} \
-    && npm explore npm -g -- npm install cross-spawn@${CROSS_SPAWN_VERSION} --omit=dev --package-lock=false \
+    && npm install -g cross-spawn@${CROSS_SPAWN_VERSION} tar@${TAR_VERSION} \
+    && npm explore npm -g -- npm install cross-spawn@${CROSS_SPAWN_VERSION} tar@${TAR_VERSION} --omit=dev --package-lock=false \
     && npm cache clean --force
 
 # --- INSTALL GO ---
@@ -131,10 +133,11 @@ RUN npm config set prefix /home/runner/.npm \
     && npm install -g \
     npm@${NPM_VERSION} \
     cross-spawn@${CROSS_SPAWN_VERSION} \
+    tar@${TAR_VERSION} \
     playwright@${PLAYWRIGHT_VERSION} \
     @playwright/test@${PLAYWRIGHT_TEST_VERSION} \
     cypress@13.15.0 \
-    && npm explore npm -g -- npm install cross-spawn@${CROSS_SPAWN_VERSION} --omit=dev --package-lock=false \
+    && npm explore npm -g -- npm install cross-spawn@${CROSS_SPAWN_VERSION} tar@${TAR_VERSION} --omit=dev --package-lock=false \
     && rm -rf /home/runner/.cache/Cypress \
     && npm install playwright@${PLAYWRIGHT_VERSION} \
     && npx playwright install chromium firefox --only-shell \
@@ -149,13 +152,16 @@ RUN curl -o "actions-runner.tar.gz" -L "https://github.com/actions/runner/releas
 
 # --- PATCH EMBEDDED NODE DISTRIBUTIONS ---
 RUN for NODE_ROOT in /actions-runner/externals/node*/ ; do \
-            if [ -x "${NODE_ROOT}bin/node" ] && [ -d "${NODE_ROOT}lib/node_modules/npm" ]; then \
-                NPM_DIR="${NODE_ROOT}lib/node_modules/npm"; \
-                rm -rf "${NPM_DIR}/node_modules/cross-spawn"; \
-                "${NODE_ROOT}bin/node" "${NPM_DIR}/bin/npm-cli.js" install cross-spawn@${CROSS_SPAWN_VERSION} --omit=dev --no-save --cache /tmp/npm-cache; \
-                rm -rf "${NPM_DIR}/node_modules/.npm" /tmp/npm-cache; \
-            fi; \
-        done
+    if [ -x "${NODE_ROOT}bin/node" ] && [ -d "${NODE_ROOT}lib/node_modules/npm" ]; then \
+        NPM_DIR="${NODE_ROOT}lib/node_modules/npm"; \
+        PATCH_DIR="$(mktemp -d)"; \
+        printf '{\n  "name": "runner-patch",\n  "private": true,\n  "version": "1.0.0",\n  "dependencies": {\n    "cross-spawn": "%s",\n    "tar": "%s"\n  }\n}\n' "${CROSS_SPAWN_VERSION}" "${TAR_VERSION}" > "${PATCH_DIR}/package.json"; \
+        "${NODE_ROOT}bin/node" "${NPM_DIR}/bin/npm-cli.js" install --prefix="${PATCH_DIR}" --omit=dev --cache /tmp/npm-cache; \
+        rm -rf "${NPM_DIR}/node_modules/cross-spawn" "${NPM_DIR}/node_modules/tar"; \
+        cp -a "${PATCH_DIR}/node_modules/." "${NPM_DIR}/node_modules/"; \
+        rm -rf "${PATCH_DIR}" "${NPM_DIR}/node_modules/.npm" /tmp/npm-cache; \
+    fi; \
+done
 WORKDIR /home/runner
 
 # --- VERIFICATION, HEALTHCHECK AND ENTRYPOINT ---
