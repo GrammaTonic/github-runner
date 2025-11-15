@@ -95,7 +95,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache \
     && apt-get update && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
-    ca-certificates git jq libicu-dev python3 python3-pip python3-venv \
+    ca-certificates curl git jq libicu-dev python3 python3-pip python3-venv \
     docker.io iputils-ping procps
 
 # --- USER AND DIRECTORIES ---
