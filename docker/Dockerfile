@@ -1,5 +1,5 @@
 # It includes system setup, user creation, and the GitHub Actions runner installation.
-FROM ubuntu:24.04
+FROM ubuntu:questing
 
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"

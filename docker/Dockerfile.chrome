@@ -1,11 +1,12 @@
-# Dockerfile for Chrome Runner (ubuntu:24.04)
+# Dockerfile for Chrome Runner (ubuntu:questing)
 #
-# This image uses ubuntu:24.04 LTS for stable browser dependencies.
+# This image uses ubuntu:questing (25.10 pre-release) for latest browser dependencies.
 # CVE mitigation is performed via npm overrides and local installs for all app-level dependencies.
 # CVEs in npm's internal modules are documented and monitored; see README.md and DEPLOYMENT.md.
 # Example: Trivy scan results are saved to test-results/docker/ for audit.
+# For production, use ubuntu:24.04 and rerun all security scans.
 # Use a specific version for reproducible builds
-FROM ubuntu:24.04
+FROM ubuntu:questing
 
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"
