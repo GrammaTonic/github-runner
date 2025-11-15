@@ -175,7 +175,7 @@ RUN curl -o "actions-runner.tar.gz" -L "https://github.com/actions/runner/releas
     && rm "./actions-runner.tar.gz"
 
 # --- PATCH EMBEDDED NODE DISTRIBUTIONS ---
-RUN --mount=type=cache,target=/tmp/npm-cache \
+RUN --mount=type=cache,target=/tmp/npm-cache,uid=0,gid=0 \
     for NODE_ROOT in /actions-runner/externals/node*/ ; do \
     if [ -x "${NODE_ROOT}bin/node" ] && [ -d "${NODE_ROOT}lib/node_modules/npm" ]; then \
         NPM_DIR="${NODE_ROOT}lib/node_modules/npm"; \
