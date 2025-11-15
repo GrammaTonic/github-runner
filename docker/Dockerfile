@@ -113,7 +113,7 @@ COPY --from=builder --chown=runner:runner /actions-runner /actions-runner
 WORKDIR /home/runner
 
 # Copy the dedicated entrypoint
-COPY --chown=runner:runner entrypoint.sh /entrypoint.sh
+COPY --chown=runner:runner docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 
