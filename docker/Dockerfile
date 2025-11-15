@@ -1,4 +1,5 @@
 # Multi-stage build for GitHub Actions Self-Hosted Runner
+# Optimized to reduce image size by separating build and runtime dependencies
 # Stage 1: Builder - Download and prepare runner with build tools
 FROM ubuntu:questing AS builder
 
