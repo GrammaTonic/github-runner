@@ -179,15 +179,23 @@ npm cache clean --force
 
 ---
 
-### 9. Multi-Stage Build Implementation (HIGH IMPACT)
-**Issue:** Single-stage build included build-time dependencies in final image  
-**Fix:** Implemented multi-stage Dockerfile with separate builder and runtime stages  
-**Impact:**
-- **Image size reduction: 370MB (~17% smaller)**
+### 9. Multi-Stage Build Implementation (HIGH IMPACT - Standard Runner Only)
+**Issue**: Single-stage build included build-time dependencies in final image  
+**Fix**: Implemented multi-stage Dockerfile with separate builder and runtime stages  
+**Impact**:
+- **Standard runner only**: Image size reduction of 370MB (~17% smaller)
 - Standard runner: 2.18GB → 1.81GB
 - Removed build-only dependencies from runtime (curl, build-essential)
 - Faster image pulls and deployments
 - Improved security (smaller attack surface)
+- **NOT suitable for Chrome variants** (see Future Optimizations for analysis)
+
+**Why Chrome Variants Don't Benefit:**
+- Chrome runners require full npm/node at runtime for Playwright/Cypress installation
+- Multi-stage build creates ~410MB overhead (duplicated npm modules)
+- Only ~15-20MB of build tools can be removed (curl, wget, unzip)
+- Net result: Larger images, not smaller
+- Future: Need alternative approach (pre-built browsers, selective caching)
 
 **Implementation:**
 ```dockerfile
@@ -204,7 +212,7 @@ RUN apt-get install ca-certificates git jq libicu-dev python3 docker.io iputils-
 COPY --from=builder /actions-runner /actions-runner
 ```
 
-**Benefits:**
+**Benefits (Standard Runner):**
 - Build tools not included in final image
 - Downloads happen in builder stage (still cached)
 - Runtime image only contains necessary dependencies
@@ -385,7 +393,17 @@ docker buildx prune --keep-storage 10GB  # Keep 10GB
 ### Medium Priority
 1. **Layer squashing** - Reduce layer count for faster pulls
 2. **Parallel npm installs** - Speed up package installation
-3. **Multi-stage builds for Chrome variants** - Apply same optimization to Chrome and Chrome-Go runners
+3. **Multi-stage builds for Chrome variants** - **EVALUATED: Not recommended**
+   - **Analysis**: Attempted multi-stage builds for Chrome and Chrome-Go runners
+   - **Finding**: Increases image size (~410MB larger) instead of reducing it
+   - **Reason**: Chrome runners require full npm/node functionality at runtime for:
+     - Playwright browser installation (`npx playwright install chromium`)
+     - Cypress installation and setup
+     - Runtime npm package patching for security fixes
+   - **Build tools removed**: Only ~15-20MB (curl, wget, unzip)
+   - **Overhead added**: Duplicated npm modules and build artifacts
+   - **Conclusion**: Multi-stage build overhead outweighs minimal savings
+   - **Alternative approach needed**: Investigate selective npm caching or pre-built browser images
 
 ### Low Priority
 5. **Alternative base images** - Test alpine, distroless for size
