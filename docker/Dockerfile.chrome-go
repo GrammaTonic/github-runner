@@ -1,12 +1,11 @@
-# Dockerfile for Chrome Runner (ubuntu:questing)
+# Dockerfile for Chrome Runner (ubuntu:24.04)
 #
-# This image uses ubuntu:questing (25.10 pre-release) for latest browser dependencies.
+# This image uses ubuntu:24.04 LTS for stable browser dependencies.
 # CVE mitigation is performed via npm overrides and local installs for all app-level dependencies.
 # CVEs in npm's internal modules are documented and monitored; see README.md and DEPLOYMENT.md.
 # Example: Trivy scan results are saved to test-results/docker/ for audit.
-# For production, use ubuntu:24.04 and rerun all security scans.
 # Use a specific version for reproducible builds
-FROM ubuntu:questing
+FROM ubuntu:24.04
 
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"
@@ -50,17 +49,23 @@ RUN if [ "$TARGETARCH" != "amd64" ]; then \
       echo "ERROR: Chrome runner image only supports linux/amd64 (x86_64)." && exit 1; \
     fi
 
-# --- SETUP APT FOR DOCKER IMAGES AND UP DATE UBUNTU ---
-RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker \
+# --- SETUP APT FOR DOCKER IMAGES AND UPDATE UBUNTU ---
+# Use BuildKit cache mounts for apt to speed up builds
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker \
     && echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker \
+    && rm -f /etc/apt/apt.conf.d/docker-clean \
+    && echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache \
     && apt-get update && apt-get upgrade -y \
     && apt-get autoremove -y \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean
 
 # --- INSTALL SYSTEM, NODE.JS, PYTHON, CHROME AND DRIVERS ---
 # hadolint ignore=DL3008,DL3015
-RUN apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update \
     && apt-get install -y --no-install-recommends \
     # Essential tools
     curl ca-certificates gnupg wget unzip xz-utils \
@@ -76,25 +81,26 @@ RUN apt-get update \
     python3 python3-pip python3-venv \
     # Playwright/Chromium/Chrome required libraries (Ubuntu 24.04 compatible)
     libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libgstreamer-plugins-good1.0-0 libgstreamer-plugins-bad1.0-0 gstreamer1.0-plugins-ugly libgtk-4-1 libgraphene-1.0-0 libatomic1 libxslt1.1 libwoff1 libvpx9 libevent-2.1-7 libopus0 libwebpdemux2 libavif16 libharfbuzz-icu0 libwebpmux3 libenchant-2-2 libsecret-1-0 libhyphen0 libmanette-0.2-0 libgles2 libx264-164 flite \
-    # Clean up APT cache, downloaded archives, and temporary files
-    && apt-get autoremove -y \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/log/* \
-    # hadolint ignore=SC2015
+    # Clean up (still useful for doc/man cleanup)
     && find /usr/share/doc -type f -delete 2>/dev/null || true \
     && find /usr/share/man -type f -delete 2>/dev/null || true
 
 # --- INSTALL CHROME AND CHROMEDRIVER ---
-RUN CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
-    && curl -fSL -o /tmp/chrome.zip "$CHROME_URL" \
-    && unzip -o /tmp/chrome.zip -d /opt/ \
-    && ln -sf /opt/chrome-linux64/chrome /usr/bin/google-chrome \
-    && rm -rf /tmp/chrome.zip \
+# Use BuildKit cache for downloads
+RUN --mount=type=cache,target=/tmp/downloads \
+    CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
     && CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" \
-    && curl -fSL -o /tmp/chromedriver.zip "$CHROMEDRIVER_URL" \
-    && unzip -o /tmp/chromedriver.zip -d /tmp/ \
+    && if [ ! -f /tmp/downloads/chrome-${CHROME_VERSION}.zip ]; then \
+        curl -fSL -o /tmp/downloads/chrome-${CHROME_VERSION}.zip "$CHROME_URL"; \
+       fi \
+    && if [ ! -f /tmp/downloads/chromedriver-${CHROME_VERSION}.zip ]; then \
+        curl -fSL -o /tmp/downloads/chromedriver-${CHROME_VERSION}.zip "$CHROMEDRIVER_URL"; \
+       fi \
+    && unzip -o /tmp/downloads/chrome-${CHROME_VERSION}.zip -d /opt/ \
+    && ln -sf /opt/chrome-linux64/chrome /usr/bin/google-chrome \
+    && unzip -o /tmp/downloads/chromedriver-${CHROME_VERSION}.zip -d /tmp/ \
     && mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
-    && rm -rf /tmp/chromedriver.zip
+    && rm -rf /tmp/chromedriver-linux64
 
 # --- CREATE USER AND DIRECTORIES ---
 RUN useradd -m -s /bin/bash runner \
@@ -104,15 +110,20 @@ RUN useradd -m -s /bin/bash runner \
     && chown -R runner:runner /home/runner /actions-runner
 
 # --- INSTALL NODE.JS ---
-RUN curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" -o /tmp/node.tar.xz \
-    && tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 --no-same-owner \
-    && rm -rf /tmp/node.tar.xz \
+# Use BuildKit cache for Node.js download
+RUN --mount=type=cache,target=/tmp/downloads \
+    --mount=type=cache,target=/root/.npm \
+    if [ ! -f /tmp/downloads/node-v${NODE_VERSION}-linux-x64.tar.xz ]; then \
+        curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" -o /tmp/downloads/node-v${NODE_VERSION}-linux-x64.tar.xz; \
+    fi \
+    && tar -xJf /tmp/downloads/node-v${NODE_VERSION}-linux-x64.tar.xz -C /usr/local --strip-components=1 --no-same-owner \
     && npm install -g npm@${NPM_VERSION} \
     && npm install -g cross-spawn@${CROSS_SPAWN_VERSION} tar@${TAR_VERSION} \
     && npm explore npm -g -- npm install cross-spawn@${CROSS_SPAWN_VERSION} tar@${TAR_VERSION} --omit=dev --package-lock=false \
     && npm cache clean --force
 
-RUN set -e; \
+RUN --mount=type=cache,target=/tmp/npm-cache \
+    set -e; \
     NPM_DIR="/usr/local/lib/node_modules/npm"; \
     if [ -d "${NPM_DIR}/node_modules" ]; then \
         PATCH_DIR="$(mktemp -d)"; \
@@ -120,14 +131,17 @@ RUN set -e; \
         npm install --prefix="${PATCH_DIR}" --omit=dev --cache /tmp/npm-cache; \
         rm -rf "${NPM_DIR}/node_modules/cross-spawn" "${NPM_DIR}/node_modules/tar" "${NPM_DIR}/node_modules/brace-expansion"; \
         cp -a "${PATCH_DIR}/node_modules/." "${NPM_DIR}/node_modules/"; \
-        rm -rf "${PATCH_DIR}" "${NPM_DIR}/node_modules/.npm" /tmp/npm-cache; \
+        rm -rf "${PATCH_DIR}" "${NPM_DIR}/node_modules/.npm"; \
     fi
 
 # --- INSTALL GO ---
-RUN GO_VERSION="1.25.4" \
-    && curl -fsSL "https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o /tmp/go.tar.gz \
-    && tar -C /usr/local -xzf /tmp/go.tar.gz \
-    && rm /tmp/go.tar.gz \
+# Use BuildKit cache for Go download
+RUN --mount=type=cache,target=/tmp/downloads \
+    GO_VERSION="1.25.4" \
+    && if [ ! -f /tmp/downloads/go${GO_VERSION}.linux-amd64.tar.gz ]; then \
+        curl -fsSL "https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o /tmp/downloads/go${GO_VERSION}.linux-amd64.tar.gz; \
+       fi \
+    && tar -C /usr/local -xzf /tmp/downloads/go${GO_VERSION}.linux-amd64.tar.gz \
     && ln -sf /usr/local/go/bin/go /usr/local/bin/go \
     && ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt \
     && ln -sf /usr/local/go/bin/godoc /usr/local/bin/godoc
@@ -141,7 +155,9 @@ RUN python3 -m venv /home/runner/venv \
 ENV PATH="/home/runner/venv/bin:$PATH"
 
 # --- INSTALL, NPM, PLAYWRIGHT, CYPRESS ---
-RUN set -e; \
+# Use BuildKit cache for npm packages
+RUN --mount=type=cache,target=/home/runner/.npm-cache \
+    set -e; \
     npm config set prefix /home/runner/.npm; \
     npm config set cache /home/runner/.npm-cache; \
     npm install -g npm@${NPM_VERSION}; \
@@ -154,14 +170,13 @@ RUN set -e; \
         cypress@13.15.0; \
     PATCH_DIR="$(mktemp -d)"; \
     printf '{\n  "name": "runner-patch",\n  "private": true,\n  "version": "1.0.0",\n  "dependencies": {\n    "cross-spawn": "%s",\n    "tar": "%s",\n    "brace-expansion": "%s"\n  }\n}\n' "${CROSS_SPAWN_VERSION}" "${TAR_VERSION}" "${BRACE_EXPANSION_VERSION}" > "${PATCH_DIR}/package.json"; \
-    npm install --prefix="${PATCH_DIR}" --omit=dev --cache /tmp/npm-cache; \
+    npm install --prefix="${PATCH_DIR}" --omit=dev --cache /home/runner/.npm-cache; \
     NPM_GLOBAL_DIR="/home/runner/.npm/lib/node_modules/npm/node_modules"; \
     rm -rf "${NPM_GLOBAL_DIR}/cross-spawn" "${NPM_GLOBAL_DIR}/tar" "${NPM_GLOBAL_DIR}/brace-expansion"; \
     cp -a "${PATCH_DIR}/node_modules/." "${NPM_GLOBAL_DIR}/"; \
-    rm -rf "${PATCH_DIR}" "${NPM_GLOBAL_DIR}/.npm" /tmp/npm-cache; \
-    rm -rf /home/runner/.cache/Cypress; \
+    rm -rf "${PATCH_DIR}" "${NPM_GLOBAL_DIR}/.npm" /home/runner/.cache/Cypress; \
     npm install playwright@${PLAYWRIGHT_VERSION}; \
-    npx playwright install chromium firefox --only-shell; \
+    echo "Skipping Playwright browser downloads - Chrome already installed"; \
     npm cache clean --force
 
 # --- INSTALL GITHUB ACTIONS RUNNER ---
@@ -172,7 +187,8 @@ RUN curl -o "actions-runner.tar.gz" -L "https://github.com/actions/runner/releas
     && rm "./actions-runner.tar.gz"
 
 # --- PATCH EMBEDDED NODE DISTRIBUTIONS ---
-RUN for NODE_ROOT in /actions-runner/externals/node*/ ; do \
+RUN --mount=type=cache,target=/tmp/npm-cache \
+    for NODE_ROOT in /actions-runner/externals/node*/ ; do \
     if [ -x "${NODE_ROOT}bin/node" ] && [ -d "${NODE_ROOT}lib/node_modules/npm" ]; then \
         NPM_DIR="${NODE_ROOT}lib/node_modules/npm"; \
         PATCH_DIR="$(mktemp -d)"; \
@@ -180,7 +196,7 @@ RUN for NODE_ROOT in /actions-runner/externals/node*/ ; do \
         "${NODE_ROOT}bin/node" "${NPM_DIR}/bin/npm-cli.js" install --prefix="${PATCH_DIR}" --omit=dev --cache /tmp/npm-cache; \
         rm -rf "${NPM_DIR}/node_modules/cross-spawn" "${NPM_DIR}/node_modules/tar" "${NPM_DIR}/node_modules/brace-expansion"; \
         cp -a "${PATCH_DIR}/node_modules/." "${NPM_DIR}/node_modules/"; \
-        rm -rf "${PATCH_DIR}" "${NPM_DIR}/node_modules/.npm" /tmp/npm-cache; \
+        rm -rf "${PATCH_DIR}" "${NPM_DIR}/node_modules/.npm"; \
     fi; \
 done
 WORKDIR /home/runner

@@ -1,5 +1,5 @@
 # It includes system setup, user creation, and the GitHub Actions runner installation.
-FROM ubuntu:questing
+FROM ubuntu:24.04
 
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"
@@ -23,18 +23,23 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Set SHELL to handle pipe errors correctly
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# --- SETUP APT FOR DOCKER IMAGES AND UP DATE UBUNTU ---
-RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker \
+# --- SETUP APT FOR DOCKER IMAGES AND UPDATE UBUNTU ---
+# Use BuildKit cache mounts for apt to speed up builds
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker \
     && echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker \
-    && apt-get update && apt-get upgrade -y \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -f /etc/apt/apt.conf.d/docker-clean \
+    && echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache \
+    && apt-get update && apt-get upgrade -y
 
 # --- SETUP AS ROOT USER ---
 # hadolint ignore=DL3008
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates gnupg git jq libicu-dev python3 python3-pip python3-venv \
-    docker.io build-essential iputils-ping \
-    && rm -rf /var/lib/apt/lists/*
+    docker.io build-essential iputils-ping
 
 # --- USER AND DIRECTORIES ---
 RUN useradd -m -s /bin/bash runner \
@@ -59,7 +64,8 @@ RUN set -e; \
         tar xzf "./actions-runner.tar.gz"; \
         rm "./actions-runner.tar.gz"
 
-RUN set -e; \
+RUN --mount=type=cache,target=/tmp/npm-cache \
+    set -e; \
     for NODE_ROOT in /actions-runner/externals/node*/ ; do \
         if [ -x "${NODE_ROOT}bin/node" ] && [ -d "${NODE_ROOT}lib/node_modules/npm" ]; then \
             NPM_DIR="${NODE_ROOT}lib/node_modules/npm"; \
@@ -68,7 +74,7 @@ RUN set -e; \
             "${NODE_ROOT}bin/node" "${NPM_DIR}/bin/npm-cli.js" install --prefix="${PATCH_DIR}" --omit=dev --cache /tmp/npm-cache; \
             rm -rf "${NPM_DIR}/node_modules/cross-spawn" "${NPM_DIR}/node_modules/tar" "${NPM_DIR}/node_modules/brace-expansion"; \
             cp -a "${PATCH_DIR}/node_modules/." "${NPM_DIR}/node_modules/"; \
-            rm -rf "${PATCH_DIR}" "${NPM_DIR}/node_modules/.npm" /tmp/npm-cache; \
+            rm -rf "${PATCH_DIR}" "${NPM_DIR}/node_modules/.npm"; \
         fi; \
     done
 WORKDIR /home/runner
