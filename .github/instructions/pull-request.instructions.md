@@ -34,6 +34,19 @@ git checkout <your-feature-branch>
 git rebase develop  # or 'main' depending on your target branch
 ```
 
+**Post-Merge Back-Sync (IMPORTANT after squash merging to main):**
+```bash
+# After merging a PR from develop to main with squash merge,
+# you MUST sync develop with main to prevent "ahead" status:
+
+git checkout develop
+git pull origin develop
+git merge main -m "chore: sync develop with main after squash merge"
+git push origin develop
+
+# This ensures develop stays in sync with main after squash merges
+```
+
 ### Summary
 
 <!-- Provide a brief summary of the changes in this pull request -->
