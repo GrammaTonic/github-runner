@@ -122,7 +122,7 @@ USER runner
 WORKDIR /home/runner
 
 # --- HEALTHCHECK AND ENTRYPOINT ---
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=5s --timeout=10s --start-period=60s --retries=3 \
     CMD pgrep -f "Runner.Listener" > /dev/null || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
