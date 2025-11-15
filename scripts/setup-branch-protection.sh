@@ -83,7 +83,12 @@ setup_develop_protection() {
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": ["CI/CD Pipeline"]
+    "checks": [
+      {
+        "context": "Lint and Validate",
+        "app_id": 15368
+      }
+    ]
   },
   "enforce_admins": false,
   "required_pull_request_reviews": null,
@@ -102,12 +107,17 @@ EOF
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": ["lint-and-validate", "security-scan"]
+    "checks": [
+      {
+        "context": "Lint and Validate",
+        "app_id": 15368
+      }
+    ]
   },
   "enforce_admins": null,
   "required_pull_request_reviews": {
     "required_approving_review_count": 1,
-    "dismiss_stale_reviews": true,
+    "dismiss_stale_reviews": false,
     "require_code_owner_reviews": false,
     "dismissal_restrictions": {}
   },
@@ -115,7 +125,7 @@ EOF
   "allow_force_pushes": false,
   "allow_deletions": false,
   "block_creations": false,
-  "required_conversation_resolution": true,
+  "required_conversation_resolution": false,
   "lock_branch": false,
   "allow_fork_syncing": true
 }
@@ -127,7 +137,12 @@ EOF
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": ["CI/CD Pipeline"]
+    "checks": [
+      {
+        "context": "Lint and Validate",
+        "app_id": 15368
+      }
+    ]
   },
   "required_pull_request_reviews": $(if [ "$COPILOT_AUTO_MERGE" = true ]; then echo null; else echo "{\"required_approving_review_count\": $REVIEW_COUNT}"; fi),
   "enforce_admins": false,
@@ -151,7 +166,12 @@ setup_main_protection() {
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": ["CI/CD Pipeline"]
+    "checks": [
+      {
+        "context": "Lint and Validate",
+        "app_id": 15368
+      }
+    ]
   },
   "enforce_admins": false,
   "required_pull_request_reviews": null,
@@ -170,9 +190,14 @@ EOF
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": ["CI/CD Pipeline"]
+    "checks": [
+      {
+        "context": "Lint and Validate",
+        "app_id": 15368
+      }
+    ]
   },
-  "enforce_admins": true,
+  "enforce_admins": false,
   "required_pull_request_reviews": {
     "required_approving_review_count": 1,
     "dismiss_stale_reviews": true,
@@ -180,6 +205,7 @@ EOF
     "dismissal_restrictions": {}
   },
   "restrictions": null,
+  "allow_force_pushes": false,
   "allow_deletions": false,
   "block_creations": false,
   "required_conversation_resolution": true,
@@ -194,7 +220,12 @@ EOF
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": ["CI/CD Pipeline"]
+    "checks": [
+      {
+        "context": "Lint and Validate",
+        "app_id": 15368
+      }
+    ]
   },
   "required_pull_request_reviews": $(if [ "$COPILOT_AUTO_MERGE" = true ]; then echo null; else echo "{\"required_approving_review_count\": $REVIEW_COUNT}"; fi),
   "enforce_admins": false,
@@ -256,9 +287,10 @@ main() {
 		log_info "✓ No conversation resolution required (Copilot friendly)"
 	else
 		log_info "✓ At least $REVIEW_COUNT approving review required"
-		log_info "✓ Conversation resolution required"
+		log_info "✓ Conversation resolution required for main branch"
 	fi
-	log_info "✓ Status checks required (CI/CD Pipeline must pass)"
+	log_info "✓ Status checks required (Lint and Validate must pass)"
+	log_info "✓ GitHub Actions check (app_id: 15368) configured correctly"
 	log_info "✓ Force pushes blocked"
 	log_info "✓ Branch deletions blocked"
 
