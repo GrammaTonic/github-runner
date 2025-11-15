@@ -54,15 +54,21 @@ RUN useradd -m -s /bin/bash runner \
 ARG RUNNER_VERSION
 USER runner
 WORKDIR /actions-runner
-RUN set -e; \
-        url="https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"; \
+# Use BuildKit cache for GitHub Actions runner download
+RUN --mount=type=cache,target=/tmp/downloads,uid=1001,gid=1001 \
+    set -e; \
+    url="https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"; \
+    cache_file="/tmp/downloads/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"; \
+    if [ ! -f "$cache_file" ]; then \
         for i in 1 2 3; do \
             echo "Downloading GitHub Actions Runner v${RUNNER_VERSION} (attempt $i)..."; \
-            if curl -fSL -o actions-runner.tar.gz "$url"; then break; fi; \
+            if curl -fSL -o "$cache_file" "$url"; then break; fi; \
             echo "Download failed, retrying in 3s..."; sleep 3; \
         done; \
-        tar xzf "./actions-runner.tar.gz"; \
-        rm "./actions-runner.tar.gz"
+    else \
+        echo "Using cached GitHub Actions Runner v${RUNNER_VERSION}"; \
+    fi; \
+    tar xzf "$cache_file"
 
 RUN --mount=type=cache,target=/tmp/npm-cache,uid=1001,gid=1001 \
     set -e; \

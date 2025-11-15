@@ -75,7 +75,48 @@ RUN --mount=type=cache,target=/tmp/downloads \
 
 ---
 
-### 4. BuildKit Cache Mounts for npm (HIGH IMPACT)
+### 4. BuildKit Cache Mounts for GitHub Actions Runner (HIGH IMPACT)
+**Issue:** GitHub Actions runner tarball (~150MB) re-downloaded on every build across all variants  
+**Fix:** Implemented `--mount=type=cache,target=/tmp/downloads` with version-specific caching and retry logic  
+**Impact:**
+- Runner tarball (150MB): Downloaded once per version, cached forever
+- **Saved per rebuild: ~150MB download**
+- Improved reliability with retry mechanism
+- Faster builds when runner version unchanged
+
+**Implementation:**
+```dockerfile
+RUN --mount=type=cache,target=/tmp/downloads,uid=1001,gid=1001 \
+    set -e; \
+    url="https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"; \
+    cache_file="/tmp/downloads/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"; \
+    if [ ! -f "$cache_file" ]; then \
+        for i in 1 2 3; do \
+            echo "Downloading GitHub Actions Runner v${RUNNER_VERSION} (attempt $i)..."; \
+            if curl -fSL -o "$cache_file" "$url"; then break; fi; \
+            echo "Download failed, retrying in 3s..."; sleep 3; \
+        done; \
+    else \
+        echo "Using cached GitHub Actions Runner v${RUNNER_VERSION}"; \
+    fi; \
+    tar xzf "$cache_file"
+```
+
+**Benefits:**
+- Cache persists across builds for same runner version
+- Version-specific caching allows multiple runner versions to coexist
+- Retry logic improves download reliability
+- Significantly faster CI/CD pipeline on cache hit
+- Reduced bandwidth usage and GitHub API rate limiting
+
+**Files Changed:**
+- `docker/Dockerfile` (runner download with cache)
+- `docker/Dockerfile.chrome` (runner download with cache)
+- `docker/Dockerfile.chrome-go` (runner download with cache)
+
+---
+
+### 5. BuildKit Cache Mounts for npm (HIGH IMPACT)
 **Issue:** npm packages re-downloaded and re-installed on every build  
 **Fix:** Implemented `--mount=type=cache` for npm cache directories  
 **Impact:**
@@ -97,7 +138,7 @@ RUN --mount=type=cache,target=/home/runner/.npm-cache \
 
 ---
 
-### 5. Remove Redundant Playwright Browsers (CRITICAL)
+### 6. Remove Redundant Playwright Browsers (CRITICAL)
 **Issue:** `npx playwright install chromium firefox` downloaded 400MB+ of browsers even though Chrome was already installed  
 **Fix:** Removed redundant browser downloads, added explanatory comment  
 **Impact:**
@@ -125,7 +166,7 @@ npm cache clean --force
 
 ---
 
-### 6. Consolidate APT Operations
+### 7. Consolidate APT Operations
 **Issue:** Multiple `apt-get update` calls and unnecessary cleanup with cache  
 **Fix:** Reduced to 2 main APT RUN commands with cache mounts, removed redundant cleanup  
 **Impact:**
@@ -138,7 +179,7 @@ npm cache clean --force
 
 ---
 
-### 7. Version Pinning (Already Done)
+### 8. Version Pinning (Already Done)
 **Status:** All external dependencies already pinned to specific versions  
 **Benefit:** Reproducible builds, better caching (versions in cache keys)
 
@@ -180,6 +221,7 @@ npm cache clean --force
 
 | Component | Size | Baseline | Optimized | Savings |
 |-----------|------|----------|-----------|---------|
+| GitHub Actions Runner | 150MB | ✅ Every build | ❌ Cached | 150MB |
 | Chrome | 150MB | ✅ Every build | ❌ Cached | 150MB |
 | Node.js | 50MB | ✅ Every build | ❌ Cached | 50MB |
 | Go | 130MB | ✅ Every build | ❌ Cached | 130MB |
@@ -187,7 +229,7 @@ npm cache clean --force
 | Playwright browsers | 400MB | ✅ Every build | ❌ Removed | 400MB |
 | APT packages | ~300MB | ✅ Every build | ❌ Cached | 300MB |
 | npm packages | ~200MB | ✅ Every build | ❌ Cached | 200MB |
-| **TOTAL** | **~1.2GB+** | **Per rebuild** | **Per rebuild** | **~1.2GB+** |
+| **TOTAL** | **~1.4GB+** | **Per rebuild** | **Per rebuild** | **~1.4GB+** |
 
 **Impact:** After first build, rebuilds download **near-zero** data (only changed dependencies).
 
