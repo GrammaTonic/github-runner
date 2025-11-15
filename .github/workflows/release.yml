@@ -239,19 +239,19 @@ jobs:
           output: "release-chrome-go-security-scan.sarif"
       - name: Upload security scan results (standard)
         if: matrix.scan == 'standard'
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "release-security-scan.sarif"
           category: "container-scan"
       - name: Upload security scan results (chrome)
         if: matrix.scan == 'chrome'
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "release-chrome-security-scan.sarif"
           category: "container-scan-chrome"
       - name: Upload security scan results (chrome-go)
         if: matrix.scan == 'chrome-go'
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "release-chrome-go-security-scan.sarif"
           category: "container-scan-chrome-go"
