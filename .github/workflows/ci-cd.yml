@@ -1173,4 +1173,4 @@ jobs:
         with:
           name: deployment-report
           path: deployment-report.md
-          retention-days: 90
+          retention-days: 30
