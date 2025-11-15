@@ -17,6 +17,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # --- SETUP APT AND INSTALL BUILD DEPENDENCIES ---
+# hadolint ignore=DL3008
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker \
