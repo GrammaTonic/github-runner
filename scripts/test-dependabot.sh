@@ -16,20 +16,20 @@ NC='\033[0m' # No Color
 # Test 1: Validate YAML syntax
 echo "Test 1: Validating dependabot.yml syntax..."
 if ruby -ryaml -e "YAML.load_file('.github/dependabot.yml')" 2>/dev/null; then
-    echo -e "${GREEN}✅ YAML syntax is valid${NC}"
+	echo -e "${GREEN}✅ YAML syntax is valid${NC}"
 else
-    echo -e "${RED}❌ YAML syntax is invalid${NC}"
-    exit 1
+	echo -e "${RED}❌ YAML syntax is invalid${NC}"
+	exit 1
 fi
 
 # Test 2: Check file exists
 echo ""
 echo "Test 2: Checking dependabot.yml exists..."
 if [ -f .github/dependabot.yml ]; then
-    echo -e "${GREEN}✅ dependabot.yml exists${NC}"
+	echo -e "${GREEN}✅ dependabot.yml exists${NC}"
 else
-    echo -e "${RED}❌ dependabot.yml not found${NC}"
-    exit 1
+	echo -e "${RED}❌ dependabot.yml not found${NC}"
+	exit 1
 fi
 
 # Test 3: Verify configuration structure
@@ -39,10 +39,10 @@ echo "Test 3: Verifying configuration structure..."
 # Check version
 VERSION=$(ruby -ryaml -e "puts YAML.load_file('.github/dependabot.yml')['version']")
 if [ "$VERSION" == "2" ]; then
-    echo -e "${GREEN}✅ Version is correct (2)${NC}"
+	echo -e "${GREEN}✅ Version is correct (2)${NC}"
 else
-    echo -e "${RED}❌ Version is incorrect: $VERSION${NC}"
-    exit 1
+	echo -e "${RED}❌ Version is incorrect: $VERSION${NC}"
+	exit 1
 fi
 
 # Count ecosystems
@@ -79,9 +79,9 @@ echo -e "${GREEN}✅ Found $DOCKERFILE_COUNT Dockerfile(s) to monitor${NC}"
 echo ""
 echo "Test 7: npm packages in Dockerfiles:"
 if grep -h "npm install" docker/Dockerfile* 2>/dev/null | grep -oE '@[0-9]+\.[0-9]+\.[0-9]+|[a-z-]+@[0-9]' | sort -u; then
-    echo -e "${GREEN}✅ Found npm packages to monitor${NC}"
+	echo -e "${GREEN}✅ Found npm packages to monitor${NC}"
 else
-    echo -e "${YELLOW}⚠️  No versioned npm packages found${NC}"
+	echo -e "${YELLOW}⚠️  No versioned npm packages found${NC}"
 fi
 
 # Test 8: Check repository settings
@@ -91,14 +91,14 @@ echo "  Checking via GitHub API..."
 
 # Try to get Dependabot status
 if command -v gh >/dev/null 2>&1; then
-    echo "  📡 Querying GitHub..."
-    gh api /repos/GrammaTonic/github-runner 2>/dev/null | jq -r '
+	echo "  📡 Querying GitHub..."
+	gh api /repos/GrammaTonic/github-runner 2>/dev/null | jq -r '
         "  Repository: \(.full_name)",
         "  Visibility: \(.visibility)",
         "  Default branch: \(.default_branch)"
     ' 2>/dev/null || echo "  ⚠️  Could not fetch repository details"
 else
-    echo -e "${YELLOW}  ⚠️  GitHub CLI not available${NC}"
+	echo -e "${YELLOW}  ⚠️  GitHub CLI not available${NC}"
 fi
 
 # Test 9: Verify target branch exists
@@ -106,9 +106,9 @@ echo ""
 echo "Test 9: Verifying target branch..."
 TARGET_BRANCH=$(ruby -ryaml -e "puts YAML.load_file('.github/dependabot.yml')['updates'][0]['target-branch']")
 if git show-ref --verify --quiet "refs/heads/$TARGET_BRANCH"; then
-    echo -e "${GREEN}✅ Target branch '$TARGET_BRANCH' exists locally${NC}"
+	echo -e "${GREEN}✅ Target branch '$TARGET_BRANCH' exists locally${NC}"
 else
-    echo -e "${YELLOW}⚠️  Target branch '$TARGET_BRANCH' not found locally${NC}"
+	echo -e "${YELLOW}⚠️  Target branch '$TARGET_BRANCH' not found locally${NC}"
 fi
 
 # Test 10: Summary
