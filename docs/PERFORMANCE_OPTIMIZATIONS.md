@@ -392,7 +392,7 @@ docker buildx prune --keep-storage 10GB  # Keep 10GB
 
 ### Medium Priority
 1. **Layer squashing** - Reduce layer count for faster pulls
-2. **Parallel npm installs** - Speed up package installation
+2. ~~**Parallel npm installs**~~ - ❌ **REJECTED** (see Rejected Optimizations below)
 3. **Multi-stage builds for Chrome variants** - **EVALUATED: Not recommended**
    - **Analysis**: Attempted multi-stage builds for Chrome and Chrome-Go runners
    - **Finding**: Increases image size (~410MB larger) instead of reducing it
@@ -406,10 +406,95 @@ docker buildx prune --keep-storage 10GB  # Keep 10GB
    - **Alternative approach needed**: Investigate selective npm caching or pre-built browser images
 
 ### Low Priority
-5. **Alternative base images** - Test alpine, distroless for size
-6. **Remote cache** - Share cache across CI/CD runners
-7. **Registry cache** - Use GitHub Container Registry as cache backend
-8. **Custom runner distribution** - Pre-built runner binary
+4. **Alternative base images** - Test alpine, distroless for size
+5. **Remote cache** - Share cache across CI/CD runners
+6. **Registry cache** - Use GitHub Container Registry as cache backend
+7. **Custom runner distribution** - Pre-built runner binary
+
+---
+
+## ❌ Rejected Optimizations (Evidence-Based Decisions)
+
+### 1. Parallel npm Package Installation
+
+**Status:** ❌ **REJECTED** (November 16, 2025)  
+**Branch:** feature/parallel-npm-installs  
+**Analysis:** [PARALLEL_NPM_RESULTS.md](features/PARALLEL_NPM_RESULTS.md)  
+**Workflows:** [#19396882450](https://github.com/GrammaTonic/github-runner/actions/runs/19396882450), [#19396967351](https://github.com/GrammaTonic/github-runner/actions/runs/19396967351)
+
+**Original Goal:**
+- Split npm installations into 3 parallel groups (security patches, Playwright, Cypress)
+- Expected savings: 20-23 seconds (46-53% faster npm installs)
+- Expected Chrome build time: 24s → 14-19s (17-37% faster)
+
+**Implementation:**
+```dockerfile
+# Group 1: Security patches (background job)
+{ npm install -g cross-spawn tar brace-expansion && echo "ok" > /tmp/npm_security.status; } &
+PID_SECURITY=$!
+
+# Group 2: Playwright (background job)
+{ npm install -g playwright @playwright/test && echo "ok" > /tmp/npm_playwright.status; } &
+PID_PLAYWRIGHT=$!
+
+# Group 3: Cypress (background job)
+{ npm install -g cypress@13.15.0 && echo "ok" > /tmp/npm_cypress.status; } &
+PID_CYPRESS=$!
+
+# Wait and verify
+wait $PID_SECURITY $PID_PLAYWRIGHT $PID_CYPRESS
+[ -f /tmp/npm_security.status ] || { echo "ERROR: Security packages failed"; exit 1; }
+[ -f /tmp/npm_playwright.status ] || { echo "ERROR: Playwright failed"; exit 1; }
+[ -f /tmp/npm_cypress.status ] || { echo "ERROR: Cypress failed"; exit 1; }
+```
+
+**Actual Results:**
+
+| Runner | Baseline (Sequential) | Parallel (Cached) | Delta | Impact |
+|--------|----------------------|-------------------|-------|--------|
+| **Chrome** | 24s | **32s** | +8s | ❌ **+33% SLOWER** |
+| **Standard** | 19s | **30s** | +11s | ❌ **+58% SLOWER** |
+
+**Root Cause Analysis:**
+
+1. **BuildKit Cache Already Optimal:**
+   - With layer cache, npm installations are instant (cached layers)
+   - No benefit from parallelization when cache hit
+   - Parallel only helps with cold cache (< 10% of builds)
+
+2. **Parallel Execution Overhead:**
+   - Shell process management: ~2-3 seconds per group
+   - Status file I/O: ~1-2 seconds
+   - Process synchronization (`wait`): ~1-2 seconds
+   - npm cache contention/lock thrashing: ~2-4 seconds
+   - **Total overhead: 6-11 seconds**
+
+3. **Evidence from Testing:**
+   - Workflow #19396967351 had **46 CACHED layers** (more than baseline's 29)
+   - Despite MORE cache hits, still 33-58% slower
+   - Proves overhead dominates any parallelization benefit
+
+**Decision Rationale:**
+
+- ❌ 33-58% performance regression in cached rebuilds (common case)
+- ❌ Added complexity: +28 lines per Dockerfile
+- ❌ Increased maintenance burden: status files, error handling, PID tracking
+- ❌ Higher cache invalidation risk
+- ❌ npm cache not designed for concurrent access
+- ✅ Sequential npm with BuildKit cache is already optimal
+
+**Lessons Learned:**
+
+1. ✅ Always measure cached AND uncached performance
+2. ✅ BuildKit layer caching makes sequential operations nearly instant
+3. ✅ Parallel execution overhead can exceed parallelization benefit
+4. ✅ Optimize for the common case (cached rebuilds, not cold builds)
+5. ✅ Complexity must justify measurable benefits
+
+**Would Reconsider If:**
+- Cache miss rate exceeded 50% (currently <10%)
+- Parallel overhead could be reduced to <1 second
+- npm supported lock-free concurrent installs
 
 ---
 
