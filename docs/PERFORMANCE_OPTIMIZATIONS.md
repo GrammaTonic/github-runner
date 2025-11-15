@@ -413,6 +413,45 @@ docker buildx prune --keep-storage 10GB  # Keep 10GB
 
 ---
 
+## 🔧 GitHub Actions Cache Configuration
+
+### Cross-Branch Cache Sharing
+
+**Challenge:** GitHub Actions cache is branch-scoped by default. When you build on a feature branch, the cache can't be accessed when building on `develop` or `main`, causing full rebuilds.
+
+**Solution:** We've configured multi-scope caching to share build cache across branches:
+
+```yaml
+# Standard configuration uses multiple cache scopes
+CACHE_FROM:
+  - type=gha                           # Default branch-scoped cache
+  - type=gha,scope=normal-runner       # Runner-specific cache
+  - type=gha,scope=buildcache          # Cross-branch shared cache
+
+CACHE_TO:
+  - type=gha,mode=max,scope=normal-runner
+  - type=gha,mode=max,scope=buildcache
+```
+
+**Benefits:**
+- ✅ Feature branch builds populate the `buildcache` scope
+- ✅ `develop` and `main` branch builds can leverage feature branch caches
+- ✅ Eliminates full rebuilds when merging PRs
+- ✅ Reduces CI/CD time and GitHub Actions usage
+
+**Cache Scopes Used:**
+- `normal-runner` - Standard runner builds
+- `chrome-runner` - Chrome runner builds  
+- `chrome-go-runner` - Chrome-Go runner builds
+- `buildcache` - Shared cache accessible by all branches
+
+**Limitations:**
+- GitHub Actions cache has a 10GB total limit per repository
+- Caches are evicted after 7 days of no access
+- Older caches may be evicted when limit is reached
+
+---
+
 ## 📝 Lessons Learned
 
 1. **BuildKit cache is essential** - Biggest single improvement for build speed

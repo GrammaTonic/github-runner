@@ -513,15 +513,18 @@ jobs:
           else
             echo "force_rebuild=false" >> $GITHUB_OUTPUT
             # Provide the default cache sources (multi-line) via GITHUB_ENV
-            printf "CACHE_FROM=type=gha\ntype=gha,scope=normal-runner\n" >> $GITHUB_ENV
-            printf "CACHE_TO=type=gha,mode=max,scope=normal-runner\n" >> $GITHUB_ENV
+            # Use cross-branch cache to leverage builds from feature branches and other branches
+            printf "CACHE_FROM=type=gha\ntype=gha,scope=normal-runner\ntype=gha,scope=buildcache\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=normal-runner\ntype=gha,mode=max,scope=buildcache\n" >> $GITHUB_ENV
             # Also emit as step outputs so other action inputs can reference them (multi-line)
             echo "cache_from<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha" >> $GITHUB_OUTPUT
             echo "type=gha,scope=normal-runner" >> $GITHUB_OUTPUT
+            echo "type=gha,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
             echo "cache_to<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha,mode=max,scope=normal-runner" >> $GITHUB_OUTPUT
+            echo "type=gha,mode=max,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           fi
       - name: Build and push normal runner Docker image
@@ -609,15 +612,18 @@ jobs:
           else
             echo "force_rebuild=false" >> $GITHUB_OUTPUT
             # Provide the default cache sources (multi-line) via GITHUB_ENV
-            printf "CACHE_FROM=type=gha\ntype=gha,scope=chrome-runner\n" >> $GITHUB_ENV
-            printf "CACHE_TO=type=gha,mode=max,scope=chrome-runner\n" >> $GITHUB_ENV
+            # Use cross-branch cache to leverage builds from feature branches and other branches
+            printf "CACHE_FROM=type=gha\ntype=gha,scope=chrome-runner\ntype=gha,scope=buildcache\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=chrome-runner\ntype=gha,mode=max,scope=buildcache\n" >> $GITHUB_ENV
             # Also emit as step outputs so other action inputs can reference them (multi-line)
             echo "cache_from<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha" >> $GITHUB_OUTPUT
             echo "type=gha,scope=chrome-runner" >> $GITHUB_OUTPUT
+            echo "type=gha,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
             echo "cache_to<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha,mode=max,scope=chrome-runner" >> $GITHUB_OUTPUT
+            echo "type=gha,mode=max,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           fi
       - name: Build and push Chrome runner image
@@ -705,15 +711,18 @@ jobs:
           else
             echo "force_rebuild=false" >> $GITHUB_OUTPUT
             # Provide the default cache sources (multi-line) via GITHUB_ENV
-            printf "CACHE_FROM=type=gha\ntype=gha,scope=chrome-go-runner\n" >> $GITHUB_ENV
-            printf "CACHE_TO=type=gha,mode=max,scope=chrome-go-runner\n" >> $GITHUB_ENV
+            # Use cross-branch cache to leverage builds from feature branches and other branches
+            printf "CACHE_FROM=type=gha\ntype=gha,scope=chrome-go-runner\ntype=gha,scope=buildcache\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=chrome-go-runner\ntype=gha,mode=max,scope=buildcache\n" >> $GITHUB_ENV
             # Also emit as step outputs so other action inputs can reference them (multi-line)
             echo "cache_from<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha" >> $GITHUB_OUTPUT
             echo "type=gha,scope=chrome-go-runner" >> $GITHUB_OUTPUT
+            echo "type=gha,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
             echo "cache_to<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha,mode=max,scope=chrome-go-runner" >> $GITHUB_OUTPUT
+            echo "type=gha,mode=max,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           fi
       - name: Build and push Chrome-Go runner image
