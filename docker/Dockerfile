@@ -64,7 +64,7 @@ RUN set -e; \
         tar xzf "./actions-runner.tar.gz"; \
         rm "./actions-runner.tar.gz"
 
-RUN --mount=type=cache,target=/tmp/npm-cache,uid=0,gid=0 \
+RUN --mount=type=cache,target=/tmp/npm-cache,uid=1001,gid=1001 \
     set -e; \
     for NODE_ROOT in /actions-runner/externals/node*/ ; do \
         if [ -x "${NODE_ROOT}bin/node" ] && [ -d "${NODE_ROOT}lib/node_modules/npm" ]; then \
