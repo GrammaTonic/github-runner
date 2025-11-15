@@ -123,11 +123,11 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/github-runner-chrome
           tags: |
-            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}-chrome
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}-chrome
-            type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}-chrome
+            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}
       - name: Build and push Chrome runner image
         id: build
         uses: docker/build-push-action@v6
@@ -137,13 +137,13 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=ghcr.io/grammatonic/github-runner:main-chrome
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/github-runner-chrome:main
           cache-to: type=gha,mode=max
           platforms: linux/amd64
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          image: ${{ env.REGISTRY }}/github-runner-chrome@${{ steps.build.outputs.digest }}
           format: spdx-json
           output-file: sbom-chrome.spdx.json
       - name: Upload SBOM as artifact
@@ -177,11 +177,11 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/github-runner-chrome-go
           tags: |
-            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}-chrome-go
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}-chrome-go
-            type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}-chrome-go
+            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}
       - name: Build and push Chrome-Go runner image
         id: build
         uses: docker/build-push-action@v6
@@ -191,13 +191,13 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=ghcr.io/grammatonic/github-runner:main-chrome-go
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/github-runner-chrome-go:main
           cache-to: type=gha,mode=max
           platforms: linux/amd64
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          image: ${{ env.REGISTRY }}/github-runner-chrome-go@${{ steps.build.outputs.digest }}
           format: spdx-json
           output-file: sbom-chrome-go.spdx.json
       - name: Upload SBOM as artifact
@@ -227,14 +227,14 @@ jobs:
         if: matrix.scan == 'chrome'
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-chrome-artifacts.outputs.image-digest }}
+          image-ref: ${{ env.REGISTRY }}/github-runner-chrome@${{ needs.build-chrome-artifacts.outputs.image-digest }}
           format: "sarif"
           output: "release-chrome-security-scan.sarif"
       - name: Run Trivy vulnerability scanner (chrome-go)
         if: matrix.scan == 'chrome-go'
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-chrome-go-artifacts.outputs.image-digest }}
+          image-ref: ${{ env.REGISTRY }}/github-runner-chrome-go@${{ needs.build-chrome-go-artifacts.outputs.image-digest }}
           format: "sarif"
           output: "release-chrome-go-security-scan.sarif"
       - name: Upload security scan results (standard)
