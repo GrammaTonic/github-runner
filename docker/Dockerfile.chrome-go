@@ -166,7 +166,7 @@ ENV PATH="/home/runner/venv/bin:$PATH"
 
 # --- INSTALL, NPM, PLAYWRIGHT, CYPRESS ---
 # Use BuildKit cache for npm packages
-RUN --mount=type=cache,target=/home/runner/.npm-cache \
+RUN --mount=type=cache,target=/home/runner/.npm-cache,uid=1001,gid=1001 \
     set -e; \
     npm config set prefix /home/runner/.npm; \
     npm config set cache /home/runner/.npm-cache; \
