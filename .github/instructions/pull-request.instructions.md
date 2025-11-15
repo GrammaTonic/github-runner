@@ -1,3 +1,9 @@
+---
+applyTo: '*'
+description: 'Comprehensive pull request template and instructions for copilot-assisted PR creation.'
+---
+
+
 ## 📋 Pull Request Description
 
 ### ⚠️ Pre-Submission Checklist
