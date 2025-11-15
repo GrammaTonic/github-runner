@@ -41,9 +41,10 @@ git rebase develop  # or 'main' depending on your target branch
 
 git checkout develop
 git pull origin develop
-git merge main -m "chore: sync develop with main after squash merge"
+git merge main -m "chore: sync develop with main after squash merge [skip ci]"
 git push origin develop
 
+# Adding [skip ci] prevents unnecessary CI/CD runs on back-sync commits
 # This ensures develop stays in sync with main after squash merges
 ```
 
