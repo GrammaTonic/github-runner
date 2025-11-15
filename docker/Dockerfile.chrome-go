@@ -8,15 +8,6 @@
 # Use a specific version for reproducible builds
 FROM ubuntu:questing
 
-# --- METADATA AND ARGUMENTS ---le for Chrome Runner (ubuntu:24.04)
-#
-# This image uses ubuntu:24.04 LTS for stable browser dependencies.
-# CVE mitigation is performed via npm overrides and local installs for all app-level dependencies.
-# CVEs in npm's internal modules are documented and monitored; see README.md and DEPLOYMENT.md.
-# Example: Trivy scan results are saved to test-results/docker/ for audit.
-# Use a specific version for reproducible builds
-FROM ubuntu:24.04
-
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"
 LABEL description="Optimized GitHub Actions Self-Hosted Runner for Chrome, Go, and web UI testing"
