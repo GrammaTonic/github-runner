@@ -2,7 +2,7 @@
 # Test Dependabot Configuration
 # This script validates the Dependabot setup and configuration
 
-set -e
+set -euo pipefail
 
 echo "🔍 Testing Dependabot Configuration..."
 echo ""

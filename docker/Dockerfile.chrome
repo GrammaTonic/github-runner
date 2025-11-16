@@ -1,20 +1,23 @@
 # Dockerfile for Chrome Runner (ubuntu:questing)
 #
-# This image uses ubuntu:questing (25.10 pre-release) for latest browser dependencies.
+# This image uses ubuntu:questing (25.10) for latest browser dependencies and multi-architecture support.
+# Supports both linux/amd64 and linux/arm64 architectures.
+# Chrome for Testing supports both ARM64 and AMD64 architectures since version 93+.
 # CVE mitigation is performed via npm overrides and local installs for all app-level dependencies.
 # CVEs in npm's internal modules are documented and monitored; see README.md and DEPLOYMENT.md.
 # Example: Trivy scan results are saved to test-results/docker/ for audit.
-# For production, use ubuntu:24.04 and rerun all security scans.
 # Use a specific version for reproducible builds
 FROM ubuntu:questing
 
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"
-LABEL description="Optimized GitHub Actions Self-Hosted Runner for Chrome and web UI testing"
+LABEL description="Optimized GitHub Actions Self-Hosted Runner for Chrome and web UI testing (multi-arch)"
 LABEL version="2.2.0"
 
 # Define arguments at the top for easy management
+ARG TARGETPLATFORM
 ARG TARGETARCH
+ARG TARGETOS
 ARG RUNNER_VERSION="2.329.0"
 ARG CHROME_VERSION="142.0.7444.162"
 ARG NODE_VERSION="24.11.1"
@@ -44,11 +47,6 @@ ENV BRACE_EXPANSION_VERSION=${BRACE_EXPANSION_VERSION}
 
 # Set SHELL to handle pipe errors correctly
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-# --- ARCHITECTURE CHECK ---
-RUN if [ "$TARGETARCH" != "amd64" ]; then \
-      echo "ERROR: Chrome runner image only supports linux/amd64 (x86_64)." && exit 1; \
-    fi
 
 # --- SETUP APT FOR DOCKER IMAGES AND UPDATE UBUNTU ---
 # Use BuildKit cache mounts for apt to speed up builds
@@ -88,20 +86,27 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 # --- INSTALL CHROME AND CHROMEDRIVER ---
 # Use BuildKit cache for downloads
+# NOTE: Chrome for Testing only provides linux64 (AMD64) builds, NOT linux-arm64
+# ARM64 support is limited to macOS (mac-arm64). For now, Chrome runners are AMD64-only.
 RUN --mount=type=cache,target=/tmp/downloads \
-    CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
-    && CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" \
-    && if [ ! -f /tmp/downloads/chrome-${CHROME_VERSION}.zip ]; then \
-        curl -fSL -o /tmp/downloads/chrome-${CHROME_VERSION}.zip "$CHROME_URL"; \
+    case ${TARGETARCH} in \
+        "amd64")  CHROME_ARCH="linux64"      ;; \
+        "arm64")  CHROME_ARCH="linux-arm64"  ;; \
+        *)        echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
+    esac; \
+    CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/${CHROME_ARCH}/chrome-${CHROME_ARCH}.zip" \
+    && CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/${CHROME_ARCH}/chromedriver-${CHROME_ARCH}.zip" \
+    && if [ ! -f /tmp/downloads/chrome-${CHROME_VERSION}-${CHROME_ARCH}.zip ]; then \
+        curl -fSL -o /tmp/downloads/chrome-${CHROME_VERSION}-${CHROME_ARCH}.zip "$CHROME_URL"; \
        fi \
-    && if [ ! -f /tmp/downloads/chromedriver-${CHROME_VERSION}.zip ]; then \
-        curl -fSL -o /tmp/downloads/chromedriver-${CHROME_VERSION}.zip "$CHROMEDRIVER_URL"; \
+    && if [ ! -f /tmp/downloads/chromedriver-${CHROME_VERSION}-${CHROME_ARCH}.zip ]; then \
+        curl -fSL -o /tmp/downloads/chromedriver-${CHROME_VERSION}-${CHROME_ARCH}.zip "$CHROMEDRIVER_URL"; \
        fi \
-    && unzip -o /tmp/downloads/chrome-${CHROME_VERSION}.zip -d /opt/ \
-    && ln -sf /opt/chrome-linux64/chrome /usr/bin/google-chrome \
-    && unzip -o /tmp/downloads/chromedriver-${CHROME_VERSION}.zip -d /tmp/ \
-    && mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
-    && rm -rf /tmp/chromedriver-linux64
+    && unzip -o /tmp/downloads/chrome-${CHROME_VERSION}-${CHROME_ARCH}.zip -d /opt/ \
+    && ln -sf /opt/chrome-${CHROME_ARCH}/chrome /usr/bin/google-chrome \
+    && unzip -o /tmp/downloads/chromedriver-${CHROME_VERSION}-${CHROME_ARCH}.zip -d /tmp/ \
+    && mv /tmp/chromedriver-${CHROME_ARCH}/chromedriver /usr/local/bin/chromedriver \
+    && rm -rf /tmp/chromedriver-${CHROME_ARCH}
 
 # --- CREATE USER AND DIRECTORIES ---
 RUN useradd -m -s /bin/bash runner \

@@ -1,10 +1,14 @@
 # Multi-stage build for GitHub Actions Self-Hosted Runner
 # Optimized to reduce image size by separating build and runtime dependencies
+# Supports multi-architecture builds (linux/amd64, linux/arm64)
 # Stage 1: Builder - Download and prepare runner with build tools
 FROM ubuntu:questing AS builder
 
 # --- METADATA AND ARGUMENTS ---
+# Multi-architecture build arguments (automatically provided by Docker Buildx)
 ARG TARGETPLATFORM
+ARG TARGETARCH
+ARG TARGETOS
 ARG RUNNER_VERSION="2.329.0"
 ARG CROSS_SPAWN_VERSION="7.0.6"
 ARG TAR_VERSION="7.5.2"
@@ -34,18 +38,24 @@ RUN useradd -m -s /bin/bash -u 1001 runner
 USER runner
 WORKDIR /actions-runner
 # Use BuildKit cache for GitHub Actions runner download
+# Architecture detection: Map Docker architecture names to GitHub runner architecture names
 RUN --mount=type=cache,target=/tmp/downloads,uid=1001,gid=1001 \
     set -e; \
-    url="https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"; \
-    cache_file="/tmp/downloads/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"; \
+    case ${TARGETARCH} in \
+        "amd64")  RUNNER_ARCH="x64"    ;; \
+        "arm64")  RUNNER_ARCH="arm64"  ;; \
+        *)        echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
+    esac; \
+    url="https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz"; \
+    cache_file="/tmp/downloads/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz"; \
     if [ ! -f "$cache_file" ]; then \
         for i in 1 2 3; do \
-            echo "Downloading GitHub Actions Runner v${RUNNER_VERSION} (attempt $i)..."; \
+            echo "Downloading GitHub Actions Runner v${RUNNER_VERSION} for ${RUNNER_ARCH} (attempt $i)..."; \
             if curl -fSL -o "$cache_file" "$url"; then break; fi; \
             echo "Download failed, retrying in 3s..."; sleep 3; \
         done; \
     else \
-        echo "Using cached GitHub Actions Runner v${RUNNER_VERSION}"; \
+        echo "Using cached GitHub Actions Runner v${RUNNER_VERSION} for ${RUNNER_ARCH}"; \
     fi; \
     tar xzf "$cache_file"
 
@@ -69,10 +79,11 @@ FROM ubuntu:questing AS runtime
 
 # --- METADATA ---
 LABEL maintainer="GrammaTonic"
-LABEL description="Multi-stage GitHub Actions Self-Hosted Runner (optimized)"
+LABEL description="Multi-stage GitHub Actions Self-Hosted Runner (optimized, multi-arch)"
 LABEL version="2.2.0"
 
 # --- ARGUMENTS FOR RUNTIME ---
+ARG TARGETARCH
 ARG RUNNER_VERSION="2.329.0"
 ARG CROSS_SPAWN_VERSION="7.0.6"
 ARG TAR_VERSION="7.5.2"

@@ -1,20 +1,24 @@
 # Dockerfile for Chrome-Go Runner (ubuntu:questing)
 #
-# This image uses ubuntu:questing (25.10 pre-release) for latest browser and Go dependencies.
+# This image uses ubuntu:questing (25.10) for latest browser and Go dependencies.
+# NOTE: Currently AMD64-only due to Chrome for Testing not providing linux-arm64 builds.
+# Chrome for Testing only provides linux64 (AMD64), NOT linux-arm64 (ARM64 limited to macOS).
+# Go official binaries available for both amd64 and arm64.
 # CVE mitigation is performed via npm overrides and local installs for all app-level dependencies.
 # CVEs in npm's internal modules are documented and monitored; see README.md and DEPLOYMENT.md.
 # Example: Trivy scan results are saved to test-results/docker/ for audit.
-# For production, use ubuntu:24.04 and rerun all security scans.
 # Use a specific version for reproducible builds
 FROM ubuntu:questing
 
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"
-LABEL description="Optimized GitHub Actions Self-Hosted Runner for Chrome, Go, and web UI testing"
+LABEL description="Optimized GitHub Actions Self-Hosted Runner for Chrome, Go, and web UI testing (multi-arch)"
 LABEL version="2.2.0"
 
 # Define arguments at the top for easy management
+ARG TARGETPLATFORM
 ARG TARGETARCH
+ARG TARGETOS
 ARG RUNNER_VERSION="2.329.0"
 ARG CHROME_VERSION="142.0.7444.162"
 ARG NODE_VERSION="24.11.1"
@@ -44,11 +48,6 @@ ENV BRACE_EXPANSION_VERSION=${BRACE_EXPANSION_VERSION}
 
 # Set SHELL to handle pipe errors correctly
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-# --- ARCHITECTURE CHECK ---
-RUN if [ "$TARGETARCH" != "amd64" ]; then \
-      echo "ERROR: Chrome runner image only supports linux/amd64 (x86_64)." && exit 1; \
-    fi
 
 # --- SETUP APT FOR DOCKER IMAGES AND UPDATE UBUNTU ---
 # Use BuildKit cache mounts for apt to speed up builds
@@ -88,20 +87,27 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 # --- INSTALL CHROME AND CHROMEDRIVER ---
 # Use BuildKit cache for downloads
+# NOTE: Chrome for Testing only provides linux64 (AMD64) builds, NOT linux-arm64
+# ARM64 support is limited to macOS (mac-arm64). For now, Chrome runners are AMD64-only.
 RUN --mount=type=cache,target=/tmp/downloads \
-    CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
-    && CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" \
-    && if [ ! -f /tmp/downloads/chrome-${CHROME_VERSION}.zip ]; then \
-        curl -fSL -o /tmp/downloads/chrome-${CHROME_VERSION}.zip "$CHROME_URL"; \
+    case ${TARGETARCH} in \
+        "amd64")  CHROME_ARCH="linux64"      ;; \
+        "arm64")  CHROME_ARCH="linux-arm64"  ;; \
+        *)        echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
+    esac; \
+    CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/${CHROME_ARCH}/chrome-${CHROME_ARCH}.zip" \
+    && CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/${CHROME_ARCH}/chromedriver-${CHROME_ARCH}.zip" \
+    && if [ ! -f /tmp/downloads/chrome-${CHROME_VERSION}-${CHROME_ARCH}.zip ]; then \
+        curl -fSL -o /tmp/downloads/chrome-${CHROME_VERSION}-${CHROME_ARCH}.zip "$CHROME_URL"; \
        fi \
-    && if [ ! -f /tmp/downloads/chromedriver-${CHROME_VERSION}.zip ]; then \
-        curl -fSL -o /tmp/downloads/chromedriver-${CHROME_VERSION}.zip "$CHROMEDRIVER_URL"; \
+    && if [ ! -f /tmp/downloads/chromedriver-${CHROME_VERSION}-${CHROME_ARCH}.zip ]; then \
+        curl -fSL -o /tmp/downloads/chromedriver-${CHROME_VERSION}-${CHROME_ARCH}.zip "$CHROMEDRIVER_URL"; \
        fi \
-    && unzip -o /tmp/downloads/chrome-${CHROME_VERSION}.zip -d /opt/ \
-    && ln -sf /opt/chrome-linux64/chrome /usr/bin/google-chrome \
-    && unzip -o /tmp/downloads/chromedriver-${CHROME_VERSION}.zip -d /tmp/ \
-    && mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
-    && rm -rf /tmp/chromedriver-linux64
+    && unzip -o /tmp/downloads/chrome-${CHROME_VERSION}-${CHROME_ARCH}.zip -d /opt/ \
+    && ln -sf /opt/chrome-${CHROME_ARCH}/chrome /usr/bin/google-chrome \
+    && unzip -o /tmp/downloads/chromedriver-${CHROME_VERSION}-${CHROME_ARCH}.zip -d /tmp/ \
+    && mv /tmp/chromedriver-${CHROME_ARCH}/chromedriver /usr/local/bin/chromedriver \
+    && rm -rf /tmp/chromedriver-${CHROME_ARCH}
 
 # --- CREATE USER AND DIRECTORIES ---
 RUN useradd -m -s /bin/bash runner \
@@ -112,12 +118,18 @@ RUN useradd -m -s /bin/bash runner \
 
 # --- INSTALL NODE.JS ---
 # Use BuildKit cache for Node.js download
+# Node.js supports both amd64 (x64) and arm64 architectures
 RUN --mount=type=cache,target=/tmp/downloads \
     --mount=type=cache,target=/root/.npm \
-    if [ ! -f /tmp/downloads/node-v${NODE_VERSION}-linux-x64.tar.xz ]; then \
-        curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" -o /tmp/downloads/node-v${NODE_VERSION}-linux-x64.tar.xz; \
+    case ${TARGETARCH} in \
+        "amd64")  NODE_ARCH="x64"    ;; \
+        "arm64")  NODE_ARCH="arm64"  ;; \
+        *)        echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
+    esac; \
+    if [ ! -f /tmp/downloads/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz ]; then \
+        curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz" -o /tmp/downloads/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz; \
     fi \
-    && tar -xJf /tmp/downloads/node-v${NODE_VERSION}-linux-x64.tar.xz -C /usr/local --strip-components=1 --no-same-owner \
+    && tar -xJf /tmp/downloads/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz -C /usr/local --strip-components=1 --no-same-owner \
     && npm install -g npm@${NPM_VERSION} \
     && npm install -g cross-spawn@${CROSS_SPAWN_VERSION} tar@${TAR_VERSION} \
     && npm explore npm -g -- npm install cross-spawn@${CROSS_SPAWN_VERSION} tar@${TAR_VERSION} --omit=dev --package-lock=false \
@@ -137,12 +149,18 @@ RUN --mount=type=cache,target=/tmp/npm-cache,uid=0,gid=0 \
 
 # --- INSTALL GO ---
 # Use BuildKit cache for Go download
+# Go supports both amd64 and arm64 architectures
 RUN --mount=type=cache,target=/tmp/downloads \
     GO_VERSION="1.25.4" \
-    && if [ ! -f /tmp/downloads/go${GO_VERSION}.linux-amd64.tar.gz ]; then \
-        curl -fsSL "https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o /tmp/downloads/go${GO_VERSION}.linux-amd64.tar.gz; \
+    && case ${TARGETARCH} in \
+        "amd64")  GO_ARCH="amd64"  ;; \
+        "arm64")  GO_ARCH="arm64"  ;; \
+        *)        echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
+       esac \
+    && if [ ! -f /tmp/downloads/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz ]; then \
+        curl -fsSL "https://golang.org/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz" -o /tmp/downloads/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz; \
        fi \
-    && tar -C /usr/local -xzf /tmp/downloads/go${GO_VERSION}.linux-amd64.tar.gz \
+    && tar -C /usr/local -xzf /tmp/downloads/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz \
     && ln -sf /usr/local/go/bin/go /usr/local/bin/go \
     && ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt \
     && ln -sf /usr/local/go/bin/godoc /usr/local/bin/godoc
@@ -184,18 +202,24 @@ RUN --mount=type=cache,target=/home/runner/.npm-cache,uid=1001,gid=1001 \
 ARG RUNNER_VERSION
 WORKDIR /actions-runner
 # Use BuildKit cache for GitHub Actions runner download
+# Architecture detection: Map Docker architecture names to GitHub runner architecture names
 RUN --mount=type=cache,target=/tmp/downloads,uid=1001,gid=1001 \
     set -e; \
-    url="https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"; \
-    cache_file="/tmp/downloads/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"; \
+    case ${TARGETARCH} in \
+        "amd64")  RUNNER_ARCH="x64"    ;; \
+        "arm64")  RUNNER_ARCH="arm64"  ;; \
+        *)        echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
+    esac; \
+    url="https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz"; \
+    cache_file="/tmp/downloads/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz"; \
     if [ ! -f "$cache_file" ]; then \
         for i in 1 2 3; do \
-            echo "Downloading GitHub Actions Runner v${RUNNER_VERSION} (attempt $i)..."; \
+            echo "Downloading GitHub Actions Runner v${RUNNER_VERSION} for ${RUNNER_ARCH} (attempt $i)..."; \
             if curl -fSL -o "$cache_file" "$url"; then break; fi; \
             echo "Download failed, retrying in 3s..."; sleep 3; \
         done; \
     else \
-        echo "Using cached GitHub Actions Runner v${RUNNER_VERSION}"; \
+        echo "Using cached GitHub Actions Runner v${RUNNER_VERSION} for ${RUNNER_ARCH}"; \
     fi; \
     tar xzf "$cache_file"
 

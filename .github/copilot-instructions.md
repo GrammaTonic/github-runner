@@ -9,6 +9,10 @@ This repository is for setting up and managing GitHub Actions self-hosted runner
 - ALWAYS follow the established development workflow and branch protection rules
 - NEVER create .md files in the root directory; all documentation must go in `/docs/` subdirectories
 - ALWAYS use the provided scripts for setup, deployment, and validation tasks
+- **ALWAYS use `ubuntu:questing` as the base image** for all Dockerfiles (standard, chrome, chrome-go variants)
+  - Ubuntu Questing (25.10) provides latest browser dependencies and system libraries
+  - Do NOT change to ubuntu:24.04 or any other base image without explicit user approval
+  - This is a deliberate choice for accessing bleeding-edge dependencies
 
 ## 🚨 CRITICAL WORKFLOW & BRANCH PROTECTION RULES
 
@@ -68,36 +72,52 @@ This repository is for setting up and managing GitHub Actions self-hosted runner
 
 ### Core Components (IMPLEMENTED)
 
-- **Dockerfile & Docker Images**: Custom GitHub runner Docker images with pre-installed tools
-- **Docker Compose Configuration**: Separate compose files implemented:
-  - `docker-compose.production.yml` - Standard runners
-  - `docker-compose.chrome.yml` - Chrome runners with browser support
+- **Dockerfile & Docker Images**: Custom GitHub runner Docker images with pre-installed tools (3 variants)
+- **Docker Compose Configuration**: Separate compose files for each runner type:
+  - `docker-compose.production.yml` - Standard runners with multi-stage build optimization
+  - `docker-compose.chrome.yml` - Chrome runners with browser support and Playwright
+  - `docker-compose.chrome-go.yml` - Chrome-Go runners with Go toolchain and browser support
 - **Configuration Management**: Environment variables and volume mounts for runner configuration
 - **Health Checks & Monitoring**: Container health monitoring and automatic restart policies
-- **CI/CD Pipeline**: Comprehensive testing and deployment automation
+- **CI/CD Pipeline**: Comprehensive testing and deployment automation with BuildKit caching
 - **Branch Protection**: Automated branch protection setup via scripts
+- **Dependabot Automation**: Auto-merge and auto-rebase workflows for zero-touch dependency updates
+- **Performance Optimizations**: BuildKit cache mounts, multi-stage builds, optimized image sizes
 
 ### Current Directory Structure
 
 ```
 ├── docker/
-│   ├── Dockerfile                     # Main runner image definition
-│   ├── Dockerfile.chrome              # Chrome runner image definition
-│   ├── docker-compose.production.yml  # Standard runner deployment (IMPLEMENTED)
-│   ├── docker-compose.chrome.yml      # Chrome runner deployment (IMPLEMENTED)
-│   ├── entrypoint.sh                  # Container startup script (IMPLEMENTED)
-│   └── entrypoint-chrome.sh           # Chrome runner startup script (IMPLEMENTED)
+│   ├── Dockerfile                     # Standard runner (multi-stage, optimized)
+│   ├── Dockerfile.chrome              # Chrome runner with Playwright
+│   ├── Dockerfile.chrome-go           # Chrome-Go runner with Go 1.25.4
+│   ├── docker-compose.production.yml  # Standard runner deployment
+│   ├── docker-compose.chrome.yml      # Chrome runner deployment
+│   ├── docker-compose.chrome-go.yml   # Chrome-Go runner deployment
+│   ├── entrypoint.sh                  # Container startup script
+│   └── entrypoint-chrome.sh           # Chrome/Chrome-Go startup script
 ├── config/
 │   ├── runner.env.example             # Standard runner configuration template
 │   ├── chrome-runner.env.example      # Chrome runner configuration template
-│   ├── runner.env                     # User's standard runner config (created from template)
-│   └── chrome-runner.env              # User's Chrome runner config (optional)
+│   ├── chrome-go-runner.env.example   # Chrome-Go runner configuration template
+│   ├── runner.env                     # User's standard runner config
+│   ├── chrome-runner.env              # User's Chrome runner config (optional)
+│   └── chrome-go-runner.env           # User's Chrome-Go runner config (optional)
 ├── scripts/
-│   ├── build.sh                       # Image building automation (IMPLEMENTED)
-│   ├── build-chrome.sh                # Chrome image building (IMPLEMENTED)
-│   ├── deploy.sh                      # Container deployment (IMPLEMENTED)
-│   ├── setup-branch-protection.sh     # Branch protection automation (IMPLEMENTED)
-│   └── check-docs-structure.sh        # Documentation validation (IMPLEMENTED)
+│   ├── build.sh                       # Standard image building with BuildKit
+│   ├── build-chrome.sh                # Chrome image building with BuildKit
+│   ├── deploy.sh                      # Container deployment automation
+│   ├── deploy-chrome-x86.sh           # Chrome runner x86 deployment
+│   ├── setup-branch-protection.sh     # Branch protection automation
+│   ├── check-docs-structure.sh        # Documentation validation
+│   └── test-dependabot.sh             # Dependabot configuration validation
+├── .github/
+│   ├── workflows/
+│   │   ├── ci-cd.yml                  # Main CI/CD pipeline with caching
+│   │   ├── dependabot-auto-merge.yml  # Auto-approve and merge Dependabot PRs
+│   │   ├── dependabot-rebase.yml      # Hourly rebase for out-of-date PRs
+│   │   └── release.yml                # Multi-variant release publishing
+│   └── dependabot.yml                 # Dependabot config (github-actions, docker)
 ├── cache/                             # Local cache directories (volume mounts)
 │   ├── build/                         # Build artifacts and intermediate files
 │   ├── deps/                          # Dependencies cache (npm, pip, etc.)
@@ -109,12 +129,14 @@ This repository is for setting up and managing GitHub Actions self-hosted runner
 │   ├── unit/                          # Unit tests
 │   ├── integration/                   # Integration tests
 │   ├── docker/                        # Docker validation tests
-│   └── security/                      # Security tests
+│   ├── security/                      # Security tests
+│   └── playwright/                    # Playwright screenshot tests
 └── docs/                              # Documentation (organized structure)
     ├── features/                      # Feature specifications
     ├── community/                     # Community guidelines
     ├── releases/                      # Release notes
-    └── archive/                       # Legacy documentation
+    ├── archive/                       # Legacy documentation
+    └── PERFORMANCE_*.md               # Performance baseline, optimizations, results
 ```
 
 │ └── entrypoint-chrome.sh # Chrome runner startup script
@@ -273,6 +295,54 @@ docker compose -f docker/docker-compose.chrome.yml up -d --scale github-runner-c
 
 **CRITICAL**: Direct pushes to `main` and `develop` are blocked by branch protection rules.
 
+### Post-Merge Back-Sync Workflow
+
+After merging a PR from `develop` to `main` with squash merge:
+
+```bash
+# Sync develop with main to prevent "ahead" status
+git checkout develop
+git pull origin develop
+git merge main -m "chore: sync develop with main after squash merge"
+git push origin develop
+
+# This triggers CI/CD validation on develop branch
+# Ensures develop stays in sync with main after squash merges
+```
+
+### Dependabot Automation (ZERO-TOUCH UPDATES)
+
+The repository has fully automated dependency management:
+
+**Auto-Merge Workflow** (`.github/workflows/dependabot-auto-merge.yml`):
+- Automatically approves Dependabot PRs
+- Enables auto-merge with squash strategy
+- Merges after all CI checks pass
+- To disable for specific PR: `gh pr merge <PR_NUMBER> --disable-auto`
+
+**Auto-Rebase Workflow** (`.github/workflows/dependabot-rebase.yml`):
+- Runs hourly to detect out-of-date Dependabot PRs
+- Automatically triggers `@dependabot rebase` command
+- Keeps multiple PRs current for sequential merging
+- Manual trigger: `gh workflow run dependabot-rebase.yml`
+
+**Complete Flow**:
+1. Monday 09:00 - Dependabot creates PRs (github-actions, docker)
+2. Auto-merge workflow approves and enables auto-merge
+3. CI runs (builds, tests, security scans)
+4. First PR passes → merges automatically
+5. Other PRs become out-of-date
+6. Hourly rebase workflow detects and rebases
+7. CI re-runs, PRs merge sequentially
+8. Zero human intervention required
+
+**Configuration** (`.github/dependabot.yml`):
+- Ecosystems: `github-actions`, `docker` (npm managed in Dockerfiles)
+- Schedule: Weekly, Monday 09:00
+- Target branch: `develop`
+- Rebase strategy: `auto`
+- Labels: `dependencies`, ecosystem-specific tags
+
 ### Common Operations
 
 - **Runner Registration**: Docker entrypoint scripts handle GitHub API token management and single repository runner registration
@@ -371,6 +441,36 @@ Use the dedicated Chrome runner for web UI tests requiring browser automation
 
 ## Performance Optimization
 
+### BuildKit Cache Optimizations (IMPLEMENTED)
+
+All Dockerfiles leverage BuildKit cache mounts for maximum performance:
+
+**Cache Mount Types**:
+- `--mount=type=cache,target=/var/cache/apt` - APT package cache
+- `--mount=type=cache,target=/var/lib/apt` - APT lists cache
+- `--mount=type=cache,target=/tmp/npm-cache` - npm package cache
+- `--mount=type=cache,target=/tmp/downloads` - External downloads (Chrome, Node.js, Go)
+
+**CI/CD Cache Configuration**:
+- Cross-branch cache sharing via `buildcache` scope
+- Feature branches benefit develop/main cache
+- Eliminates full rebuilds on merges
+- 50-70% faster builds with cache hits
+
+**Performance Results** (see `docs/PERFORMANCE_RESULTS.md`):
+- Standard runner: 19s (96% faster than baseline)
+- Chrome runner: 24s (99% faster than baseline)
+- Chrome-Go runner: 4m 34s (48% faster than baseline)
+- ~985MB bandwidth saved per rebuild
+- 100% cache hit rate on unchanged dependencies
+
+**Multi-Stage Build** (Standard Runner Only):
+- Builder stage: Downloads and patches runner
+- Runtime stage: Only runtime dependencies
+- Image size: 2.18GB → 1.81GB (370MB reduction, 17% smaller)
+- Better security: Smaller attack surface
+- NOT used for Chrome variants (runtime npm required)
+
 ### Web UI Testing Performance
 
 - **Dedicated Chrome Runner**: Deployed via `docker-compose.chrome.yml` with Chrome browser optimizations for UI testing
@@ -381,6 +481,21 @@ Use the dedicated Chrome runner for web UI tests requiring browser automation
 ### Runner Specialization Strategies
 
 - **Standard Runners**: `docker-compose.production.yml` for general building, testing, and deployment tasks
-- **Chrome Runners**: `docker-compose.chrome.yml` for specialized browser testing with Chrome, Selenium, Playwright, Cypress
-- **Mixed Deployment**: Deploy both runner types simultaneously for comprehensive CI/CD coverage
-- **Cache-Optimized**: Both runner types include persistent volume mounts for dependency caching
+  - Multi-stage build optimized
+  - BuildKit cache for fast rebuilds
+  - Image size: ~1.8GB
+  
+- **Chrome Runners**: `docker-compose.chrome.yml` for specialized browser testing
+  - Chrome, Selenium, Playwright, Cypress pre-installed
+  - BuildKit cache for downloads and npm
+  - Playwright chromium browser binaries
+  - Image size: ~4.1GB
+  
+- **Chrome-Go Runners**: `docker-compose.chrome-go.yml` for Go + browser testing
+  - All Chrome runner features
+  - Go 1.25.4 toolchain
+  - BuildKit cache for Go downloads
+  - Image size: ~4.5GB
+  
+- **Mixed Deployment**: Deploy multiple runner types simultaneously for comprehensive CI/CD coverage
+- **Cache-Optimized**: All runner types include persistent volume mounts and BuildKit caching
