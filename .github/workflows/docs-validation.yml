@@ -65,7 +65,7 @@ jobs:
           name: docs-full-patch
           path: docs-full-patch.diff
       - name: Run GitHub Super Linter for Docs
-        uses: github/super-linter@v6
+        uses: github/super-linter@v7
         env:
           DEFAULT_BRANCH: develop
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
