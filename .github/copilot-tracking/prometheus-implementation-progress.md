@@ -35,19 +35,19 @@
 **Tasks:**
 - [x] Create feature branch
 - [x] Create feature specification document
-- [ ] Design metrics collection strategy
-- [ ] Create metrics HTTP server script (bash + netcat)
-- [ ] Create metrics collector script
-- [ ] Update `docker/entrypoint.sh`
-- [ ] Update `docker/entrypoint-chrome.sh`
+- [ ] Create Go metrics exporter using Prometheus client library
+- [ ] Implement Prometheus metrics (gauges, counters, histograms)
+- [ ] Add metrics exporter binary to Docker images
+- [ ] Update `docker/entrypoint.sh` to start metrics exporter
+- [ ] Update `docker/entrypoint-chrome.sh` to start metrics exporter
 - [ ] Expose port 9091 in Dockerfiles
 - [ ] Update Docker Compose files to map port 9091
 - [ ] Test metrics endpoint on all runner types
 
 **Next Steps:**
-1. Add metrics server code to `entrypoint.sh`
-2. Add metrics server code to `entrypoint-chrome.sh`
-3. Update Dockerfiles to expose port 9091
+1. Create Go module with Prometheus dependencies
+2. Implement metrics exporter in `cmd/metrics-exporter/main.go`
+3. Add multi-stage build to Dockerfiles
 
 ---
 
@@ -87,11 +87,16 @@
 ## 📂 Files to Create/Modify
 
 ### Phase 1: Metrics Endpoint
-- [ ] Update `docker/entrypoint.sh`
-- [ ] Update `docker/entrypoint-chrome.sh`
-- [ ] Update `docker/Dockerfile` (add `EXPOSE 9091`)
-- [ ] Update `docker/Dockerfile.chrome` (add `EXPOSE 9091`)
-- [ ] Update `docker/Dockerfile.chrome-go` (add `EXPOSE 9091`)
+- [ ] Create `go.mod` (Go module with Prometheus dependencies)
+- [ ] Create `go.sum` (dependency checksums)
+- [ ] Create `cmd/metrics-exporter/main.go` (main metrics exporter)
+- [ ] Create `internal/metrics/collector.go` (optional: metrics collection logic)
+- [ ] Create `internal/metrics/registry.go` (optional: Prometheus registry)
+- [ ] Update `docker/entrypoint.sh` (start metrics exporter)
+- [ ] Update `docker/entrypoint-chrome.sh` (start metrics exporter)
+- [ ] Update `docker/Dockerfile` (multi-stage build for Go binary, add `EXPOSE 9091`)
+- [ ] Update `docker/Dockerfile.chrome` (multi-stage build, add `EXPOSE 9091`)
+- [ ] Update `docker/Dockerfile.chrome-go` (multi-stage build, add `EXPOSE 9091`)
 - [ ] Update `docker/docker-compose.production.yml` (add port mapping)
 - [ ] Update `docker/docker-compose.chrome.yml` (add port mapping)
 - [ ] Update `docker/docker-compose.chrome-go.yml` (add port mapping)
@@ -194,11 +199,14 @@ curl http://localhost:9091/metrics
 
 ## 📝 Design Decisions
 
-- **Lightweight Implementation**: bash + netcat instead of heavy HTTP frameworks
-- **30-second update interval**: Balance between freshness and overhead
+- **Go Prometheus Client**: Using official `github.com/prometheus/client_golang` library
+- **Real-time Updates**: Metrics updated on events, not polling intervals
 - **Port 9091**: Standard Prometheus exporter port, avoids conflicts
-- **Prometheus text format**: Universal compatibility with monitoring tools
+- **Prometheus Text Format**: Standard exposition format with proper metric types
 - **Dashboard JSON**: Users import into their own Grafana instance
+- **Multi-stage Build**: Separate Go build stage for smaller final images
+- **Static Binary**: CGO_ENABLED=0 for portability and smaller size
+- **Health Endpoint**: `/health` endpoint for container health checks
 
 ---
 
