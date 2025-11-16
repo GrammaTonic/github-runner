@@ -1,3 +1,25 @@
+# Seed Trivy SARIF Baseline
+#
+# This workflow generates security scan baselines using Trivy and uploads results
+# to GitHub Code Scanning (Security tab).
+#
+# Design Decisions:
+# - Single-platform builds (linux/amd64) for scanning - vulnerabilities are package-level, not architecture-specific
+# - Multi-platform builds are handled in release.yml for actual deployments
+# - Direct image load (load: true) instead of tar export for efficiency
+# - CodeQL Action v4 (v3 deprecated December 2026)
+# - Separate SARIF categories per variant for clear security dashboard organization
+#
+# Triggers:
+# - Manual: workflow_dispatch with scan type selection
+# - Automatic: Push to main branch (production deployments)
+# - Scheduled: Weekly on Monday 2 AM UTC
+#
+# Fixes Applied:
+# - PR #1048: Removed multi-platform build incompatibility with docker exporter
+# - PR #1050: Fixed Dockerfile path expression for standard variant
+# - Upgraded CodeQL Action from v3 to v4
+
 name: Seed Trivy SARIF Baseline
 
 on:
@@ -45,6 +67,8 @@ jobs:
           severity: "CRITICAL,HIGH,MEDIUM"
           timeout: "10m"
 
+      # Upload to GitHub Code Scanning for security dashboard integration
+      # Using v4 (v3 deprecated December 2026)
       - name: Upload Trivy filesystem SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v4
         if: always()
@@ -74,14 +98,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Build single-platform image for security scanning
+      # Multi-platform builds are handled in release.yml for actual deployments
+      # Vulnerabilities are detected at package level, not CPU architecture level
       - name: Build Docker image for scanning
         uses: docker/build-push-action@v6
         with:
           context: ./docker
+          # Explicit filename mapping: standard->Dockerfile, chrome->Dockerfile.chrome, chrome-go->Dockerfile.chrome-go
           file: ./docker/${{ matrix.variant == 'standard' && 'Dockerfile' || format('Dockerfile.{0}', matrix.variant) }}
-          platforms: linux/amd64
+          platforms: linux/amd64  # Single platform for scanning efficiency
           tags: github-runner-${{ matrix.variant }}:scan
-          load: true
+          load: true  # Load directly to Docker daemon (faster than tar export)
           push: false
           cache-from: |
             type=gha
@@ -101,6 +129,8 @@ jobs:
           severity: "CRITICAL,HIGH,MEDIUM"
           timeout: "15m"
 
+      # Upload to GitHub Code Scanning with variant-specific category
+      # Using v4 (v3 deprecated December 2026)
       - name: Upload Trivy container SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v4
         if: always()
