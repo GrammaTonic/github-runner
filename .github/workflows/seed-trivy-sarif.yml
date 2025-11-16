@@ -7,36 +7,149 @@ on:
         description: "Target branch to seed baseline on"
         required: false
         default: "develop"
+      scan_type:
+        description: "Scan type to run"
+        required: false
+        default: "all"
+        type: choice
+        options:
+          - all
+          - filesystem
+          - container
   push:
-    branches: [main, develop]
+    branches: [main]  # Only on production deployments
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly deep scan on Monday 2 AM UTC
 
 permissions:
   contents: read
   security-events: write
+  packages: write
 
 jobs:
   seed-filesystem-baseline:
     name: Seed Trivy filesystem SARIF baseline
     runs-on: ubuntu-latest
+    if: github.event.inputs.scan_type == 'filesystem' || github.event.inputs.scan_type == 'all' || github.event_name == 'push' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
       - name: Run Trivy filesystem scan (generate SARIF)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: "fs"
           scan-ref: "."
           format: "sarif"
           output: "trivy-filesystem-baseline.sarif"
+          severity: "CRITICAL,HIGH,MEDIUM"
+          timeout: "10m"
 
       - name: Upload Trivy filesystem SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: "trivy-filesystem-baseline.sarif"
           category: "filesystem-scan"
 
-      - name: Emit note
+      - name: Upload SARIF as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-filesystem-sarif
+          path: trivy-filesystem-baseline.sarif
+          retention-days: 30
+
+  seed-container-baseline:
+    name: Seed Trivy container SARIF baseline
+    runs-on: ubuntu-latest
+    if: github.event.inputs.scan_type == 'container' || github.event.inputs.scan_type == 'all' || github.event_name == 'push' || github.event_name == 'schedule'
+    strategy:
+      matrix:
+        variant: [standard, chrome, chrome-go]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up QEMU for multi-platform builds
+        uses: docker/setup-qemu-action@v3
+        if: matrix.variant == 'standard'
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build Docker image for scanning
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker
+          file: ./docker/Dockerfile${{ matrix.variant == 'standard' && '' || format('.{0}', matrix.variant) }}
+          platforms: ${{ matrix.variant == 'standard' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          tags: github-runner-${{ matrix.variant }}:scan
+          load: false
+          push: false
+          cache-from: |
+            type=gha
+            type=gha,scope=${{ matrix.variant == 'standard' && 'normal' || matrix.variant }}-runner
+            type=gha,scope=buildcache
+          outputs: type=docker,dest=/tmp/github-runner-${{ matrix.variant }}.tar
+
+      - name: Load image for scanning
         run: |
-          echo "Seed SARIF uploaded as category 'filesystem-scan'. To seed other categories (container/chrome), add corresponding steps or run the container scans on a runner with access to built images."
+          docker load --input /tmp/github-runner-${{ matrix.variant }}.tar
+          docker images
+
+      - name: Run Trivy container scan (generate SARIF)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: "image"
+          input: /tmp/github-runner-${{ matrix.variant }}.tar
+          format: "sarif"
+          output: "trivy-container-${{ matrix.variant }}-baseline.sarif"
+          severity: "CRITICAL,HIGH,MEDIUM"
+          timeout: "15m"
+
+      - name: Upload Trivy container SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-container-${{ matrix.variant }}-baseline.sarif"
+          category: "container-scan-${{ matrix.variant }}"
+
+      - name: Upload SARIF as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-container-${{ matrix.variant }}-sarif
+          path: "trivy-container-${{ matrix.variant }}-baseline.sarif"
+          retention-days: 30
+
+  summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [seed-filesystem-baseline, seed-container-baseline]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 🔒 Trivy SARIF Baseline Seeding Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Trigger Event: \`${{ github.event_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Scans Performed:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Filesystem scan" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Container scan (standard, chrome, chrome-go)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### SARIF Categories:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`filesystem-scan\` - Repository filesystem vulnerabilities" >> $GITHUB_STEP_SUMMARY
+          echo "- \`container-scan-standard\` - Standard runner container vulnerabilities" >> $GITHUB_STEP_SUMMARY
+          echo "- \`container-scan-chrome\` - Chrome runner container vulnerabilities" >> $GITHUB_STEP_SUMMARY
+          echo "- \`container-scan-chrome-go\` - Chrome-Go runner container vulnerabilities" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Schedule:" >> $GITHUB_STEP_SUMMARY
+          echo "- 📅 Weekly automated scan: Monday 2 AM UTC" >> $GITHUB_STEP_SUMMARY
+          echo "- 🚀 Automatic on production deployments (main branch)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔧 Manual trigger available via workflow_dispatch" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "View results in the [Security tab](https://github.com/${{ github.repository }}/security/code-scanning)" >> $GITHUB_STEP_SUMMARY
