@@ -78,7 +78,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./docker
-          file: ./docker/Dockerfile${{ matrix.variant == 'standard' && '' || format('.{0}', matrix.variant) }}
+          file: ./docker/${{ matrix.variant == 'standard' && 'Dockerfile' || format('Dockerfile.{0}', matrix.variant) }}
           platforms: linux/amd64
           tags: github-runner-${{ matrix.variant }}:scan
           load: true
