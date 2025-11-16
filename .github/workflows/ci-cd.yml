@@ -511,7 +511,11 @@ jobs:
         run: |
           # Determine whether to force rebuild for the normal build
           INPUT_VAL="${{ github.event.inputs.force_rebuild || '' }}"
-          HEAD_MSG="${{ github.event.head_commit.message || '' }}"
+          # Write commit message to temp file to avoid bash expansion issues
+          cat > /tmp/commit_msg.txt << 'END_OF_MSG'
+          ${{ github.event.head_commit.message || '' }}
+          END_OF_MSG
+          HEAD_MSG="$(cat /tmp/commit_msg.txt)"
           echo "event_input=$INPUT_VAL"
           printf 'head_commit_message=%s\n' "$HEAD_MSG"
           if [ "$INPUT_VAL" = "true" ] || printf '%s' "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
@@ -616,7 +620,11 @@ jobs:
         run: |
           # Determine whether to force rebuild for the Chrome build
           INPUT_VAL="${{ github.event.inputs.force_rebuild || '' }}"
-          HEAD_MSG="${{ github.event.head_commit.message || '' }}"
+          # Write commit message to temp file to avoid bash expansion issues
+          cat > /tmp/commit_msg_chrome.txt << 'END_OF_MSG'
+          ${{ github.event.head_commit.message || '' }}
+          END_OF_MSG
+          HEAD_MSG="$(cat /tmp/commit_msg_chrome.txt)"
           echo "event_input=$INPUT_VAL"
           printf 'head_commit_message=%s\n' "$HEAD_MSG"
           if [ "$INPUT_VAL" = "true" ] || printf '%s' "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
@@ -719,7 +727,11 @@ jobs:
         run: |
           # Determine whether to force rebuild for the Chrome-Go build
           INPUT_VAL="${{ github.event.inputs.force_rebuild || '' }}"
-          HEAD_MSG="${{ github.event.head_commit.message || '' }}"
+          # Write commit message to temp file to avoid bash expansion issues
+          cat > /tmp/commit_msg_chromego.txt << 'END_OF_MSG'
+          ${{ github.event.head_commit.message || '' }}
+          END_OF_MSG
+          HEAD_MSG="$(cat /tmp/commit_msg_chromego.txt)"
           echo "event_input=$INPUT_VAL"
           printf 'head_commit_message=%s\n' "$HEAD_MSG"
           if [ "$INPUT_VAL" = "true" ] || printf '%s' "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
