@@ -6,6 +6,28 @@ description: 'Comprehensive pull request template and instructions for copilot-a
 
 ## 📋 Pull Request Description
 
+### 🔀 Merge Strategy
+
+**This repository uses SQUASH MERGE as the standard merge strategy.**
+
+**Why Squash Merge?**
+- ✅ Clean, linear commit history on `main` branch
+- ✅ One commit per feature/fix for easier rollbacks
+- ✅ Better release notes and changelog generation
+- ✅ Simplified CI/CD and automated release processes
+- ✅ Consistent with Dependabot auto-merge configuration
+
+**How to Merge:**
+```bash
+# Via GitHub CLI (recommended):
+gh pr merge <PR_NUMBER> --squash --delete-branch
+
+# Via GitHub Web UI:
+# Select "Squash and merge" button
+```
+
+**CRITICAL: After squash merging to `main`, you MUST back-sync `develop`** (see Post-Merge Back-Sync section below).
+
 ### ⚠️ Pre-Submission Checklist
 
 <!-- CRITICAL: Complete these steps BEFORE creating this PR -->
@@ -34,7 +56,17 @@ git checkout <your-feature-branch>
 git rebase develop  # or 'main' depending on your target branch
 ```
 
-**Post-Merge Back-Sync (IMPORTANT after squash merging to main):**
+**Post-Merge Back-Sync (CRITICAL after squash merging to main):**
+
+**Why is this needed?**
+When you squash merge a PR from `develop` to `main`, the individual commits from `develop` are condensed into a single commit on `main`. This causes `develop` to appear "ahead" of `main` in git history, even though the code is identical. The back-sync merge resolves this divergence.
+
+**When to perform back-sync:**
+- ✅ Always after merging a promotion PR (`develop` → `main`)
+- ✅ Always after merging any PR directly to `main` with squash merge
+- ❌ NOT needed when merging feature branches to `develop` (develop will be promoted later)
+
+**How to perform back-sync:**
 ```bash
 # After merging a PR from develop to main with squash merge,
 # you MUST sync develop with main to prevent "ahead" status:
@@ -45,6 +77,15 @@ git merge main -m "chore: sync develop with main after squash merge"
 git push origin develop
 
 # This ensures develop stays in sync with main after squash merges
+# The merge commit preserves the development history in develop
+# while keeping main's linear squashed history
+```
+
+**Verification:**
+```bash
+# After back-sync, these commands should show no differences:
+git diff main..develop  # Should be empty
+git log --oneline main..develop  # Should only show merge commits
 ```
 
 ### Summary
