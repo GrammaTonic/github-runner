@@ -60,12 +60,12 @@ jobs:
         run: |
           git diff origin/main -- docs/ wiki-content/ > docs-full-patch.diff || echo "No doc changes detected."
       - name: Upload Patch Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: docs-full-patch
           path: docs-full-patch.diff
       - name: Run GitHub Super Linter for Docs
-        uses: github/super-linter@v6
+        uses: github/super-linter@v7
         env:
           DEFAULT_BRANCH: develop
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

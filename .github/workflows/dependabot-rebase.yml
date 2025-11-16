@@ -1,0 +1,67 @@
+name: Dependabot PR Rebase
+
+on:
+  # Run hourly to keep Dependabot PRs up-to-date
+  schedule:
+    - cron: '0 * * * *'  # Every hour
+  # Allow manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  rebase-dependabot-prs:
+    name: Rebase out-of-date Dependabot PRs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find and rebase Dependabot PRs
+        run: |
+          echo "Finding Dependabot PRs that are out of date..."
+          
+          # Get all open Dependabot PRs
+          DEPENDABOT_PRS=$(gh pr list \
+            --author "dependabot[bot]" \
+            --state open \
+            --json number,title,headRefName,mergeable,mergeStateStatus \
+            --jq '.[] | select(.mergeStateStatus == "BEHIND") | .number')
+          
+          if [ -z "$DEPENDABOT_PRS" ]; then
+            echo "No out-of-date Dependabot PRs found."
+            exit 0
+          fi
+          
+          echo "Found out-of-date PRs: $DEPENDABOT_PRS"
+          
+          # Rebase each out-of-date PR
+          for PR_NUMBER in $DEPENDABOT_PRS; do
+            echo "Rebasing PR #$PR_NUMBER..."
+            
+            # Comment on PR that we're rebasing it
+            gh pr comment "$PR_NUMBER" \
+              --body "🔄 **Auto-rebase triggered**
+              
+              This PR was behind the base branch and has been updated automatically.
+              CI checks will re-run, and the PR will auto-merge when all checks pass."
+            
+            # Trigger Dependabot to rebase the PR
+            gh pr comment "$PR_NUMBER" --body "@dependabot rebase"
+            
+            echo "Rebase triggered for PR #$PR_NUMBER"
+            sleep 2  # Rate limiting
+          done
+          
+          echo "Rebase process completed."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Summary
+        run: |
+          echo "## Dependabot PR Rebase Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Checked all open Dependabot PRs for out-of-date status." >> $GITHUB_STEP_SUMMARY
+          echo "PRs that were behind the base branch have been rebased." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Next check: $(date -u -d '+1 hour' '+%Y-%m-%d %H:%M:%S UTC' 2>/dev/null || date -u -v+1H '+%Y-%m-%d %H:%M:%S UTC' 2>/dev/null || echo 'in 1 hour')" >> $GITHUB_STEP_SUMMARY
