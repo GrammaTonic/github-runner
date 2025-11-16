@@ -893,9 +893,11 @@ jobs:
           echo "Integration tests completed. Errors: $integration_errors"
           if [[ $integration_errors -gt 0 ]]; then
             echo "❌ Integration tests failed"
+            echo "FAILED" > test-results/integration/status.txt
             exit 1
           else
             echo "✅ Integration tests passed"
+            echo "PASSED" > test-results/integration/status.txt
           fi
       - name: Run Docker Package Validation
         if: matrix.test-suite == 'docker-validation'
@@ -944,9 +946,11 @@ jobs:
           echo "Docker validation completed. Errors: $docker_errors"
           if [[ $docker_errors -gt 0 ]]; then
             echo "❌ Docker package validation failed"
+            echo "FAILED" > test-results/docker-validation/status.txt
             exit 1
           else
             echo "✅ Docker package validation passed"
+            echo "PASSED" > test-results/docker-validation/status.txt
           fi
       - name: Run Security Tests
         if: matrix.test-suite == 'security'
@@ -989,6 +993,7 @@ jobs:
             fi
           done
           echo "Security scan completed. Issues found: $security_issues"
+          echo "PASSED: $security_issues issues found" > test-results/security/status.txt
       - name: Run Configuration Tests
         if: matrix.test-suite == 'configuration'
         run: |
@@ -1028,7 +1033,10 @@ jobs:
           done
           echo "Configuration validation completed. Errors found: $config_errors"
           if [[ $config_errors -gt 0 ]]; then
+            echo "FAILED" > test-results/configuration/status.txt
             exit 1
+          else
+            echo "PASSED" > test-results/configuration/status.txt
           fi
       - name: Upload comprehensive test results
         uses: actions/upload-artifact@v5
