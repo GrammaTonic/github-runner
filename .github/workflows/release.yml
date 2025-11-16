@@ -88,8 +88,13 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=ghcr.io/grammatonic/github-runner:main
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha
+            type=gha,scope=normal-runner
+            type=gha,scope=buildcache
+          cache-to: |
+            type=gha,mode=max,scope=normal-runner
+            type=gha,mode=max,scope=buildcache
           platforms: linux/amd64,linux/arm64
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
@@ -145,8 +150,13 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/github-runner-chrome:main
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha
+            type=gha,scope=chrome-runner
+            type=gha,scope=buildcache
+          cache-to: |
+            type=gha,mode=max,scope=chrome-runner
+            type=gha,mode=max,scope=buildcache
           platforms: linux/amd64
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
@@ -199,8 +209,13 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/github-runner-chrome-go:main
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha
+            type=gha,scope=chrome-go-runner
+            type=gha,scope=buildcache
+          cache-to: |
+            type=gha,mode=max,scope=chrome-go-runner
+            type=gha,mode=max,scope=buildcache
           platforms: linux/amd64
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
