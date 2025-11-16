@@ -50,8 +50,8 @@ jobs:
         run: |
           echo "Extracting versions from Docker images..."
 
-          # Extract GitHub Actions Runner version
-          RUNNER_VERSION=$(grep -E 'ARG RUNNER_VERSION=' docker/Dockerfile | cut -d'"' -f2)
+          # Extract GitHub Actions Runner version (remove quotes)
+          RUNNER_VERSION=$(grep -E 'ARG RUNNER_VERSION=' docker/Dockerfile | cut -d'=' -f2 | tr -d '"')
           echo "runner-version=$RUNNER_VERSION" >> $GITHUB_OUTPUT
 
           # Extract Node.js version
