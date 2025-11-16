@@ -577,15 +577,26 @@ GitHub Actions runner supports ARM64 since v2.285.0:
 
 ### Known Limitations
 
+**Standard Runner:**
+- ✅ Full multi-arch support (AMD64 + ARM64)
+- ✅ GitHub Actions Runner supports ARM64 since v2.285.0
+- ✅ All dependencies available for both architectures
+
 **Chrome Runner:**
-- Chrome ARM64 requires Chrome 93+ (currently available)
-- Playwright has ARM64 support
-- Performance may differ slightly between architectures
+- ⚠️ **AMD64-ONLY** - Chrome for Testing does NOT provide linux-arm64 builds
+- Chrome for Testing only supports:
+  - ✅ `linux64` (AMD64/x86_64)
+  - ✅ `mac-arm64` (macOS ARM64)
+  - ❌ `linux-arm64` (Linux ARM64) - **Not available**
+- Current workaround: Chrome runners built for AMD64 only
+- Future: Investigate Chromium ARM64 builds or alternative Chrome sources
+- Reference: https://github.com/GoogleChromeLabs/chrome-for-testing#platform-support
 
 **Chrome-Go Runner:**
-- Go has full ARM64 support since Go 1.5
+- ⚠️ **AMD64-ONLY** - Same Chrome limitation as Chrome Runner
+- Go has full ARM64 support since Go 1.5 ✅
+- Limitation is purely Chrome-related, not Go-related
 - Cross-compilation works the same on both platforms
-- No known limitations
 
 ---
 

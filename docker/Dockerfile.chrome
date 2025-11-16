@@ -86,7 +86,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 # --- INSTALL CHROME AND CHROMEDRIVER ---
 # Use BuildKit cache for downloads
-# Chrome for Testing supports both amd64 (linux64) and arm64 (linux-arm64) since Chrome 93+
+# NOTE: Chrome for Testing only provides linux64 (AMD64) builds, NOT linux-arm64
+# ARM64 support is limited to macOS (mac-arm64). For now, Chrome runners are AMD64-only.
 RUN --mount=type=cache,target=/tmp/downloads \
     case ${TARGETARCH} in \
         "amd64")  CHROME_ARCH="linux64"      ;; \

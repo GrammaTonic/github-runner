@@ -1,8 +1,8 @@
 # Dockerfile for Chrome-Go Runner (ubuntu:questing)
 #
-# This image uses ubuntu:questing (25.10) for latest browser and Go dependencies with multi-architecture support.
-# Supports both linux/amd64 and linux/arm64 architectures.
-# Chrome for Testing supports both ARM64 and AMD64 architectures since version 93+.
+# This image uses ubuntu:questing (25.10) for latest browser and Go dependencies.
+# NOTE: Currently AMD64-only due to Chrome for Testing not providing linux-arm64 builds.
+# Chrome for Testing only provides linux64 (AMD64), NOT linux-arm64 (ARM64 limited to macOS).
 # Go official binaries available for both amd64 and arm64.
 # CVE mitigation is performed via npm overrides and local installs for all app-level dependencies.
 # CVEs in npm's internal modules are documented and monitored; see README.md and DEPLOYMENT.md.
@@ -87,7 +87,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 # --- INSTALL CHROME AND CHROMEDRIVER ---
 # Use BuildKit cache for downloads
-# Chrome for Testing supports both amd64 (linux64) and arm64 (linux-arm64) since Chrome 93+
+# NOTE: Chrome for Testing only provides linux64 (AMD64) builds, NOT linux-arm64
+# ARM64 support is limited to macOS (mac-arm64). For now, Chrome runners are AMD64-only.
 RUN --mount=type=cache,target=/tmp/downloads \
     case ${TARGETARCH} in \
         "amd64")  CHROME_ARCH="linux64"      ;; \

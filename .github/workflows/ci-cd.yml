@@ -645,7 +645,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./docker
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: ./docker/Dockerfile.chrome
           push: true
           load: false
@@ -748,7 +748,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./docker
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: ./docker/Dockerfile.chrome-go
           push: true
           load: false
