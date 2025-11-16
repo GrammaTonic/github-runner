@@ -1,0 +1,61 @@
+name: Dependabot Auto-Merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-approve-and-merge:
+    name: Auto-approve and merge Dependabot PRs
+    runs-on: ubuntu-latest
+    # Only run for Dependabot PRs
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Check PR metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Auto-approve PR
+        run: |
+          gh pr review "${{ github.event.pull_request.number }}" --approve \
+            --body "Auto-approved by Dependabot auto-merge workflow. All CI checks must pass before merge."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Enable auto-merge
+        run: |
+          # Enable auto-merge with squash merge strategy
+          gh pr merge "${{ github.event.pull_request.number }}" \
+            --auto --squash \
+            --subject "chore(deps): ${{ github.event.pull_request.title }}" \
+            --body "Automatically merged Dependabot PR after CI validation."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Add comment to PR
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --body "🤖 **Dependabot Auto-Merge Enabled**
+
+          This PR has been auto-approved and will merge automatically when:
+          - ✅ All required status checks pass
+          - ✅ Branch is up to date with base branch
+
+          Update type: **${{ steps.metadata.outputs.update-type }}**
+          Dependency: **${{ steps.metadata.outputs.dependency-names }}**
+
+          If you need to make changes or prevent auto-merge, you can disable it with:
+          \`\`\`bash
+          gh pr merge ${{ github.event.pull_request.number }} --disable-auto
+          \`\`\`"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
