@@ -104,22 +104,35 @@ jobs:
             echo "ERROR: github-runner-main container does not exist. Skipping health check."
             exit 1
           fi
-          MAX_RETRIES=6
+          MAX_RETRIES=12
           RETRY_INTERVAL=5
           for i in $(seq 1 $MAX_RETRIES); do
             HEALTH_JSON=$(docker inspect --format='{{json .State.Health}}' github-runner-main)
             echo "Full health JSON: $HEALTH_JSON"
             STATUS=$(echo "$HEALTH_JSON" | jq -r '.Status')
             FAILING_STREAK=$(echo "$HEALTH_JSON" | jq -r '.FailingStreak')
-            LOGS=$(echo "$HEALTH_JSON" | jq -r '.Log | @json')
+            LOG_LENGTH=$(echo "$HEALTH_JSON" | jq -r '.Log | length')
             echo "Health status: $STATUS"
             echo "Failing streak: $FAILING_STREAK"
-            echo "Health logs: $LOGS"
+            echo "Health log entries: $LOG_LENGTH"
             if [ "$STATUS" = "healthy" ]; then
             echo "Normal runner container health is healthy."
             break
+            elif [ "$STATUS" = "unhealthy" ] && [ "$LOG_LENGTH" = "0" ]; then
+            # Container just started, Docker hasn't run healthcheck yet
+            if [ $i -lt $MAX_RETRIES ]; then
+              echo "Health status is 'unhealthy' but no healthchecks have run yet. Waiting $RETRY_INTERVAL seconds before retry ($i/$MAX_RETRIES)..."
+              sleep $RETRY_INTERVAL
+            else
+              echo "WARNING: Normal runner container never became healthy after $MAX_RETRIES retries."
+              docker logs github-runner-main || echo "No logs available."
+              exit 1
+            fi
             elif [ "$STATUS" = "unhealthy" ]; then
             echo "ERROR: Normal runner container is unhealthy!"
+            echo "Health logs:"
+            echo "$HEALTH_JSON" | jq -r '.Log'
+            docker logs github-runner-main || echo "No container logs available."
             exit 1
             elif [ "$STATUS" = "starting" ]; then
             if [ $i -lt $MAX_RETRIES ]; then
@@ -440,7 +453,7 @@ jobs:
           format: "sarif"
           output: "trivy-results.sarif"
       - name: Upload Trivy scan results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
@@ -500,15 +513,18 @@ jobs:
           else
             echo "force_rebuild=false" >> $GITHUB_OUTPUT
             # Provide the default cache sources (multi-line) via GITHUB_ENV
-            printf "CACHE_FROM=type=gha\ntype=gha,scope=normal-runner\n" >> $GITHUB_ENV
-            printf "CACHE_TO=type=gha,mode=max,scope=normal-runner\n" >> $GITHUB_ENV
+            # Use cross-branch cache to leverage builds from feature branches and other branches
+            printf "CACHE_FROM=type=gha\ntype=gha,scope=normal-runner\ntype=gha,scope=buildcache\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=normal-runner\ntype=gha,mode=max,scope=buildcache\n" >> $GITHUB_ENV
             # Also emit as step outputs so other action inputs can reference them (multi-line)
             echo "cache_from<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha" >> $GITHUB_OUTPUT
             echo "type=gha,scope=normal-runner" >> $GITHUB_OUTPUT
+            echo "type=gha,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
             echo "cache_to<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha,mode=max,scope=normal-runner" >> $GITHUB_OUTPUT
+            echo "type=gha,mode=max,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           fi
       - name: Build and push normal runner Docker image
@@ -596,15 +612,18 @@ jobs:
           else
             echo "force_rebuild=false" >> $GITHUB_OUTPUT
             # Provide the default cache sources (multi-line) via GITHUB_ENV
-            printf "CACHE_FROM=type=gha\ntype=gha,scope=chrome-runner\n" >> $GITHUB_ENV
-            printf "CACHE_TO=type=gha,mode=max,scope=chrome-runner\n" >> $GITHUB_ENV
+            # Use cross-branch cache to leverage builds from feature branches and other branches
+            printf "CACHE_FROM=type=gha\ntype=gha,scope=chrome-runner\ntype=gha,scope=buildcache\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=chrome-runner\ntype=gha,mode=max,scope=buildcache\n" >> $GITHUB_ENV
             # Also emit as step outputs so other action inputs can reference them (multi-line)
             echo "cache_from<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha" >> $GITHUB_OUTPUT
             echo "type=gha,scope=chrome-runner" >> $GITHUB_OUTPUT
+            echo "type=gha,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
             echo "cache_to<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha,mode=max,scope=chrome-runner" >> $GITHUB_OUTPUT
+            echo "type=gha,mode=max,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           fi
       - name: Build and push Chrome runner image
@@ -692,15 +711,18 @@ jobs:
           else
             echo "force_rebuild=false" >> $GITHUB_OUTPUT
             # Provide the default cache sources (multi-line) via GITHUB_ENV
-            printf "CACHE_FROM=type=gha\ntype=gha,scope=chrome-go-runner\n" >> $GITHUB_ENV
-            printf "CACHE_TO=type=gha,mode=max,scope=chrome-go-runner\n" >> $GITHUB_ENV
+            # Use cross-branch cache to leverage builds from feature branches and other branches
+            printf "CACHE_FROM=type=gha\ntype=gha,scope=chrome-go-runner\ntype=gha,scope=buildcache\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=chrome-go-runner\ntype=gha,mode=max,scope=buildcache\n" >> $GITHUB_ENV
             # Also emit as step outputs so other action inputs can reference them (multi-line)
             echo "cache_from<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha" >> $GITHUB_OUTPUT
             echo "type=gha,scope=chrome-go-runner" >> $GITHUB_OUTPUT
+            echo "type=gha,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
             echo "cache_to<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha,mode=max,scope=chrome-go-runner" >> $GITHUB_OUTPUT
+            echo "type=gha,mode=max,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           fi
       - name: Build and push Chrome-Go runner image
@@ -1070,7 +1092,7 @@ jobs:
           format: "sarif"
           output: "trivy-container-results.sarif"
       - name: Upload container scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: "trivy-container-results.sarif"
@@ -1094,7 +1116,7 @@ jobs:
           format: "sarif"
           output: "trivy-chrome-results.sarif"
       - name: Upload Chrome container scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: "trivy-chrome-results.sarif"
@@ -1118,7 +1140,7 @@ jobs:
           format: "sarif"
           output: "trivy-chrome-go-results.sarif"
       - name: Upload Chrome-Go container scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: "trivy-chrome-go-results.sarif"
@@ -1173,4 +1195,4 @@ jobs:
         with:
           name: deployment-report
           path: deployment-report.md
-          retention-days: 90
+          retention-days: 30

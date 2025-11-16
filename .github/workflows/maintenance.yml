@@ -332,7 +332,7 @@ jobs:
         with:
           name: security-status-report
           path: security-status.md
-          retention-days: 90
+          retention-days: 30
 
   documentation-maintenance:
     name: Documentation Maintenance
@@ -700,7 +700,7 @@ jobs:
         with:
           name: comprehensive-health-report
           path: comprehensive-health-report.md
-          retention-days: 90
+          retention-days: 30
 
   maintenance-summary:
     name: Maintenance Summary
@@ -781,4 +781,4 @@ jobs:
         with:
           name: maintenance-summary
           path: maintenance-summary.md
-          retention-days: 90
+          retention-days: 30

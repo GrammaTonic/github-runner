@@ -263,7 +263,7 @@ jobs:
           name: security-scan-reports-${{ steps.params.outputs.timestamp }}
           path: |
             trivy-results/
-          retention-days: 90
+          retention-days: 30
           if-no-files-found: warn
 
       - name: Create Security Summary Report
@@ -314,7 +314,7 @@ jobs:
         with:
           name: security-summary-${{ steps.params.outputs.timestamp }}
           path: security-report.md
-          retention-days: 90
+          retention-days: 30
 
   cleanup-old-artifacts:
     name: Cleanup Old Security Artifacts
