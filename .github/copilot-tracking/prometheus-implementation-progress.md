@@ -1,36 +1,33 @@
-# Prometheus Improvements - Implementation Progress
+# Grafana Dashboard & Metrics Endpoint - Implementation Progress
 
 **Feature Branch:** `feature/prometheus-improvements`  
-**Status:** 🚧 Phase 1 - Infrastructure Setup  
+**Status:** 🚧 Phase 1 - Metrics Endpoint  
 **Started:** 2025-11-16  
-**Target Completion:** 2025-12-21  
+**Target Completion:** 2025-11-30  
+**Scope:** Metrics Endpoint + Grafana Dashboard ONLY
 
 ---
 
-## 📊 Overall Progress: 5%
+## 📊 Overall Progress: 10%
 
-### ✅ Completed (5%)
+### ✅ Completed (10%)
 - [x] Feature branch created
-- [x] Comprehensive feature specification document (50+ pages)
-- [x] 5-phase implementation plan defined
+- [x] Feature specification document created
+- [x] 2-phase implementation plan defined
 - [x] Metrics strategy documented
-- [x] Alert rules designed
-- [x] Dashboard specifications created
+- [x] Dashboard panel specifications designed
 
 ### 🚧 In Progress (0%)
-- [ ] Phase 1: Infrastructure Setup
+- [ ] Phase 1: Custom Metrics Endpoint
 
-### ⏳ Pending (95%)
-- [ ] Phase 2: Custom Metrics Endpoint
-- [ ] Phase 3: Grafana Dashboards
-- [ ] Phase 4: Alerting
-- [ ] Phase 5: Documentation & Testing
+### ⏳ Pending (90%)
+- [ ] Phase 2: Grafana Dashboard
 
 ---
 
 ## 📅 Phase Progress
 
-### Phase 1: Infrastructure Setup (Week 1) - 10% Complete
+### Phase 1: Custom Metrics Endpoint (Week 1) - 10% Complete
 
 **Status:** 🚧 In Progress  
 **Due:** 2025-11-23
@@ -38,80 +35,36 @@
 **Tasks:**
 - [x] Create feature branch
 - [x] Create feature specification document
-- [ ] Create `docker/docker-compose.monitoring.yml`
-- [ ] Configure Prometheus server
-- [ ] Configure Grafana with provisioning
-- [ ] Set up Node Exporter
-- [ ] Set up cAdvisor
-- [ ] Create persistent volumes
-- [ ] Configure Docker network
+- [ ] Design metrics collection strategy
+- [ ] Create metrics HTTP server script (bash + netcat)
+- [ ] Create metrics collector script
+- [ ] Update `docker/entrypoint.sh`
+- [ ] Update `docker/entrypoint-chrome.sh`
+- [ ] Expose port 9091 in Dockerfiles
+- [ ] Update Docker Compose files to map port 9091
+- [ ] Test metrics endpoint on all runner types
 
 **Next Steps:**
-1. Create `docker-compose.monitoring.yml`
-2. Populate `monitoring/prometheus.yml` configuration
-3. Set up Grafana provisioning
+1. Add metrics server code to `entrypoint.sh`
+2. Add metrics server code to `entrypoint-chrome.sh`
+3. Update Dockerfiles to expose port 9091
 
 ---
 
-### Phase 2: Custom Metrics Endpoint (Week 2) - 0% Complete
+### Phase 2: Grafana Dashboard (Week 2) - 0% Complete
 
 **Status:** ⏳ Planned  
 **Due:** 2025-11-30
 
 **Tasks:**
-- [ ] Design metrics collection strategy
-- [ ] Create metrics HTTP server (bash + netcat)
-- [ ] Implement metrics collector script
-- [ ] Update entrypoint.sh
-- [ ] Update entrypoint-chrome.sh
-- [ ] Expose port 9091 in Dockerfiles
-- [ ] Update Docker Compose files
-- [ ] Configure Prometheus scrape configs
-
----
-
-### Phase 3: Grafana Dashboards (Week 3) - 0% Complete
-
-**Status:** ⏳ Planned  
-**Due:** 2025-12-07
-
-**Tasks:**
-- [ ] Design dashboard layouts
-- [ ] Create Runner Overview dashboard
-- [ ] Create DORA Metrics dashboard
-- [ ] Create Resource Utilization dashboard
-- [ ] Create Performance Trends dashboard
-- [ ] Configure auto-provisioning
-
----
-
-### Phase 4: Alerting (Week 4) - 0% Complete
-
-**Status:** ⏳ Planned  
-**Due:** 2025-12-14
-
-**Tasks:**
-- [ ] Define alert thresholds
-- [ ] Create alert rule groups
-- [ ] Test alert triggering
-- [ ] Write runbooks
-- [ ] (Optional) Configure Alertmanager
-
----
-
-### Phase 5: Documentation & Testing (Week 5) - 0% Complete
-
-**Status:** ⏳ Planned  
-**Due:** 2025-12-21
-
-**Tasks:**
-- [ ] Write setup guide
-- [ ] Write usage guide
-- [ ] Write troubleshooting guide
-- [ ] Update README
-- [ ] Test on all runner types
-- [ ] Validate dashboards and alerts
-- [ ] Measure performance impact
+- [ ] Design dashboard layout
+- [ ] Create dashboard JSON with 12 panels
+- [ ] Add dashboard variables (runner_name, runner_type)
+- [ ] Test dashboard with sample data
+- [ ] Create example Prometheus scrape config
+- [ ] Write `docs/PROMETHEUS_INTEGRATION.md`
+- [ ] Write `docs/GRAFANA_DASHBOARD_SETUP.md`
+- [ ] Update README.md
 
 ---
 
@@ -119,55 +72,34 @@
 
 ### Target Metrics
 - **Performance Overhead:** <1% CPU, <50MB RAM
-- **Metrics Lag:** <15 seconds
+- **Metrics Update Frequency:** 30 seconds
+- **Endpoint Response Time:** <100ms
 - **Dashboard Load Time:** <2 seconds
-- **Storage Growth:** <1GB/week
-- **Setup Time:** <15 minutes
 
 ### Current Metrics
 - **Performance Overhead:** Not yet measured
-- **Metrics Lag:** Not yet implemented
+- **Metrics Update Frequency:** Not yet implemented
+- **Endpoint Response Time:** Not yet implemented
 - **Dashboard Load Time:** Not yet implemented
-- **Storage Growth:** Not yet measured
-- **Setup Time:** Not yet measured
 
 ---
 
-## 📂 Files to Create
+## 📂 Files to Create/Modify
 
-### Phase 1
-- [ ] `docker/docker-compose.monitoring.yml`
-- [ ] `monitoring/prometheus.yml`
-- [ ] `monitoring/prometheus/alerts.yml`
-- [ ] `monitoring/grafana/provisioning/datasources/prometheus.yml`
-- [ ] `monitoring/grafana/provisioning/dashboards/default.yml`
-
-### Phase 2
+### Phase 1: Metrics Endpoint
 - [ ] Update `docker/entrypoint.sh`
 - [ ] Update `docker/entrypoint-chrome.sh`
-- [ ] Update `docker/Dockerfile`
-- [ ] Update `docker/Dockerfile.chrome`
-- [ ] Update `docker/Dockerfile.chrome-go`
-- [ ] Update `docker/docker-compose.production.yml`
-- [ ] Update `docker/docker-compose.chrome.yml`
-- [ ] Update `docker/docker-compose.chrome-go.yml`
+- [ ] Update `docker/Dockerfile` (add `EXPOSE 9091`)
+- [ ] Update `docker/Dockerfile.chrome` (add `EXPOSE 9091`)
+- [ ] Update `docker/Dockerfile.chrome-go` (add `EXPOSE 9091`)
+- [ ] Update `docker/docker-compose.production.yml` (add port mapping)
+- [ ] Update `docker/docker-compose.chrome.yml` (add port mapping)
+- [ ] Update `docker/docker-compose.chrome-go.yml` (add port mapping)
 
-### Phase 3
-- [ ] `monitoring/grafana/dashboards/runner-overview.json`
-- [ ] `monitoring/grafana/dashboards/dora-metrics.json`
-- [ ] `monitoring/grafana/dashboards/resource-utilization.json`
-- [ ] `monitoring/grafana/dashboards/performance-trends.json`
-
-### Phase 4
-- [ ] `monitoring/prometheus/alerts.yml` (populate)
-- [ ] `docs/runbooks/PROMETHEUS_ALERTS.md`
-- [ ] `monitoring/alertmanager.yml` (optional)
-
-### Phase 5
-- [ ] `docs/PROMETHEUS_SETUP.md`
-- [ ] `docs/PROMETHEUS_USAGE.md`
-- [ ] `docs/PROMETHEUS_TROUBLESHOOTING.md`
-- [ ] `docs/PROMETHEUS_ARCHITECTURE.md`
+### Phase 2: Grafana Dashboard
+- [ ] `monitoring/grafana/dashboards/github-runner-dashboard.json`
+- [ ] `docs/PROMETHEUS_INTEGRATION.md`
+- [ ] `docs/GRAFANA_DASHBOARD_SETUP.md`
 - [ ] Update `README.md`
 
 ---
@@ -183,70 +115,94 @@ git pull origin feature/prometheus-improvements
 
 ### View Feature Spec
 ```bash
-cat docs/features/PROMETHEUS_IMPROVEMENTS.md
+cat docs/features/GRAFANA_DASHBOARD_METRICS.md
 ```
 
-### Next Implementation Step
+### Test Metrics Endpoint (after implementation)
 ```bash
-# Create docker-compose.monitoring.yml
-# See Phase 1 tasks in feature specification
+# Start a runner
+docker-compose -f docker/docker-compose.production.yml up -d
+
+# Test metrics endpoint
+curl http://localhost:9091/metrics
 ```
 
 ---
 
-## 📊 Metrics to Track
+## 📊 Metrics to Expose
 
-### Runner Metrics (Custom)
+### Runner Metrics (Custom - Port 9091)
 - `github_runner_status` - Runner online/offline (1/0)
-- `github_runner_jobs_total` - Total jobs by status
+- `github_runner_jobs_total{status}` - Total jobs by status (success/failed)
 - `github_runner_job_duration_seconds` - Job duration histogram
+- `github_runner_queue_time_seconds` - Time waiting in queue
 - `github_runner_uptime_seconds` - Runner uptime
-- `github_runner_cache_hit_rate` - Cache effectiveness
+- `github_runner_cache_hit_rate{cache_type}` - Cache effectiveness
+- `github_runner_info{version,type}` - Runner metadata
 
-### System Metrics (Node Exporter)
-- CPU usage percentage
-- Memory usage percentage
-- Disk usage percentage
-- Network I/O rates
-
-### Container Metrics (cAdvisor)
-- Container CPU usage
-- Container memory usage
-- Container network I/O
-- Container filesystem usage
-
-### DORA Metrics (Derived)
+### DORA Metrics (Calculated in Grafana)
 - Deployment Frequency (builds/day)
 - Lead Time for Changes (avg duration)
 - Change Failure Rate (%)
-- Mean Time to Recovery
+- Mean Time to Recovery (calculated from logs)
+
+---
+
+## 📊 Dashboard Panels (12 Total)
+
+1. **Runner Status Overview** - Stat panel showing online/offline
+2. **Total Jobs Executed** - Counter of all jobs
+3. **Job Success Rate** - Gauge with thresholds
+4. **Jobs per Hour** - Time series graph
+5. **Runner Uptime** - Table showing hours
+6. **Job Status Distribution** - Pie chart
+7. **Deployment Frequency** - DORA metric (builds/day)
+8. **Lead Time for Changes** - DORA metric (minutes)
+9. **Change Failure Rate** - DORA metric (%)
+10. **Job Duration Trends** - Time series
+11. **Cache Hit Rates** - Time series by cache type
+12. **Active Runners** - Count of online runners
 
 ---
 
 ## 🔗 Related Links
 
-- **Feature Spec:** [docs/features/PROMETHEUS_IMPROVEMENTS.md](../../../docs/features/PROMETHEUS_IMPROVEMENTS.md)
+- **Feature Spec:** [docs/features/GRAFANA_DASHBOARD_METRICS.md](../../../docs/features/GRAFANA_DASHBOARD_METRICS.md)
 - **GitHub Branch:** https://github.com/GrammaTonic/github-runner/tree/feature/prometheus-improvements
 - **Create PR:** https://github.com/GrammaTonic/github-runner/pull/new/feature/prometheus-improvements
 
 ---
 
-## 📝 Notes
+## 📝 Scope Changes
 
-### Design Decisions
-- Using lightweight bash + netcat for metrics HTTP server (not heavy frameworks)
-- 30-second metric update interval (balance between freshness and overhead)
-- Port 9091 for runner metrics (avoids conflicts with standard ports)
-- 30-day retention for Prometheus data (balance between history and storage)
+**What's Included:**
+- ✅ Custom metrics endpoint (port 9091)
+- ✅ Grafana dashboard JSON
+- ✅ Example Prometheus scrape config
+- ✅ Integration documentation
 
-### Key Considerations
-- Must maintain <1% performance overhead
-- All runner types must be supported equally
-- Single-command deployment for ease of use
-- Comprehensive documentation for all user levels
+**What's NOT Included (Out of Scope):**
+- ❌ Prometheus server deployment
+- ❌ Grafana server deployment
+- ❌ Node Exporter for system metrics
+- ❌ cAdvisor for container metrics
+- ❌ Alertmanager configuration
+
+**Rationale:** Users likely have existing Prometheus/Grafana infrastructure. This implementation focuses on adding runner-specific metrics and a dashboard, not deploying the entire monitoring stack.
+
+---
+
+## 📝 Design Decisions
+
+- **Lightweight Implementation**: bash + netcat instead of heavy HTTP frameworks
+- **30-second update interval**: Balance between freshness and overhead
+- **Port 9091**: Standard Prometheus exporter port, avoids conflicts
+- **Prometheus text format**: Universal compatibility with monitoring tools
+- **Dashboard JSON**: Users import into their own Grafana instance
 
 ---
 
 **Last Updated:** 2025-11-16  
 **Next Review:** 2025-11-23  
-**Assignee:** GitHub Copilot AI Agent
+**Scope:** Metrics + Dashboard ONLY  
+**Timeline:** 2 weeks (down from 5 weeks)

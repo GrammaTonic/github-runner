@@ -1,8 +1,9 @@
-# Prometheus Improvements Feature Specification
+# Grafana Dashboard & Metrics Endpoint Feature Specification
 
 ## Status: 🚧 In Development
 
 **Created:** 2025-11-16  
+**Updated:** 2025-11-16 (Scope reduced to Grafana + Metrics only)  
 **Feature Branch:** `feature/prometheus-improvements`  
 **Target Release:** v2.3.0
 
@@ -10,32 +11,31 @@
 
 ## 📋 Executive Summary
 
-Implement comprehensive Prometheus monitoring for GitHub Actions self-hosted runners to provide visibility into runner health, performance, and resource utilization. This feature enables data-driven optimization, proactive alerting, and alignment with DORA metrics.
+Implement custom metrics endpoint and Grafana dashboard for GitHub Actions self-hosted runners to provide visibility into runner health, performance, and resource utilization. This lightweight implementation uses existing Prometheus infrastructure (assumed to be already deployed) and focuses on runner-specific insights.
 
-**Current State:** No monitoring infrastructure - empty `monitoring/prometheus.yml` file  
-**Desired State:** Full observability stack with Prometheus, Grafana, and custom metrics  
-**Business Value:** Improved reliability, faster troubleshooting, cost optimization
+**Current State:** No metrics endpoint or dashboard for GitHub runners  
+**Desired State:** Custom metrics endpoint on each runner + Grafana dashboard for visualization  
+**Business Value:** Improved visibility, faster troubleshooting, data-driven optimization
+
+**Scope:** Metrics endpoint + Grafana dashboard only (assumes external Prometheus server exists)
 
 ---
 
 ## 🎯 Objectives
 
 ### Primary Goals
-1. **Visibility**: Real-time insights into runner health and performance
-2. **Alerting**: Proactive notifications for issues (runner offline, resource exhaustion)
-3. **Optimization**: Data-driven decisions for scaling and resource allocation
-4. **Compliance**: Track and report on DevOps metrics (DORA)
-5. **Troubleshooting**: Historical data for debugging performance issues
-6. **Cost Control**: Monitor resource usage to optimize cloud costs
+1. **Metrics Endpoint**: Expose runner-specific metrics in Prometheus format on port 9091
+2. **Grafana Dashboard**: Visualize runner health, performance, and DORA metrics
+3. **Minimal Overhead**: <1% CPU impact on runner performance
+4. **Easy Integration**: Works with existing Prometheus infrastructure
 
 ### Success Criteria
-- [ ] Prometheus server collecting metrics from all runner types
-- [ ] Grafana dashboards visualizing key metrics
-- [ ] Alerts configured for critical issues
-- [ ] DORA metrics tracked and reported
+- [ ] Custom metrics endpoint running on all runner types (standard, Chrome, Chrome-Go)
+- [ ] Grafana dashboard visualizing key runner metrics
+- [ ] DORA metrics tracked and calculated
 - [ ] Documentation for setup and usage
-- [ ] Integration with existing CI/CD pipeline
 - [ ] <1% performance overhead on runners
+- [ ] 30-second metric update frequency
 
 ---
 
@@ -45,60 +45,59 @@ Implement comprehensive Prometheus monitoring for GitHub Actions self-hosted run
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      Monitoring Stack                            │
+│              GitHub Runner Metrics & Visualization               │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                   │
-│  ┌──────────────┐      ┌──────────────┐      ┌──────────────┐  │
-│  │  Prometheus  │◄─────│ Node Exporter│      │   Grafana    │  │
-│  │   :9090      │      │    :9100     │      │    :3000     │  │
-│  └──────┬───────┘      └──────────────┘      └──────┬───────┘  │
-│         │                                             │          │
-│         │ scrapes                          visualizes│          │
-│         ▼                                             ▼          │
-│  ┌──────────────┐      ┌──────────────┐      ┌──────────────┐  │
-│  │   cAdvisor   │      │   Runners    │      │  Dashboards  │  │
-│  │    :8080     │      │  :9091/metrics│     │   & Alerts   │  │
-│  └──────────────┘      └──────────────┘      └──────────────┘  │
-│                                                                   │
-└─────────────────────────────────────────────────────────────────┘
+│  External Prometheus                    Grafana Dashboard        │
+│  (User-provided)                        (This Project)           │
+│         │                                      ▲                  │
+│         │ scrapes                              │                  │
+│         │ :9091/metrics                        │ queries          │
+│         ▼                                      │                  │
+│  ┌──────────────┐      ┌──────────────┐      │                  │
+│  │   Runner 1   │      │   Runner 2   │      │                  │
+│  │ :9091/metrics│      │ :9091/metrics│      │                  │
+│  │  (standard)  │      │   (chrome)   │      │                  │
+│  └──────────────┘      └──────────────┘      │                  │
+│         ▲                      ▲              │                  │
+│         │                      │              │                  │
+│  ┌──────┴──────────────────────┴──────┐      │                  │
+│  │  Metrics Collector (bash script)   │      │                  │
+│  │  - Updates every 30s                │      │                  │
+│  │  - Lightweight netcat HTTP server   │      │                  │
+│  └─────────────────────────────────────┘      │                  │
+│                                                │                  │
+└────────────────────────────────────────────────┴──────────────────┘
 ```
 
-### Components
+### Components (In Scope)
 
-#### 1. Prometheus Server
-- **Image**: `prom/prometheus:latest`
-- **Port**: 9090
-- **Configuration**: `monitoring/prometheus.yml`
-- **Storage**: `prometheus_data` volume (30-day retention)
-- **Scrape Interval**: 15s
-- **Evaluation Interval**: 15s
-
-#### 2. Grafana
-- **Image**: `grafana/grafana:latest`
-- **Port**: 3000
-- **Configuration**: `monitoring/grafana/provisioning/`
-- **Storage**: `grafana_data` volume
-- **Default Credentials**: admin/admin (change on first login)
-- **Plugins**: grafana-piechart-panel
-
-#### 3. Node Exporter
-- **Image**: `prom/node-exporter:latest`
-- **Port**: 9100
-- **Metrics**: System-level metrics (CPU, memory, disk, network)
-- **Export**: Host /proc, /sys, and / filesystems
-
-#### 4. cAdvisor
-- **Image**: `gcr.io/cadvisor/cadvisor:latest`
-- **Port**: 8080
-- **Metrics**: Docker container metrics
-- **Export**: Container CPU, memory, network, filesystem
-
-#### 5. Custom Metrics Endpoint
+#### 1. Custom Metrics Endpoint
 - **Port**: 9091 (per runner container)
-- **Format**: Prometheus text format
-- **Update Frequency**: 30s
+- **Format**: Prometheus text format (OpenMetrics compatible)
+- **Update Frequency**: 30 seconds
 - **Implementation**: Lightweight bash + netcat HTTP server
 - **Metrics**: Runner-specific custom metrics
+- **Location**: Embedded in runner entrypoint scripts
+
+#### 2. Grafana Dashboard
+- **Dashboard JSON**: Pre-configured dashboard for import
+- **Panels**: 10+ panels covering runner health, jobs, and DORA metrics
+- **Variables**: Filter by runner name, runner type
+- **Refresh**: 15-second auto-refresh
+- **Time Range**: Last 24 hours (configurable)
+
+### Components (Out of Scope - User Responsibility)
+
+#### External Prometheus Server
+- User must provide their own Prometheus server
+- Must be configured to scrape runners on port 9091
+- Example scrape config provided in documentation
+
+#### External Grafana Instance
+- User must provide their own Grafana instance
+- Must have Prometheus datasource configured
+- Dashboard JSON provided for import
 
 ---
 
@@ -135,49 +134,7 @@ github_runner_cache_hit_rate{runner_name="runner-1", cache_type="npm"} 0.78
 github_runner_info{runner_name="runner-1", runner_type="standard", version="2.329.0"} 1
 ```
 
-### System Metrics (Node Exporter - Port 9100)
-
-```promql
-# CPU usage percentage
-100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
-
-# Memory usage percentage
-(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
-
-# Disk usage percentage
-(1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100
-
-# Network I/O (bytes/sec)
-rate(node_network_receive_bytes_total[5m])
-rate(node_network_transmit_bytes_total[5m])
-
-# Load average
-node_load1
-node_load5
-node_load15
-```
-
-### Container Metrics (cAdvisor - Port 8080)
-
-```promql
-# Container CPU usage percentage
-rate(container_cpu_usage_seconds_total{name=~"github-runner.*"}[5m]) * 100
-
-# Container memory usage (bytes)
-container_memory_usage_bytes{name=~"github-runner.*"}
-
-# Container memory limit (bytes)
-container_spec_memory_limit_bytes{name=~"github-runner.*"}
-
-# Container network I/O (bytes/sec)
-rate(container_network_receive_bytes_total{name=~"github-runner.*"}[5m])
-rate(container_network_transmit_bytes_total{name=~"github-runner.*"}[5m])
-
-# Container filesystem usage
-container_fs_usage_bytes{name=~"github-runner.*"}
-```
-
-### DORA Metrics (Derived)
+### DORA Metrics (Derived from Runner Metrics)
 
 ```promql
 # Deployment Frequency (builds per day)
@@ -193,11 +150,13 @@ avg(rate(github_runner_job_duration_seconds_sum[5m]) / rate(github_runner_job_du
 avg(github_runner_recovery_time_seconds)
 ```
 
+**Note:** System and container metrics (CPU, memory, disk) should be collected separately using standard tools like Node Exporter and cAdvisor if needed. This implementation focuses only on runner-specific application metrics.
+
 ---
 
 ## 🚀 Implementation Plan
 
-### Phase 1: Infrastructure Setup (Week 1)
+### Phase 1: Custom Metrics Endpoint (Week 1)
 
 **Objective:** Deploy basic monitoring stack with Prometheus, Grafana, Node Exporter, and cAdvisor.
 
