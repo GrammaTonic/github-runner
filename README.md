@@ -26,16 +26,17 @@ Note: Documentation workflows and repo prompts were recently improved — see
 
 ## 📊 Current Versions
 
-| Component                 | Standard Runner  | Chrome Runner    | Status            |
-| ------------------------- | ---------------- | ---------------- | ----------------- |
-| **Image Version**         | v2.2.0           | v2.2.0           | ✅ Latest         |
-| **GitHub Actions Runner** | v2.329.0         | v2.329.0         | ✅ Latest         |
-| **Base OS**               | Ubuntu 25.10 Questing | Ubuntu 25.10 Questing | ✅ Supported/Pre-release |
-| **Node.js**               |                  | 24.11.1          | ✅ Chrome Only    |
-| **Python**                | 3.10+            | 3.10+            | ✅ Latest         |
-| **Playwright**            | -                | v1.55.1          | ✅ Latest         |
-| **Cypress**               | -                | v13.15.0         | ✅ Security Fixed |
-| **Chrome**                | -                | 142.0.7444.162   | ✅ Latest         |
+| Component                 | Standard Runner  | Chrome Runner    | Chrome-Go Runner | Status            |
+| ------------------------- | ---------------- | ---------------- | ---------------- | ----------------- |
+| **Image Version**         | v2.2.1           | v2.2.1           | v2.2.1           | ✅ Latest         |
+| **GitHub Actions Runner** | v2.329.0         | v2.329.0         | v2.329.0         | ✅ Latest         |
+| **Base OS**               | Ubuntu 25.10 Questing | Ubuntu 25.10 Questing | Ubuntu 25.10 Questing | ✅ Pre-release |
+| **Node.js**               | -                | 24.11.1          | 24.11.1          | ✅ Latest         |
+| **Go**                    | -                | -                | 1.25.4           | ✅ Latest         |
+| **Python**                | 3.10+            | 3.10+            | 3.10+            | ✅ Latest         |
+| **Playwright**            | -                | v1.55.1          | v1.55.1          | ✅ Latest         |
+| **Cypress**               | -                | v13.15.0         | v13.15.0         | ✅ Security Fixed |
+| **Chrome**                | -                | 142.0.7444.162   | 142.0.7444.162   | ✅ Latest         |
 
 > 📋 For detailed version information, see [Version Overview](docs/VERSION_OVERVIEW.md)
 
@@ -50,24 +51,30 @@ Note: Documentation workflows and repo prompts were recently improved — see
 
 ## 🚀 Features & Security Scanning
 
+- **Three Runner Types**: Standard, Chrome (browser testing), and Chrome-Go (Go + browser testing)
 - **Containerized Runners**: Docker-based runners with multi-platform support (amd64/arm64)
-- **Chrome Runner**: Specialized environment for web UI testing and browser automation
+- **Automated Dependency Management**: Zero-touch Dependabot automation with auto-merge and auto-rebase
+- **Performance Optimized**: BuildKit cache mounts, multi-stage builds, 50-70% faster rebuilds
 - **Auto-scaling**: Dynamic scaling based on workload demands using Docker Compose
 - **Monitoring**: Prometheus metrics and Grafana dashboards for performance tracking
 - **Security**: Comprehensive vulnerability scanning, security patches, and container hardening
 - **CI/CD Integration**: Automated building, testing, and deployment with GitHub Actions
 - **High Availability**: Health checks, automatic restarts, and failover mechanisms
 - **Multi-Environment**: Support for dev, staging, and production environments
-  - **Cache Optimization**: Persistent volume caching for build artifacts and dependencies
-  - **Security Scanning**: Weekly Trivy scans (filesystem, container, Chrome runner) with automated SARIF reporting and GitHub Security tab integration
-  - **Architecture Enforcement**: Chrome runner image only supports `linux/amd64` (x86_64). Builds on ARM (Apple Silicon) will fail with a clear error.
+- **Cache Optimization**: Persistent volume caching for build artifacts and dependencies
+- **Security Scanning**: Weekly Trivy scans (filesystem, container, Chrome runner) with automated SARIF reporting and GitHub Security tab integration
 
 ### 🆕 Recent Improvements (November 2025)
 
-- ✅ Added npm override to force `tar@7.5.2` inside all embedded npm distributions, closing CVE-2024-47554 exposure paths.
-- ✅ Chrome runners updated to Chrome `142.0.7444.162`, Playwright `1.55.1`, and Cypress `13.15.0` with matching `@playwright/test` tooling.
-- ✅ Documentation, version catalog, and wiki refreshed for v2.2.0 with Questing base image guidance and security workflow parity.
-- ✅ Release automation continues to publish SBOMs and Trivy scan SARIF reports for every tagged build.
+- ✅ **Dependabot Automation**: Zero-touch dependency updates with auto-merge and hourly auto-rebase workflows
+- ✅ **Performance Optimizations**: BuildKit cache mounts reduce build times by 50-70% (19s standard, 24s Chrome, 4m34s Chrome-Go)
+- ✅ **Multi-Stage Builds**: Standard runner image reduced by 370MB (17% smaller) with improved security
+- ✅ **Chrome-Go Runner**: New variant combining Go 1.25.4 toolchain with browser testing capabilities
+- ✅ **Cross-Branch Caching**: Feature branches leverage develop/main cache, eliminating redundant rebuilds
+- ✅ **Image Size Optimizations**: Standard ~1.8GB, Chrome ~4.1GB, Chrome-Go ~4.5GB (all optimized)
+- ✅ **CI/CD Enhancements**: Conditional Dependabot provisioning, artifact status files, clean logs
+- ✅ Chrome runners updated to Chrome `142.0.7444.162`, Playwright `1.55.1`, and Cypress `13.15.0`
+- ✅ npm override to force `tar@7.5.2` inside all embedded npm distributions, closing CVE-2024-47554
 
 ## 📦 Installation
 
@@ -102,17 +109,24 @@ Pre-built Docker images are available for each release:
 
 ```bash
 # Standard Runner (latest)
-docker pull ghcr.io/grammatonic/github-runner:v2.2.0
+docker pull ghcr.io/grammatonic/github-runner:v2.2.1
+docker pull ghcr.io/grammatonic/github-runner:latest
 
 # Chrome Runner (latest)
-docker pull ghcr.io/grammatonic/github-runner-chrome:v2.2.0
+docker pull ghcr.io/grammatonic/github-runner-chrome:v2.2.1
+docker pull ghcr.io/grammatonic/github-runner-chrome:latest
+
+# Chrome-Go Runner (latest)
+docker pull ghcr.io/grammatonic/github-runner-chrome-go:v2.2.1
+docker pull ghcr.io/grammatonic/github-runner-chrome-go:latest
 
 # Development versions
 docker pull ghcr.io/grammatonic/github-runner:develop
 docker pull ghcr.io/grammatonic/github-runner-chrome:develop
+docker pull ghcr.io/grammatonic/github-runner-chrome-go:develop
 
 # Semantic versioning
-docker pull ghcr.io/grammatonic/github-runner:2.2.0
+docker pull ghcr.io/grammatonic/github-runner:2.2.1
 docker pull ghcr.io/grammatonic/github-runner:2.2
 docker pull ghcr.io/grammatonic/github-runner:2
 ```
@@ -148,9 +162,10 @@ The interactive script will guide you through:
 
 ### Runner Types Available
 
-- **Standard Runner**: General CI/CD with Docker, Node.js, Python
-- **Chrome Runner**: UI testing with Chrome, Selenium, Playwright
-- **Both Runners**: Deploy both types with separate configurations
+- **Standard Runner**: General CI/CD with Docker, Node.js, Python (optimized with multi-stage build)
+- **Chrome Runner**: UI testing with Chrome, Selenium, Playwright, Cypress
+- **Chrome-Go Runner**: Go development + browser testing (Go 1.25.4 + all Chrome runner features)
+- **All Runners**: Deploy all three types with separate configurations for comprehensive coverage
 
 ### Manual Setup (Alternative)
 
@@ -183,8 +198,16 @@ ENVIRONMENT=production
 # Production setup (recommended)
 docker compose -f docker/docker-compose.production.yml up -d
 
+# Chrome runner for browser testing
+docker compose -f docker/docker-compose.chrome.yml up -d
+
+# Chrome-Go runner for Go + browser testing
+docker compose -f docker/docker-compose.chrome-go.yml up -d
+
 # Scale runners based on demand
-docker compose -f docker/docker-compose.production.yml up -d --scale github-runner=2 --scale github-runner-chrome=1
+docker compose -f docker/docker-compose.production.yml up -d --scale github-runner=3
+docker compose -f docker/docker-compose.chrome.yml up -d --scale github-runner-chrome=2
+docker compose -f docker/docker-compose.chrome-go.yml up -d --scale github-runner-chrome-go=1
 ```
 
 ### 4. Verify Setup
@@ -247,6 +270,65 @@ CHROME_SANDBOX=false
 ```
 
 📚 **Full Documentation**: [Chrome Runner Wiki](https://github.com/GrammaTonic/github-runner/wiki/Chrome-Runner)
+
+## 🤖 Automated Dependency Management
+
+**Zero-touch dependency updates with Dependabot automation.**
+
+### ✨ Features
+
+- ✅ **Auto-Merge**: Automatically approves and merges Dependabot PRs after CI passes
+- ✅ **Auto-Rebase**: Hourly checks keep out-of-date PRs current for sequential merging
+- ✅ **CI Validation**: All updates require passing builds, tests, and security scans
+- ✅ **Weekly Schedule**: Monday 09:00 dependency checks (github-actions, docker)
+- ✅ **Zero Human Intervention**: Complete automation from PR creation to merge
+
+### 🔄 Automated Workflow
+
+1. **Monday 09:00** - Dependabot creates PRs for github-actions and docker updates
+2. **Auto-Approve** - Workflow automatically approves PRs
+3. **CI Validation** - Full test suite, builds, and security scans run
+4. **Auto-Merge** - First PR passes and merges automatically
+5. **Auto-Rebase** - Hourly workflow rebases remaining out-of-date PRs
+6. **Sequential Merge** - PRs merge one-by-one as CI passes
+
+### 📊 Benefits
+
+- **Time Savings**: ~10 hours/year on dependency management
+- **Security**: Updates applied within hours of release
+- **Quality**: All updates validated by full CI/CD pipeline
+- **Reliability**: Automatic rebase prevents "ahead" branch issues
+
+📚 **Configuration**: See [`.github/dependabot.yml`](.github/dependabot.yml) and workflows in [`.github/workflows/`](.github/workflows/)
+
+## ⚡ Performance Optimizations
+
+**BuildKit cache mounts and multi-stage builds for 50-70% faster builds.**
+
+### 🚀 Performance Results
+
+| Runner Type     | Build Time | Improvement | Image Size | Reduction |
+| --------------- | ---------- | ----------- | ---------- | --------- |
+| **Standard**    | 19s        | 96% faster  | ~1.8GB     | 17% smaller |
+| **Chrome**      | 24s        | 99% faster  | ~4.1GB     | Optimized |
+| **Chrome-Go**   | 4m 34s     | 48% faster  | ~4.5GB     | Optimized |
+
+### ✨ Optimizations
+
+- ✅ **BuildKit Cache Mounts**: apt, npm, and download caches persist across builds
+- ✅ **Multi-Stage Builds**: Standard runner separates build and runtime dependencies
+- ✅ **Cross-Branch Caching**: Feature branches leverage develop/main cache
+- ✅ **100% Cache Hit Rate**: Unchanged dependencies never re-downloaded
+- ✅ **985MB Bandwidth Saved**: Per rebuild with cache hits
+
+### 📊 Impact
+
+- **First Build**: Normal download times (establishes cache)
+- **Subsequent Builds**: 50-70% faster with cache hits
+- **Annual Savings**: ~118 hours build time, ~3.6TB bandwidth
+- **CI Efficiency**: Faster feedback loops, reduced resource usage
+
+📚 **Full Analysis**: See [docs/PERFORMANCE_RESULTS.md](docs/PERFORMANCE_RESULTS.md)
 
 ## 📁 Project Structure
 
