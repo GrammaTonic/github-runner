@@ -513,15 +513,15 @@ jobs:
           if [ "$INPUT_VAL" = "true" ] || echo "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
             echo "force_rebuild=true" >> $GITHUB_OUTPUT
             # Clear cache settings so build-push-action won't attempt to import caches
-            printf "CACHE_FROM=\nCACHE_TO=\n" >> $GITHUB_ENV
+            printf "CACHE_FROM=\\nCACHE_TO=\\n" >> $GITHUB_ENV
             echo "cache_from=" >> $GITHUB_OUTPUT
             echo "cache_to=" >> $GITHUB_OUTPUT
           else
             echo "force_rebuild=false" >> $GITHUB_OUTPUT
             # Provide the default cache sources (multi-line) via GITHUB_ENV
             # Use cross-branch cache to leverage builds from feature branches and other branches
-            printf "CACHE_FROM=type=gha\ntype=gha,scope=normal-runner\ntype=gha,scope=buildcache\n" >> $GITHUB_ENV
-            printf "CACHE_TO=type=gha,mode=max,scope=normal-runner\ntype=gha,mode=max,scope=buildcache\n" >> $GITHUB_ENV
+            printf "CACHE_FROM=type=gha\\ntype=gha,scope=normal-runner\\ntype=gha,scope=buildcache\\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=normal-runner\\ntype=gha,mode=max,scope=buildcache\\n" >> $GITHUB_ENV
             # Also emit as step outputs so other action inputs can reference them (multi-line)
             echo "cache_from<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha" >> $GITHUB_OUTPUT
@@ -614,13 +614,13 @@ jobs:
           if [ "$INPUT_VAL" = "true" ] || echo "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
             echo "force_rebuild=true" >> $GITHUB_OUTPUT
             # Clear cache settings so build-push-action won't attempt to import caches
-            printf "CACHE_FROM=\nCACHE_TO=\n" >> $GITHUB_ENV
+            printf "CACHE_FROM=\\nCACHE_TO=\\n" >> $GITHUB_ENV
           else
             echo "force_rebuild=false" >> $GITHUB_OUTPUT
             # Provide the default cache sources (multi-line) via GITHUB_ENV
             # Use cross-branch cache to leverage builds from feature branches and other branches
-            printf "CACHE_FROM=type=gha\ntype=gha,scope=chrome-runner\ntype=gha,scope=buildcache\n" >> $GITHUB_ENV
-            printf "CACHE_TO=type=gha,mode=max,scope=chrome-runner\ntype=gha,mode=max,scope=buildcache\n" >> $GITHUB_ENV
+            printf "CACHE_FROM=type=gha\\ntype=gha,scope=chrome-runner\\ntype=gha,scope=buildcache\\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=chrome-runner\\ntype=gha,mode=max,scope=buildcache\\n" >> $GITHUB_ENV
             # Also emit as step outputs so other action inputs can reference them (multi-line)
             echo "cache_from<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha" >> $GITHUB_OUTPUT
@@ -713,13 +713,13 @@ jobs:
           if [ "$INPUT_VAL" = "true" ] || echo "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
             echo "force_rebuild=true" >> $GITHUB_OUTPUT
             # Clear cache settings so build-push-action won't attempt to import caches
-            printf "CACHE_FROM=\nCACHE_TO=\n" >> $GITHUB_ENV
+            printf "CACHE_FROM=\\nCACHE_TO=\\n" >> $GITHUB_ENV
           else
             echo "force_rebuild=false" >> $GITHUB_OUTPUT
             # Provide the default cache sources (multi-line) via GITHUB_ENV
             # Use cross-branch cache to leverage builds from feature branches and other branches
-            printf "CACHE_FROM=type=gha\ntype=gha,scope=chrome-go-runner\ntype=gha,scope=buildcache\n" >> $GITHUB_ENV
-            printf "CACHE_TO=type=gha,mode=max,scope=chrome-go-runner\ntype=gha,mode=max,scope=buildcache\n" >> $GITHUB_ENV
+            printf "CACHE_FROM=type=gha\\ntype=gha,scope=chrome-go-runner\\ntype=gha,scope=buildcache\\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=chrome-go-runner\\ntype=gha,mode=max,scope=buildcache\\n" >> $GITHUB_ENV
             # Also emit as step outputs so other action inputs can reference them (multi-line)
             echo "cache_from<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha" >> $GITHUB_OUTPUT
