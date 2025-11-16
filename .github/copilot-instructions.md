@@ -9,6 +9,10 @@ This repository is for setting up and managing GitHub Actions self-hosted runner
 - ALWAYS follow the established development workflow and branch protection rules
 - NEVER create .md files in the root directory; all documentation must go in `/docs/` subdirectories
 - ALWAYS use the provided scripts for setup, deployment, and validation tasks
+- **ALWAYS use `ubuntu:questing` as the base image** for all Dockerfiles (standard, chrome, chrome-go variants)
+  - Ubuntu Questing (25.10) provides latest browser dependencies and system libraries
+  - Do NOT change to ubuntu:24.04 or any other base image without explicit user approval
+  - This is a deliberate choice for accessing bleeding-edge dependencies
 
 ## 🚨 CRITICAL WORKFLOW & BRANCH PROTECTION RULES
 
