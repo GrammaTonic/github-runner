@@ -11,6 +11,7 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 5
     target-branch: "develop"
+    rebase-strategy: "auto"
     commit-message:
       prefix: "chore(deps)"
       include: "scope"
@@ -29,6 +30,7 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 5
     target-branch: "develop"
+    rebase-strategy: "auto"
     commit-message:
       prefix: "chore(docker)"
       include: "scope"
