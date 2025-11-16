@@ -46,7 +46,7 @@ jobs:
           timeout: "10m"
 
       - name: Upload Trivy filesystem SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: "trivy-filesystem-baseline.sarif"
@@ -74,44 +74,35 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Set up QEMU for multi-platform builds
-        uses: docker/setup-qemu-action@v3
-        if: matrix.variant == 'standard'
-        with:
-          platforms: linux/amd64,linux/arm64
-
       - name: Build Docker image for scanning
         uses: docker/build-push-action@v6
         with:
           context: ./docker
           file: ./docker/Dockerfile${{ matrix.variant == 'standard' && '' || format('.{0}', matrix.variant) }}
-          platforms: ${{ matrix.variant == 'standard' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          platforms: linux/amd64
           tags: github-runner-${{ matrix.variant }}:scan
-          load: false
+          load: true
           push: false
           cache-from: |
             type=gha
             type=gha,scope=${{ matrix.variant == 'standard' && 'normal' || matrix.variant }}-runner
             type=gha,scope=buildcache
-          outputs: type=docker,dest=/tmp/github-runner-${{ matrix.variant }}.tar
 
-      - name: Load image for scanning
-        run: |
-          docker load --input /tmp/github-runner-${{ matrix.variant }}.tar
-          docker images
+      - name: Verify image loaded
+        run: docker images | grep github-runner-${{ matrix.variant }}
 
       - name: Run Trivy container scan (generate SARIF)
         uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: "image"
-          input: /tmp/github-runner-${{ matrix.variant }}.tar
+          image-ref: github-runner-${{ matrix.variant }}:scan
           format: "sarif"
           output: "trivy-container-${{ matrix.variant }}-baseline.sarif"
           severity: "CRITICAL,HIGH,MEDIUM"
           timeout: "15m"
 
       - name: Upload Trivy container SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: "trivy-container-${{ matrix.variant }}-baseline.sarif"
