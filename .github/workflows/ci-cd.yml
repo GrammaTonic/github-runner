@@ -492,6 +492,10 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up QEMU for multi-platform builds
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Extract normal runner metadata
@@ -538,7 +542,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./docker
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           file: ./docker/Dockerfile
           push: true
           load: false
@@ -591,6 +595,10 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up QEMU for multi-platform builds
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Extract Chrome runner metadata
@@ -637,7 +645,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./docker
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           file: ./docker/Dockerfile.chrome
           push: true
           load: false
@@ -690,6 +698,10 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up QEMU for multi-platform builds
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Extract Chrome-Go runner metadata
@@ -736,7 +748,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./docker
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           file: ./docker/Dockerfile.chrome-go
           push: true
           load: false
