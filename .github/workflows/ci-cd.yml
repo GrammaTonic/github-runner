@@ -513,8 +513,8 @@ jobs:
           INPUT_VAL="${{ github.event.inputs.force_rebuild || '' }}"
           HEAD_MSG="${{ github.event.head_commit.message || '' }}"
           echo "event_input=$INPUT_VAL"
-          echo "head_commit_message=$HEAD_MSG"
-          if [ "$INPUT_VAL" = "true" ] || echo "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
+          printf 'head_commit_message=%s\n' "$HEAD_MSG"
+          if [ "$INPUT_VAL" = "true" ] || printf '%s' "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
             echo "force_rebuild=true" >> $GITHUB_OUTPUT
             # Clear cache settings so build-push-action won't attempt to import caches
             printf "CACHE_FROM=\\nCACHE_TO=\\n" >> $GITHUB_ENV
@@ -618,8 +618,8 @@ jobs:
           INPUT_VAL="${{ github.event.inputs.force_rebuild || '' }}"
           HEAD_MSG="${{ github.event.head_commit.message || '' }}"
           echo "event_input=$INPUT_VAL"
-          echo "head_commit_message=$HEAD_MSG"
-          if [ "$INPUT_VAL" = "true" ] || echo "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
+          printf 'head_commit_message=%s\n' "$HEAD_MSG"
+          if [ "$INPUT_VAL" = "true" ] || printf '%s' "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
             echo "force_rebuild=true" >> $GITHUB_OUTPUT
             # Clear cache settings so build-push-action won't attempt to import caches
             printf "CACHE_FROM=\\nCACHE_TO=\\n" >> $GITHUB_ENV
@@ -721,8 +721,8 @@ jobs:
           INPUT_VAL="${{ github.event.inputs.force_rebuild || '' }}"
           HEAD_MSG="${{ github.event.head_commit.message || '' }}"
           echo "event_input=$INPUT_VAL"
-          echo "head_commit_message=$HEAD_MSG"
-          if [ "$INPUT_VAL" = "true" ] || echo "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
+          printf 'head_commit_message=%s\n' "$HEAD_MSG"
+          if [ "$INPUT_VAL" = "true" ] || printf '%s' "$HEAD_MSG" | grep -q '\[force rebuild\]'; then
             echo "force_rebuild=true" >> $GITHUB_OUTPUT
             # Clear cache settings so build-push-action won't attempt to import caches
             printf "CACHE_FROM=\\nCACHE_TO=\\n" >> $GITHUB_ENV
