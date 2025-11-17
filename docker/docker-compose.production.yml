@@ -1,6 +1,6 @@
 services:
   github-runner:
-    image: ghcr.io/grammatonic/github-runner:latest
+    image: github-runner:metrics-test  # TASK-009: Using test image
     container_name: github-runner-main
     restart: unless-stopped
     environment:

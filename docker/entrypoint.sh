@@ -29,23 +29,64 @@ validate_hostname() {
 }
 
 # --- VARIABLE SETUP ---
-# Check for required environment variables
+# Assign optional variables with general-purpose defaults (before token check for metrics)
+RUNNER_NAME="${RUNNER_NAME:-docker-runner-$(hostname)}"
+RUNNER_LABELS="${RUNNER_LABELS:-docker,self-hosted,linux,x64}"
+RUNNER_WORK_DIR="${RUNNER_WORK_DIR:-/home/runner/_work}"
+GITHUB_HOST="${GITHUB_HOST:-github.com}"
+RUNNER_DIR="/actions-runner"
+
+# --- METRICS SETUP (Phase 1: Prometheus Monitoring) ---
+# Start metrics services BEFORE token validation to enable standalone testing
+# TASK-003: Initialize job log
+JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
+echo "Initializing job log: ${JOBS_LOG}"
+touch "${JOBS_LOG}"
+
+# TASK-004: Start metrics collection services
+METRICS_PORT="${METRICS_PORT:-9091}"
+METRICS_FILE="${METRICS_FILE:-/tmp/runner_metrics.prom}"
+RUNNER_TYPE="${RUNNER_TYPE:-standard}"
+
+echo "Starting Prometheus metrics services..."
+echo "  - Metrics endpoint: http://localhost:${METRICS_PORT}/metrics"
+echo "  - Runner type: ${RUNNER_TYPE}"
+
+# Start metrics collector in background
+if [ -f "/usr/local/bin/metrics-collector.sh" ]; then
+	RUNNER_NAME="${RUNNER_NAME}" \
+	RUNNER_TYPE="${RUNNER_TYPE}" \
+	METRICS_FILE="${METRICS_FILE}" \
+	JOBS_LOG="${JOBS_LOG}" \
+	UPDATE_INTERVAL="${METRICS_UPDATE_INTERVAL:-30}" \
+	/usr/local/bin/metrics-collector.sh &
+	COLLECTOR_PID=$!
+	echo "Metrics collector started (PID: ${COLLECTOR_PID})"
+else
+	echo "Warning: metrics-collector.sh not found, metrics collection disabled"
+fi
+
+# Start metrics HTTP server in background
+if [ -f "/usr/local/bin/metrics-server.sh" ]; then
+	METRICS_PORT="${METRICS_PORT}" \
+	METRICS_FILE="${METRICS_FILE}" \
+	/usr/local/bin/metrics-server.sh &
+	SERVER_PID=$!
+	echo "Metrics server started (PID: ${SERVER_PID})"
+else
+	echo "Warning: metrics-server.sh not found, metrics endpoint disabled"
+fi
+
+# --- GITHUB RUNNER SETUP ---
+# Check for required environment variables (after metrics setup)
 : "${GITHUB_TOKEN:?Error: GITHUB_TOKEN environment variable not set.}"
 : "${GITHUB_REPOSITORY:?Error: GITHUB_REPOSITORY environment variable not set.}"
 
 # Validate inputs before using them
 validate_repository "$GITHUB_REPOSITORY" || exit 1
 
-# Assign optional variables with general-purpose defaults
-RUNNER_NAME="${RUNNER_NAME:-docker-runner-$(hostname)}"
-RUNNER_LABELS="${RUNNER_LABELS:-docker,self-hosted,linux,x64}"
-RUNNER_WORK_DIR="${RUNNER_WORK_DIR:-/home/runner/_work}"
-GITHUB_HOST="${GITHUB_HOST:-github.com}"
-
 # Validate GitHub host
 validate_hostname "$GITHUB_HOST" || exit 1
-
-RUNNER_DIR="/actions-runner"
 
 # --- RUNNER CONFIGURATION ---
 cd "${RUNNER_DIR}"
@@ -87,46 +128,6 @@ echo "Configuring runner..."
 	--work "${RUNNER_WORK_DIR}" \
 	--unattended \
 	--replace
-
-# --- METRICS SETUP (Phase 1: Prometheus Monitoring) ---
-# TASK-003: Initialize job log
-JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
-echo "Initializing job log: ${JOBS_LOG}"
-touch "${JOBS_LOG}"
-
-# TASK-004: Start metrics collection services
-METRICS_PORT="${METRICS_PORT:-9091}"
-METRICS_FILE="${METRICS_FILE:-/tmp/runner_metrics.prom}"
-RUNNER_TYPE="${RUNNER_TYPE:-standard}"
-
-echo "Starting Prometheus metrics services..."
-echo "  - Metrics endpoint: http://localhost:${METRICS_PORT}/metrics"
-echo "  - Runner type: ${RUNNER_TYPE}"
-
-# Start metrics collector in background
-if [ -f "/usr/local/bin/metrics-collector.sh" ]; then
-	RUNNER_NAME="${RUNNER_NAME}" \
-	RUNNER_TYPE="${RUNNER_TYPE}" \
-	METRICS_FILE="${METRICS_FILE}" \
-	JOBS_LOG="${JOBS_LOG}" \
-	UPDATE_INTERVAL="${METRICS_UPDATE_INTERVAL:-30}" \
-	/usr/local/bin/metrics-collector.sh &
-	COLLECTOR_PID=$!
-	echo "Metrics collector started (PID: ${COLLECTOR_PID})"
-else
-	echo "Warning: metrics-collector.sh not found, metrics collection disabled"
-fi
-
-# Start metrics HTTP server in background
-if [ -f "/usr/local/bin/metrics-server.sh" ]; then
-	METRICS_PORT="${METRICS_PORT}" \
-	METRICS_FILE="${METRICS_FILE}" \
-	/usr/local/bin/metrics-server.sh &
-	SERVER_PID=$!
-	echo "Metrics server started (PID: ${SERVER_PID})"
-else
-	echo "Warning: metrics-server.sh not found, metrics endpoint disabled"
-fi
 
 # --- STARTUP AND CLEANUP ---
 
