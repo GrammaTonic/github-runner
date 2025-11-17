@@ -11,9 +11,9 @@ echo ""
 # Phase 1: Custom Metrics Endpoint - Standard Runner
 echo "📝 Creating Phase 1 Issue..."
 gh issue create \
-  --title "[Feature] Phase 1: Custom Metrics Endpoint - Standard Runner" \
-  --label "enhancement,monitoring,prometheus,phase-1" \
-  --body-file - <<'EOF'
+	--title "[Feature] Phase 1: Custom Metrics Endpoint - Standard Runner" \
+	--label "enhancement,monitoring,prometheus,phase-1" \
+	--body-file - <<'EOF'
 ## 📊 Phase 1: Custom Metrics Endpoint - Standard Runner
 
 **Timeline:** Week 1 (2025-11-18 to 2025-11-23)
@@ -67,9 +67,9 @@ echo ""
 # Phase 2: Chrome & Chrome-Go Runners
 echo "📝 Creating Phase 2 Issue..."
 gh issue create \
-  --title "[Feature] Phase 2: Custom Metrics Endpoint - Chrome & Chrome-Go Runners" \
-  --label "enhancement,monitoring,prometheus,phase-2,chrome" \
-  --body-file - <<'EOF'
+	--title "[Feature] Phase 2: Custom Metrics Endpoint - Chrome & Chrome-Go Runners" \
+	--label "enhancement,monitoring,prometheus,phase-2,chrome" \
+	--body-file - <<'EOF'
 ## 📊 Phase 2: Custom Metrics Endpoint - Chrome & Chrome-Go Runners
 
 **Timeline:** Week 2 (2025-11-23 to 2025-11-30)
@@ -119,9 +119,9 @@ echo ""
 # Phase 3: Enhanced Metrics & Job Tracking
 echo "📝 Creating Phase 3 Issue..."
 gh issue create \
-  --title "[Feature] Phase 3: Enhanced Metrics & Job Tracking (DORA)" \
-  --label "enhancement,monitoring,prometheus,phase-3,dora-metrics" \
-  --body-file - <<'EOF'
+	--title "[Feature] Phase 3: Enhanced Metrics & Job Tracking (DORA)" \
+	--label "enhancement,monitoring,prometheus,phase-3,dora-metrics" \
+	--body-file - <<'EOF'
 ## 📊 Phase 3: Enhanced Metrics & Job Tracking (DORA)
 
 **Timeline:** Week 2-3 (2025-11-26 to 2025-12-03)
@@ -166,9 +166,9 @@ echo ""
 # Phase 4: Grafana Dashboards
 echo "📝 Creating Phase 4 Issue..."
 gh issue create \
-  --title "[Feature] Phase 4: Grafana Dashboards" \
-  --label "enhancement,monitoring,prometheus,phase-4,grafana,dashboards" \
-  --body-file - <<'EOF'
+	--title "[Feature] Phase 4: Grafana Dashboards" \
+	--label "enhancement,monitoring,prometheus,phase-4,grafana,dashboards" \
+	--body-file - <<'EOF'
 ## 📊 Phase 4: Grafana Dashboards
 
 **Timeline:** Week 3-4 (2025-11-30 to 2025-12-10)
@@ -214,9 +214,9 @@ echo ""
 # Phase 5: Documentation & User Guide
 echo "📝 Creating Phase 5 Issue..."
 gh issue create \
-  --title "[Feature] Phase 5: Documentation & User Guide" \
-  --label "enhancement,monitoring,prometheus,phase-5,documentation" \
-  --body-file - <<'EOF'
+	--title "[Feature] Phase 5: Documentation & User Guide" \
+	--label "enhancement,monitoring,prometheus,phase-5,documentation" \
+	--body-file - <<'EOF'
 ## 📊 Phase 5: Documentation & User Guide
 
 **Timeline:** Week 4-5 (2025-12-07 to 2025-12-21)
@@ -264,9 +264,9 @@ echo ""
 # Phase 6: Testing & Validation
 echo "📝 Creating Phase 6 Issue..."
 gh issue create \
-  --title "[Feature] Phase 6: Testing & Validation" \
-  --label "enhancement,monitoring,prometheus,phase-6,testing" \
-  --body-file - <<'EOF'
+	--title "[Feature] Phase 6: Testing & Validation" \
+	--label "enhancement,monitoring,prometheus,phase-6,testing" \
+	--body-file - <<'EOF'
 ## 📊 Phase 6: Testing & Validation
 
 **Timeline:** Week 5 (2025-12-14 to 2025-12-21)
@@ -321,9 +321,9 @@ echo ""
 # Phase 7: Release Preparation
 echo "📝 Creating Phase 7 Issue..."
 gh issue create \
-  --title "[Feature] Phase 7: Release Preparation (v2.3.0)" \
-  --label "enhancement,monitoring,prometheus,phase-7,release" \
-  --body-file - <<'EOF'
+	--title "[Feature] Phase 7: Release Preparation (v2.3.0)" \
+	--label "enhancement,monitoring,prometheus,phase-7,release" \
+	--body-file - <<'EOF'
 ## 📊 Phase 7: Release Preparation (v2.3.0)
 
 **Timeline:** Week 5 (2025-12-18 to 2025-12-21)
