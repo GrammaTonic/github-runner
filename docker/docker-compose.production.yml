@@ -15,12 +15,21 @@ services:
       - RUNNER_WORKDIR=${RUNNER_WORKDIR:-/home/runner/_work}
       - RUNNER_EPHEMERAL=${RUNNER_EPHEMERAL:-false}
       - RUNNER_REPLACE_EXISTING=${RUNNER_REPLACE_EXISTING:-true}
+      # TASK-007: Prometheus metrics configuration (Phase 1)
+      - RUNNER_TYPE=standard
+      - METRICS_PORT=9091
+      - METRICS_UPDATE_INTERVAL=${METRICS_UPDATE_INTERVAL:-30}
+    ports:
+      # TASK-006: Expose Prometheus metrics endpoint
+      - "9091:9091"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - runner-cache:/home/runner/_work
       - runner-config:/home/runner/.config
       - runner-cache-npm:/home/runner/.npm
       - runner-cache-pip:/home/runner/.cache/pip
+      # Persist job log for metrics across restarts
+      - runner-jobs-log:/tmp
     # Drop all capabilities except those needed for Docker socket
     cap_drop:
       - ALL
@@ -51,6 +60,8 @@ volumes:
   runner-cache-npm:
     driver: local
   runner-cache-pip:
+    driver: local
+  runner-jobs-log:
     driver: local
 
 networks:
