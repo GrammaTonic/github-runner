@@ -129,10 +129,19 @@ WORKDIR /home/runner
 COPY --chown=runner:runner entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# Copy Prometheus metrics scripts (Phase 1: Prometheus Monitoring)
+COPY --chown=runner:runner metrics-server.sh /usr/local/bin/metrics-server.sh
+COPY --chown=runner:runner metrics-collector.sh /usr/local/bin/metrics-collector.sh
+RUN chmod +x /usr/local/bin/metrics-server.sh /usr/local/bin/metrics-collector.sh
+
 
 # Final image runs as unprivileged runner user.
 USER runner
 WORKDIR /home/runner
+
+# --- EXPOSE PORTS ---
+# TASK-005: Expose Prometheus metrics port
+EXPOSE 9091
 
 # --- HEALTHCHECK AND ENTRYPOINT ---
 HEALTHCHECK --interval=5s --timeout=10s --start-period=60s --retries=3 \

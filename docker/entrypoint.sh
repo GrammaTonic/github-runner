@@ -88,11 +88,65 @@ echo "Configuring runner..."
 	--unattended \
 	--replace
 
+# --- METRICS SETUP (Phase 1: Prometheus Monitoring) ---
+# TASK-003: Initialize job log
+JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
+echo "Initializing job log: ${JOBS_LOG}"
+touch "${JOBS_LOG}"
+
+# TASK-004: Start metrics collection services
+METRICS_PORT="${METRICS_PORT:-9091}"
+METRICS_FILE="${METRICS_FILE:-/tmp/runner_metrics.prom}"
+RUNNER_TYPE="${RUNNER_TYPE:-standard}"
+
+echo "Starting Prometheus metrics services..."
+echo "  - Metrics endpoint: http://localhost:${METRICS_PORT}/metrics"
+echo "  - Runner type: ${RUNNER_TYPE}"
+
+# Start metrics collector in background
+if [ -f "/usr/local/bin/metrics-collector.sh" ]; then
+	RUNNER_NAME="${RUNNER_NAME}" \
+	RUNNER_TYPE="${RUNNER_TYPE}" \
+	METRICS_FILE="${METRICS_FILE}" \
+	JOBS_LOG="${JOBS_LOG}" \
+	UPDATE_INTERVAL="${METRICS_UPDATE_INTERVAL:-30}" \
+	/usr/local/bin/metrics-collector.sh &
+	COLLECTOR_PID=$!
+	echo "Metrics collector started (PID: ${COLLECTOR_PID})"
+else
+	echo "Warning: metrics-collector.sh not found, metrics collection disabled"
+fi
+
+# Start metrics HTTP server in background
+if [ -f "/usr/local/bin/metrics-server.sh" ]; then
+	METRICS_PORT="${METRICS_PORT}" \
+	METRICS_FILE="${METRICS_FILE}" \
+	/usr/local/bin/metrics-server.sh &
+	SERVER_PID=$!
+	echo "Metrics server started (PID: ${SERVER_PID})"
+else
+	echo "Warning: metrics-server.sh not found, metrics endpoint disabled"
+fi
+
 # --- STARTUP AND CLEANUP ---
 
 # Function to clean up the runner on exit
 cleanup() {
-	echo "Signal received, removing runner registration..."
+	echo "Signal received, shutting down..."
+	
+	# Stop metrics services
+	if [ -n "${COLLECTOR_PID:-}" ]; then
+		echo "Stopping metrics collector (PID: ${COLLECTOR_PID})..."
+		kill -TERM "${COLLECTOR_PID}" 2>/dev/null || true
+	fi
+	
+	if [ -n "${SERVER_PID:-}" ]; then
+		echo "Stopping metrics server (PID: ${SERVER_PID})..."
+		kill -TERM "${SERVER_PID}" 2>/dev/null || true
+	fi
+	
+	# Remove runner registration
+	echo "Removing runner registration..."
 	./config.sh remove --token "${RUNNER_TOKEN}"
 	echo "Runner registration removed."
 }
