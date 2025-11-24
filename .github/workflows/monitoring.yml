@@ -30,7 +30,7 @@ jobs:
     if: inputs.check_type == 'all' || inputs.check_type == 'infrastructure' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Check container registry connectivity
         run: |
@@ -100,7 +100,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Run security vulnerability scan
         uses: aquasecurity/trivy-action@master
@@ -180,7 +180,7 @@ jobs:
     if: inputs.check_type == 'all' || inputs.check_type == 'performance' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Measure repository size
         run: |
@@ -230,7 +230,7 @@ jobs:
     if: inputs.check_type == 'all' || inputs.check_type == 'dependencies' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Check for outdated base images
         run: |
