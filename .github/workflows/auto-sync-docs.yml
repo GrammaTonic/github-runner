@@ -16,7 +16,7 @@ jobs:
   auto-sync-docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           # Need full history for diff against origin/main
           fetch-depth: 0
