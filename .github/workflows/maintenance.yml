@@ -50,40 +50,76 @@ jobs:
         run: |
           echo "Extracting versions from Docker images..."
 
-          # Extract GitHub Actions Runner version (remove quotes)
-          RUNNER_VERSION=$(grep -E 'ARG RUNNER_VERSION=' docker/Dockerfile | cut -d'=' -f2 | tr -d '"')
-          echo "runner-version=$RUNNER_VERSION" >> $GITHUB_OUTPUT
+          # helper: sanitize and write single-line output
+          write_output() {
+            name="$1"
+            value="$2"
+            # remove carriage returns, collapse multiple lines to single space, trim leading/trailing whitespace
+            value=$(printf "%s" "$value" | tr -d '\r' | awk 'BEGIN{ORS="";} {gsub(/^[ \t]+|[ \t]+$/,""); if (NR>1) printf " "; print $0}')
+            # final safety: remove any literal newlines just in case
+            value=$(printf "%s" "$value" | tr '\n' ' ')
+            # if empty, set to "unknown"
+            if [[ -z "$value" ]]; then
+              value="unknown"
+            fi
+            # write in key=value single-line form
+            printf "%s=%s\n" "$name" "$value" >> "$GITHUB_OUTPUT"
+          }
 
-          # Extract Node.js version
+          # Extract GitHub Actions Runner version (remove quotes)
+          RUNNER_VERSION=$(grep -E 'ARG RUNNER_VERSION=' docker/Dockerfile | cut -d'=' -f2 | tr -d '"' | head -n1)
+          write_output "runner-version" "$RUNNER_VERSION"
+
+          # Extract Node.js version (first numeric major from setup_x.x pattern)
           NODE_VERSION=$(grep -E 'setup_[0-9]+\.x' docker/Dockerfile | grep -o '[0-9]\+' | head -1)
-          echo "node-version=${NODE_VERSION}.x" >> $GITHUB_OUTPUT
+          if [[ -n "$NODE_VERSION" ]]; then
+            write_output "node-version" "${NODE_VERSION}.x"
+          else
+            write_output "node-version" "unknown"
+          fi
 
           # Extract testing framework versions from Chrome Dockerfile
-          PLAYWRIGHT_VERSION=$(grep -E 'playwright@[0-9]+\.[0-9]+\.[0-9]+' docker/Dockerfile.chrome | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
-          CYPRESS_VERSION=$(grep -E 'cypress@[0-9]+\.[0-9]+\.[0-9]+' docker/Dockerfile.chrome | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
-          echo "playwright-version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
-          echo "cypress-version=$CYPRESS_VERSION" >> $GITHUB_OUTPUT
+          PLAYWRIGHT_VERSION=$(grep -E 'playwright@[0-9]+\.[0-9]+\.[0-9]+' docker/Dockerfile.chrome 2>/dev/null | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
+          CYPRESS_VERSION=$(grep -E 'cypress@[0-9]+\.[0-9]+\.[0-9]+' docker/Dockerfile.chrome 2>/dev/null | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
+          write_output "playwright-version" "$PLAYWRIGHT_VERSION"
+          write_output "cypress-version" "$CYPRESS_VERSION"
 
           # Extract security patch versions
-          FLAT_VERSION=$(grep -E 'flat@[0-9]+\.[0-9]+\.[0-9]+' docker/Dockerfile* | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
-          echo "flat-version=$FLAT_VERSION" >> $GITHUB_OUTPUT
+          FLAT_VERSION=$(grep -E 'flat@[0-9]+\.[0-9]+\.[0-9]+' docker/Dockerfile* 2>/dev/null | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
+          write_output "flat-version" "$FLAT_VERSION"
 
       - name: Check for newer versions
         id: check-updates
         run: |
           echo "Checking for newer versions..."
 
+          # helper: sanitize and write single-line output
+          write_output() {
+            name="$1"
+            value="$2"
+            # remove carriage returns, collapse multiple lines to single space, trim leading/trailing whitespace
+            value=$(printf "%s" "$value" | tr -d '\r' | awk 'BEGIN{ORS="";} {gsub(/^[ \t]+|[ \t]+$/,""); if (NR>1) printf " "; print $0}')
+            # final safety: remove any literal newlines just in case
+            value=$(printf "%s" "$value" | tr '\n' ' ')
+            # if empty, set to "unknown"
+            if [[ -z "$value" ]]; then
+              value="unknown"
+            fi
+            # write in key=value single-line form
+            printf "%s=%s\n" "$name" "$value" >> "$GITHUB_OUTPUT"
+          }
+
           # Check GitHub Actions Runner releases
           LATEST_RUNNER=$(curl -s https://api.github.com/repos/actions/runner/releases/latest | jq -r '.tag_name' | sed 's/v//')
-          echo "latest-runner=$LATEST_RUNNER" >> $GITHUB_OUTPUT
+          write_output "latest-runner" "$LATEST_RUNNER"
 
           # Check Node.js LTS versions
           LATEST_NODE=$(curl -s https://nodejs.org/dist/index.json | jq -r '.[0].version' | sed 's/v//' | cut -d'.' -f1)
-          echo "latest-node-major=$LATEST_NODE" >> $GITHUB_OUTPUT
+          write_output "latest-node-major" "$LATEST_NODE"
 
           # Compare versions and set update flags
           if [[ "${{ steps.extract-versions.outputs.runner-version }}" != "$LATEST_RUNNER" ]]; then
-            echo "runner-needs-update=true" >> $GITHUB_OUTPUT
+            write_output "runner-needs-update" "true"
           fi
 
       - name: Update VERSION_OVERVIEW.md
