@@ -459,6 +459,8 @@ jobs:
           scan-ref: "."
           format: "sarif"
           output: "trivy-results.sarif"
+          timeout: "10m"
+          skip-dirs: "test-results,logs,.git"
       - name: Upload Trivy scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
         if: always()
@@ -1130,6 +1132,8 @@ jobs:
           image-ref: ${{ needs.build.outputs.normal-image-primary }}
           format: "sarif"
           output: "trivy-container-results.sarif"
+          timeout: "15m"
+          severity: "CRITICAL,HIGH"
       - name: Upload container scan results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
@@ -1154,6 +1158,8 @@ jobs:
           image-ref: ${{ needs.build-chrome.outputs.chrome-image-primary }}
           format: "sarif"
           output: "trivy-chrome-results.sarif"
+          timeout: "15m"
+          severity: "CRITICAL,HIGH"
       - name: Upload Chrome container scan results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
@@ -1178,6 +1184,8 @@ jobs:
           image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
           format: "sarif"
           output: "trivy-chrome-go-results.sarif"
+          timeout: "15m"
+          severity: "CRITICAL,HIGH"
       - name: Upload Chrome-Go container scan results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
