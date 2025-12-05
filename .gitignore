@@ -185,12 +185,13 @@ pip-delete-this-directory.txt
 
 # Go
 vendor/
+bin/
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-go.sum
+# Note: go.sum should be committed for reproducible builds
 
 # ===============================
 # Emergency and Backup Files

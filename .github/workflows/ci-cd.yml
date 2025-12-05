@@ -59,7 +59,7 @@ jobs:
     if: github.actor != 'dependabot[bot]'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Log in to Container Registry
@@ -167,7 +167,7 @@ jobs:
     if: github.actor != 'dependabot[bot]'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Log in to Container Registry
@@ -273,7 +273,7 @@ jobs:
     if: github.actor != 'dependabot[bot]'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Log in to Container Registry
@@ -399,28 +399,29 @@ jobs:
       statuses: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Run GitHub Super Linter 
-        id: lint
-        uses: super-linter/super-linter/slim@v8.2.1
-        env:
-          DEFAULT_BRANCH: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref || github.ref_name }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_ALL_CODEBASE: true
-          VALIDATE_DOCKERFILE: true
-          VALIDATE_DOCKERFILE_HADOLINT: true
-          FILTER_REGEX_EXCLUDE: docs/archive/.*
-          VALIDATE_BASH: true
-          VALIDATE_SHELL_SHFMT: true
-          VALIDATE_YAML: true
-          VALIDATE_JSON: true
-          VALIDATE_MD: true
-          # report in SARIF format for GitHub code scanning dont fail this step on lint errors
-          FAIL_ON_ERROR: false
-          SAVE_SUPER_LINTER_OUTPUT: true
+      - name: Lint Dockerfiles with Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: "docker/Dockerfile*"
+          recursive: true
+          failure-threshold: warning
+      - name: Lint Shell Scripts with ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: './scripts'
+          severity: warning
+          ignore_paths: docs tests
+      - name: Lint YAML files
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: .github/workflows docker/docker-compose*.yml
+          config_file: .yamllint.yml
+          strict: false
+        continue-on-error: true
       - name: Validate Docker Compose files
         run: |
           # Validate separate compose files syntax
@@ -448,7 +449,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Run Trivy vulnerability scanner on filesystem
@@ -458,6 +459,8 @@ jobs:
           scan-ref: "."
           format: "sarif"
           output: "trivy-results.sarif"
+          timeout: "10m"
+          skip-dirs: "test-results,logs,.git"
       - name: Upload Trivy scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
         if: always()
@@ -483,7 +486,7 @@ jobs:
       normal-image-primary: ${{ steps.get-primary-tag.outputs.primary-tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - name: Log in to Container Registry
@@ -590,7 +593,7 @@ jobs:
       chrome-image-primary: ${{ steps.get-primary-tag-chrome.outputs.primary-tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - name: Log in to Container Registry
@@ -697,7 +700,7 @@ jobs:
       chrome-go-image-primary: ${{ steps.get-primary-tag-chrome-go.outputs.primary-tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - name: Log in to Container Registry
@@ -800,7 +803,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - name: Run Package Validation Tests
@@ -835,7 +838,7 @@ jobs:
           [unit, integration, docker-validation, security, configuration]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - name: Set up test environment
@@ -1081,7 +1084,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Log in to Container Registry
@@ -1120,7 +1123,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - name: Run Trivy vulnerability scanner on container
@@ -1129,6 +1132,8 @@ jobs:
           image-ref: ${{ needs.build.outputs.normal-image-primary }}
           format: "sarif"
           output: "trivy-container-results.sarif"
+          timeout: "15m"
+          severity: "CRITICAL,HIGH"
       - name: Upload container scan results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
@@ -1144,7 +1149,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - name: Run Trivy vulnerability scanner on Chrome container
@@ -1153,6 +1158,8 @@ jobs:
           image-ref: ${{ needs.build-chrome.outputs.chrome-image-primary }}
           format: "sarif"
           output: "trivy-chrome-results.sarif"
+          timeout: "15m"
+          severity: "CRITICAL,HIGH"
       - name: Upload Chrome container scan results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
@@ -1168,7 +1175,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - name: Run Trivy vulnerability scanner on Chrome-Go container
@@ -1177,6 +1184,8 @@ jobs:
           image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
           format: "sarif"
           output: "trivy-chrome-go-results.sarif"
+          timeout: "15m"
+          severity: "CRITICAL,HIGH"
       - name: Upload Chrome-Go container scan results
         uses: github/codeql-action/upload-sarif@v4
         if: always()

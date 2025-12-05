@@ -55,10 +55,10 @@ jobs:
     if: github.event.inputs.scan_type == 'filesystem' || github.event.inputs.scan_type == 'all' || github.event_name == 'push' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Run Trivy filesystem scan (generate SARIF)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -77,7 +77,7 @@ jobs:
           category: "filesystem-scan"
 
       - name: Upload SARIF as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: trivy-filesystem-sarif
@@ -93,7 +93,7 @@ jobs:
         variant: [standard, chrome, chrome-go]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -120,7 +120,7 @@ jobs:
         run: docker images | grep github-runner-${{ matrix.variant }}
 
       - name: Run Trivy container scan (generate SARIF)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: "image"
           image-ref: github-runner-${{ matrix.variant }}:scan
@@ -139,7 +139,7 @@ jobs:
           category: "container-scan-${{ matrix.variant }}"
 
       - name: Upload SARIF as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: trivy-container-${{ matrix.variant }}-sarif
