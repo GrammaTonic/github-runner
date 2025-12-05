@@ -403,24 +403,25 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Run GitHub Super Linter 
-        id: lint
-        uses: super-linter/super-linter/slim@v8.2.1
-        env:
-          DEFAULT_BRANCH: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref || github.ref_name }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_ALL_CODEBASE: false
-          VALIDATE_DOCKERFILE: true
-          VALIDATE_DOCKERFILE_HADOLINT: true
-          FILTER_REGEX_EXCLUDE: docs/archive/.*|plan/.*|docs/features/.*|docs/releases/.*
-          VALIDATE_BASH: true
-          VALIDATE_SHELL_SHFMT: true
-          VALIDATE_YAML: true
-          VALIDATE_JSON: true
-          VALIDATE_MD: false
-          # report in SARIF format for GitHub code scanning dont fail this step on lint errors
-          FAIL_ON_ERROR: false
-          SAVE_SUPER_LINTER_OUTPUT: false
+      - name: Lint Dockerfiles with Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: "docker/Dockerfile*"
+          recursive: true
+          failure-threshold: warning
+      - name: Lint Shell Scripts with ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: './scripts'
+          severity: warning
+          ignore_paths: docs tests
+      - name: Lint YAML files
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: .github/workflows docker/docker-compose*.yml
+          config_file: .yamllint.yml
+          strict: false
+        continue-on-error: true
       - name: Validate Docker Compose files
         run: |
           # Validate separate compose files syntax
