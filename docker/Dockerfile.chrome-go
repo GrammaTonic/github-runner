@@ -28,6 +28,7 @@ ARG PLAYWRIGHT_TEST_VERSION="1.55.1"
 ARG CROSS_SPAWN_VERSION="7.0.6"
 ARG TAR_VERSION="7.5.2"
 ARG BRACE_EXPANSION_VERSION="2.0.2"
+ARG GLOB_VERSION="13.0.0"
 
 # Environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -229,9 +230,9 @@ RUN --mount=type=cache,target=/tmp/npm-cache,uid=1001,gid=1001 \
     if [ -x "${NODE_ROOT}bin/node" ] && [ -d "${NODE_ROOT}lib/node_modules/npm" ]; then \
         NPM_DIR="${NODE_ROOT}lib/node_modules/npm"; \
         PATCH_DIR="$(mktemp -d)"; \
-        printf '{\n  "name": "runner-patch",\n  "private": true,\n  "version": "1.0.0",\n  "dependencies": {\n    "cross-spawn": "%s",\n    "tar": "%s",\n    "brace-expansion": "%s"\n  }\n}\n' "${CROSS_SPAWN_VERSION}" "${TAR_VERSION}" "${BRACE_EXPANSION_VERSION}" > "${PATCH_DIR}/package.json"; \
+        printf '{\n  "name": "runner-patch",\n  "private": true,\n  "version": "1.0.0",\n  "dependencies": {\n    "cross-spawn": "%s",\n    "tar": "%s",\n    "brace-expansion": "%s",\n    "glob": "%s"\n  }\n}\n' "${CROSS_SPAWN_VERSION}" "${TAR_VERSION}" "${BRACE_EXPANSION_VERSION}" "${GLOB_VERSION}" > "${PATCH_DIR}/package.json"; \
         "${NODE_ROOT}bin/node" "${NPM_DIR}/bin/npm-cli.js" install --prefix="${PATCH_DIR}" --omit=dev --cache /tmp/npm-cache; \
-        rm -rf "${NPM_DIR}/node_modules/cross-spawn" "${NPM_DIR}/node_modules/tar" "${NPM_DIR}/node_modules/brace-expansion"; \
+        rm -rf "${NPM_DIR}/node_modules/cross-spawn" "${NPM_DIR}/node_modules/tar" "${NPM_DIR}/node_modules/brace-expansion" "${NPM_DIR}/node_modules/glob"; \
         cp -a "${PATCH_DIR}/node_modules/." "${NPM_DIR}/node_modules/"; \
         rm -rf "${PATCH_DIR}" "${NPM_DIR}/node_modules/.npm"; \
     fi; \
