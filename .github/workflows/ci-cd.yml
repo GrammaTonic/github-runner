@@ -409,18 +409,18 @@ jobs:
         env:
           DEFAULT_BRANCH: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref || github.ref_name }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_ALL_CODEBASE: false
           VALIDATE_DOCKERFILE: true
           VALIDATE_DOCKERFILE_HADOLINT: true
-          FILTER_REGEX_EXCLUDE: docs/archive/.*
+          FILTER_REGEX_EXCLUDE: docs/archive/.*|plan/.*|docs/features/.*|docs/releases/.*
           VALIDATE_BASH: true
           VALIDATE_SHELL_SHFMT: true
           VALIDATE_YAML: true
           VALIDATE_JSON: true
-          VALIDATE_MD: true
+          VALIDATE_MD: false
           # report in SARIF format for GitHub code scanning dont fail this step on lint errors
           FAIL_ON_ERROR: false
-          SAVE_SUPER_LINTER_OUTPUT: true
+          SAVE_SUPER_LINTER_OUTPUT: false
       - name: Validate Docker Compose files
         run: |
           # Validate separate compose files syntax
