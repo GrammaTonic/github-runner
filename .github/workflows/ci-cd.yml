@@ -404,7 +404,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Lint Dockerfiles with Hadolint
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: "docker/Dockerfile*"
           recursive: true
