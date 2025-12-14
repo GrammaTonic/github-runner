@@ -39,6 +39,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space-action@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: false
+          swap-storage: false
+
       - name: Set up scan parameters
         id: params
         run: |
@@ -132,6 +143,15 @@ jobs:
           format: "json"
           output: "trivy-results/container.json"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+
+      - name: Cleanup standard runner image
+        if: contains(steps.params.outputs.scan_targets, 'container')
+        run: |
+          echo "Cleaning up standard runner image to free space..."
+          docker rmi github-runner:scan || true
+          docker system prune -f || true
+          echo "Disk space after cleanup:"
+          df -h
 
       # Chrome runner container scan
       - name: Build Chrome runner image for scanning
