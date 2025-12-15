@@ -60,7 +60,7 @@ jobs:
         run: |
           git diff origin/main -- docs/ wiki-content/ > docs-full-patch.diff || echo "No doc changes detected."
       - name: Upload Patch Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: docs-full-patch
           path: docs-full-patch.diff

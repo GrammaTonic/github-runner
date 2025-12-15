@@ -278,7 +278,7 @@ jobs:
           echo "total-count=$total_all" >> $GITHUB_OUTPUT
 
       - name: Upload Security Reports
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: security-scan-reports-${{ steps.params.outputs.timestamp }}
           path: |
@@ -330,7 +330,7 @@ jobs:
           EOF
 
       - name: Upload Security Summary
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: security-summary-${{ steps.params.outputs.timestamp }}
           path: security-report.md
