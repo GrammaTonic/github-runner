@@ -39,6 +39,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Free Disk Space (Ubuntu)
+        run: |
+          echo "Freeing up disk space..."
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          echo "Disk space after cleanup:"
+          df -h
+
       - name: Set up scan parameters
         id: params
         run: |
@@ -132,6 +142,15 @@ jobs:
           format: "json"
           output: "trivy-results/container.json"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+
+      - name: Cleanup standard runner image
+        if: contains(steps.params.outputs.scan_targets, 'container')
+        run: |
+          echo "Cleaning up standard runner image to free space..."
+          docker rmi github-runner:scan || true
+          docker system prune -f || true
+          echo "Disk space after cleanup:"
+          df -h
 
       # Chrome runner container scan
       - name: Build Chrome runner image for scanning
@@ -258,7 +277,7 @@ jobs:
           echo "total-count=$total_all" >> $GITHUB_OUTPUT
 
       - name: Upload Security Reports
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: security-scan-reports-${{ steps.params.outputs.timestamp }}
           path: |
@@ -310,7 +329,7 @@ jobs:
           EOF
 
       - name: Upload Security Summary
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: security-summary-${{ steps.params.outputs.timestamp }}
           path: security-report.md

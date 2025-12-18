@@ -260,7 +260,7 @@ jobs:
           chmod +x tests/integration/playwright_screenshot_integration.sh
           CONTAINER_NAME=github-runner-chrome tests/integration/playwright_screenshot_integration.sh
       - name: Upload Playwright screenshot artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-google-screenshot
           path: test-results/playwright/google_screenshot_*.png
@@ -386,7 +386,7 @@ jobs:
           chmod +x tests/integration/playwright_screenshot_integration.sh
           CONTAINER_NAME=github-runner-chrome-go tests/integration/playwright_screenshot_integration.sh
       - name: Upload Playwright screenshot artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-chrome-go-google-screenshot
           path: test-results/playwright/google_screenshot_*.png
@@ -404,7 +404,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Lint Dockerfiles with Hadolint
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: "docker/Dockerfile*"
           recursive: true
@@ -570,13 +570,13 @@ jobs:
           echo "$PRIMARY_TAG" > build-normal-image-tag.txt
           echo "${{ steps.build.outputs.digest }}" > build-normal-image-digest.txt
       - name: Upload normal runner build image tag as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: build-normal-image-tag
           path: build-normal-image-tag.txt
           retention-days: 30
       - name: Upload normal runner build image digest as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: build-normal-image-digest
           path: build-normal-image-digest.txt
@@ -677,13 +677,13 @@ jobs:
           echo "$PRIMARY_TAG" > build-chrome-image-tag.txt
           echo "${{ steps.build-chrome.outputs.digest }}" > build-chrome-image-digest.txt
       - name: Upload Chrome build image tag as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: build-chrome-image-tag
           path: build-chrome-image-tag.txt
           retention-days: 30
       - name: Upload Chrome build image digest as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: build-chrome-image-digest
           path: build-chrome-image-digest.txt
@@ -784,13 +784,13 @@ jobs:
           echo "$PRIMARY_TAG" > build-chrome-go-image-tag.txt
           echo "${{ steps.build-chrome-go.outputs.digest }}" > build-chrome-go-image-digest.txt
       - name: Upload Chrome-Go build image tag as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: build-chrome-go-image-tag
           path: build-chrome-go-image-tag.txt
           retention-days: 30
       - name: Upload Chrome-Go build image digest as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: build-chrome-go-image-digest
           path: build-chrome-go-image-digest.txt
@@ -819,7 +819,7 @@ jobs:
           echo "Running unit tests for obsolete package detection..."
           tests/unit/package-validation.sh
       - name: Upload package validation results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: package-validation-results
@@ -1066,7 +1066,7 @@ jobs:
             echo "PASSED" > test-results/configuration/status.txt
           fi
       - name: Upload comprehensive test results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: test-results-${{ matrix.test-suite }}
@@ -1107,7 +1107,7 @@ jobs:
           chmod +x tests/user-deployment/test-user-experience.sh
           tests/user-deployment/test-user-experience.sh
       - name: Upload user deployment test results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: user-deployment-test-results
@@ -1239,7 +1239,7 @@ jobs:
           fi
           cat deployment-report.md
       - name: Upload deployment report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: deployment-report
           path: deployment-report.md
