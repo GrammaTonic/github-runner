@@ -34,7 +34,7 @@ NAMESPACE="${DOCKER_NAMESPACE:-grammatonic}"
 IMAGE_NAME="${IMAGE_NAME:-github-runner}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64}"
-RUNNER_VERSION="${RUNNER_VERSION:-2.329.0}"
+RUNNER_VERSION="${RUNNER_VERSION:-2.330.0}"
 
 # Build arguments
 BUILD_ARGS=(
