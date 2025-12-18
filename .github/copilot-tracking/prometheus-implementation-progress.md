@@ -16,9 +16,8 @@
 - [x] 2-phase implementation plan defined
 - [x] Metrics strategy documented
 - [x] Dashboard panel specifications designed
-- [x] Go module created with Prometheus dependencies
-- [x] Metrics exporter implementation completed
-- [x] Metrics tested and validated
+- [x] Implementation approach switched to netcat method
+- [x] Removed Go dependencies and implementation
 
 ### 🚧 In Progress (0%)
 - [ ] Docker integration
@@ -40,19 +39,19 @@
 **Tasks:**
 - [x] Create feature branch
 - [x] Create feature specification document
-- [x] Create Go metrics exporter using Prometheus client library
-- [x] Implement Prometheus metrics (gauges, counters, histograms)
-- [ ] Add metrics exporter binary to Docker images
-- [ ] Update `docker/entrypoint.sh` to start metrics exporter
-- [ ] Update `docker/entrypoint-chrome.sh` to start metrics exporter
+- [ ] Create bash metrics server script using netcat
+- [ ] Create bash metrics collector script
+- [ ] Initialize job log file in entrypoint scripts
+- [ ] Update `docker/entrypoint.sh` to start metrics server and collector
+- [ ] Update `docker/entrypoint-chrome.sh` to start metrics server and collector
 - [ ] Expose port 9091 in Dockerfiles
 - [ ] Update Docker Compose files to map port 9091
 - [ ] Test metrics endpoint on all runner types
 
 **Next Steps:**
-1. Create multi-stage Dockerfile for building Go binary
-2. Update entrypoint.sh to start metrics exporter
-3. Update entrypoint-chrome.sh to start metrics exporter
+1. Create /tmp/metrics-server.sh using netcat for HTTP server
+2. Create /tmp/metrics-collector.sh to generate Prometheus metrics
+3. Update entrypoint scripts to launch background processes
 
 ---
 
@@ -92,17 +91,13 @@
 ## 📂 Files to Create/Modify
 
 ### Phase 1: Metrics Endpoint
-- [x] Create `go.mod` (Go module with Prometheus dependencies)
-- [x] Create `go.sum` (dependency checksums)
-- [x] Create `cmd/metrics-exporter/main.go` (main metrics exporter)
-- [x] Update `.gitignore` (add bin/, keep go.sum)
-- [ ] Create `internal/metrics/collector.go` (optional: metrics collection logic)
-- [ ] Create `internal/metrics/registry.go` (optional: Prometheus registry)
-- [ ] Update `docker/entrypoint.sh` (start metrics exporter)
-- [ ] Update `docker/entrypoint-chrome.sh` (start metrics exporter)
-- [ ] Update `docker/Dockerfile` (multi-stage build for Go binary, add `EXPOSE 9091`)
-- [ ] Update `docker/Dockerfile.chrome` (multi-stage build, add `EXPOSE 9091`)
-- [ ] Update `docker/Dockerfile.chrome-go` (multi-stage build, add `EXPOSE 9091`)
+- [ ] Create `docker/metrics-server.sh` (netcat-based HTTP server for port 9091)
+- [ ] Create `docker/metrics-collector.sh` (bash script to generate Prometheus metrics)
+- [ ] Update `docker/entrypoint.sh` (start metrics server and collector)
+- [ ] Update `docker/entrypoint-chrome.sh` (start metrics server and collector)
+- [ ] Update `docker/Dockerfile` (add `EXPOSE 9091`)
+- [ ] Update `docker/Dockerfile.chrome` (add `EXPOSE 9091`)
+- [ ] Update `docker/Dockerfile.chrome-go` (add `EXPOSE 9091`)
 - [ ] Update `docker/docker-compose.production.yml` (add port mapping)
 - [ ] Update `docker/docker-compose.chrome.yml` (add port mapping)
 - [ ] Update `docker/docker-compose.chrome-go.yml` (add port mapping)
@@ -205,13 +200,13 @@ curl http://localhost:9091/metrics
 
 ## 📝 Design Decisions
 
-- **Go Prometheus Client**: Using official `github.com/prometheus/client_golang` library
-- **Real-time Updates**: Metrics updated on events, not polling intervals
+- **Netcat HTTP Server**: Using netcat (nc) for lightweight HTTP server on port 9091
+- **Bash Metrics Collector**: Pure bash script to generate Prometheus text format
+- **Periodic Updates**: Metrics updated every 30 seconds via background process
 - **Port 9091**: Standard Prometheus exporter port, avoids conflicts
 - **Prometheus Text Format**: Standard exposition format with proper metric types
 - **Dashboard JSON**: Users import into their own Grafana instance
-- **Multi-stage Build**: Separate Go build stage for smaller final images
-- **Static Binary**: CGO_ENABLED=0 for portability and smaller size
+- **Job Log Tracking**: Parse /tmp/jobs.log for job metrics
 - **Health Endpoint**: `/health` endpoint for container health checks
 
 ---
