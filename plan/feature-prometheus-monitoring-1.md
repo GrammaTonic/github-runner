@@ -51,7 +51,7 @@ This implementation plan provides a fully executable roadmap for adding Promethe
 
 ### Constraints
 
-- **CON-001**: Must use bash scripting (no additional language runtimes like Python/Node.js)
+- **CON-001**: Must use bash scripting (no additional language runtimes like Python/Node.js/Go)
 - **CON-002**: Must use netcat (nc) for HTTP server (lightweight, already available in base image)
 - **CON-003**: Cannot modify GitHub Actions runner binary or core functionality
 - **CON-004**: Must maintain compatibility with existing Docker Compose configurations

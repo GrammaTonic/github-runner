@@ -86,14 +86,13 @@ Implement a lightweight custom metrics endpoint on each GitHub Actions runner (p
 ### Components
 
 #### 1. Custom Metrics Endpoint (Port 9091) - **We Provide**
-- **Implementation**: Go service using official Prometheus client library
-- **Libraries**: 
-  - `github.com/prometheus/client_golang/prometheus`
-  - `github.com/prometheus/client_golang/prometheus/promhttp`
+- **Implementation**: Lightweight bash script using netcat for HTTP server
+- **HTTP Server**: netcat (nc) listening on port 9091
+- **Metrics Generation**: Bash script generating Prometheus text format
 - **Format**: Prometheus text format (OpenMetrics compatible)
-- **Update Frequency**: Real-time (metrics updated on each job event)
-- **Location**: Separate Go binary started by `entrypoint.sh` and `entrypoint-chrome.sh`
-- **Metrics**: Runner status, job counts, uptime, cache hit rates, job duration histograms
+- **Update Frequency**: 30 seconds (metrics collector updates periodically)
+- **Location**: Bash scripts started by `entrypoint.sh` and `entrypoint-chrome.sh`
+- **Metrics**: Runner status, job counts, uptime, cache hit rates, job duration
 
 #### 2. Grafana Dashboard JSON - **We Provide**
 - **File**: `monitoring/grafana/dashboards/github-runner-dashboard.json`
@@ -169,208 +168,103 @@ avg(rate(github_runner_job_duration_seconds_sum[5m]) / rate(github_runner_job_du
 **Tasks:**
 - [x] Create feature branch
 - [x] Create feature specification
-- [ ] Create Go metrics exporter using Prometheus client library
-- [ ] Implement Prometheus metrics (gauges, counters, histograms)
-- [ ] Add metrics exporter binary to Docker images
-- [ ] Update `docker/entrypoint.sh` to start metrics exporter
-- [ ] Update `docker/entrypoint-chrome.sh` to start metrics exporter
+- [ ] Create bash metrics server script using netcat
+- [ ] Create bash metrics collector script
+- [ ] Initialize job log file in entrypoint scripts
+- [ ] Update `docker/entrypoint.sh` to start metrics server and collector
+- [ ] Update `docker/entrypoint-chrome.sh` to start metrics server and collector
 - [ ] Expose port 9091 in all Dockerfiles
 - [ ] Update all Docker Compose files to map port 9091
 - [ ] Test metrics endpoint on all runner types
 
 **Files to Create:**
-- `cmd/metrics-exporter/main.go` - Main metrics exporter application
-- `internal/metrics/collector.go` - Metrics collection logic
-- `internal/metrics/registry.go` - Prometheus registry setup
-- `go.mod` - Go module definition with Prometheus dependencies
-- `go.sum` - Go dependency checksums
+- `docker/metrics-server.sh` - Netcat-based HTTP server for /metrics endpoint
+- `docker/metrics-collector.sh` - Bash script to generate Prometheus metrics
 
 **Files to Modify:**
 - `docker/entrypoint.sh`
 - `docker/entrypoint-chrome.sh`
-- `docker/Dockerfile` (add Go binary and `EXPOSE 9091`)
-- `docker/Dockerfile.chrome` (add Go binary and `EXPOSE 9091`)
-- `docker/Dockerfile.chrome-go` (add Go binary and `EXPOSE 9091`)
+- `docker/Dockerfile` (add `EXPOSE 9091`)
+- `docker/Dockerfile.chrome` (add `EXPOSE 9091`)
+- `docker/Dockerfile.chrome-go` (add `EXPOSE 9091`)
 - `docker/docker-compose.production.yml` (add port mapping)
 - `docker/docker-compose.chrome.yml` (add port mapping)
 - `docker/docker-compose.chrome-go.yml` (add port mapping)
 
 **Implementation:**
 
-**1. Create Go Metrics Exporter (`cmd/metrics-exporter/main.go`):**
+**1. Create Bash Metrics Server (`docker/metrics-server.sh`):**
 
-```go
-package main
+```bash
+#!/bin/bash
+# Metrics HTTP server using netcat
+# Serves /tmp/runner_metrics.prom on port 9091
 
-import (
-    "log"
-    "net/http"
-    "os"
-    "time"
+METRICS_FILE="/tmp/runner_metrics.prom"
+PORT="${METRICS_PORT:-9091}"
 
-    "github.com/prometheus/client_golang/prometheus"
-    "github.com/prometheus/client_golang/prometheus/promhttp"
-)
-
-var (
-    runnerName    = os.Getenv("RUNNER_NAME")
-    runnerType    = getEnvOrDefault("RUNNER_TYPE", "standard")
-    runnerVersion = "2.329.0"
-
-    // Gauges
-    runnerStatus = prometheus.NewGaugeVec(
-        prometheus.GaugeOpts{
-            Name: "github_runner_status",
-            Help: "Runner online status (1=online, 0=offline)",
-        },
-        []string{"runner_name", "runner_type"},
-    )
-
-    runnerUptime = prometheus.NewGaugeVec(
-        prometheus.GaugeOpts{
-            Name: "github_runner_uptime_seconds",
-            Help: "Runner uptime in seconds",
-        },
-        []string{"runner_name", "runner_type"},
-    )
-
-    runnerInfo = prometheus.NewGaugeVec(
-        prometheus.GaugeOpts{
-            Name: "github_runner_info",
-            Help: "Runner metadata",
-        },
-        []string{"runner_name", "runner_type", "version"},
-    )
-
-    // Counters
-    jobsTotal = prometheus.NewCounterVec(
-        prometheus.CounterOpts{
-            Name: "github_runner_jobs_total",
-            Help: "Total jobs executed by status",
-        },
-        []string{"runner_name", "runner_type", "status"},
-    )
-
-    // Histograms
-    jobDuration = prometheus.NewHistogramVec(
-        prometheus.HistogramOpts{
-            Name:    "github_runner_job_duration_seconds",
-            Help:    "Job duration in seconds",
-            Buckets: prometheus.ExponentialBuckets(10, 2, 10), // 10s to ~2.8h
-        },
-        []string{"runner_name", "runner_type", "status"},
-    )
-
-    cacheHitRate = prometheus.NewGaugeVec(
-        prometheus.GaugeOpts{
-            Name: "github_runner_cache_hit_rate",
-            Help: "Cache hit rate (0.0 to 1.0)",
-        },
-        []string{"runner_name", "runner_type", "cache_type"},
-    )
-)
-
-func init() {
-    // Register metrics
-    prometheus.MustRegister(runnerStatus)
-    prometheus.MustRegister(runnerUptime)
-    prometheus.MustRegister(runnerInfo)
-    prometheus.MustRegister(jobsTotal)
-    prometheus.MustRegister(jobDuration)
-    prometheus.MustRegister(cacheHitRate)
-}
-
-func main() {
-    log.Printf("Starting metrics exporter for runner: %s (type: %s)", runnerName, runnerType)
-
-    // Set initial status
-    runnerStatus.WithLabelValues(runnerName, runnerType).Set(1)
-    runnerInfo.WithLabelValues(runnerName, runnerType, runnerVersion).Set(1)
-
-    // Start metrics updater
-    go updateMetrics()
-
-    // Start HTTP server
-    http.Handle("/metrics", promhttp.Handler())
-    http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-        w.WriteHeader(http.StatusOK)
-        w.Write([]byte("OK"))
-    })
-
-    log.Printf("Metrics endpoint listening on :9091")
-    if err := http.ListenAndServe(":9091", nil); err != nil {
-        log.Fatalf("Failed to start metrics server: %v", err)
-    }
-}
-
-func updateMetrics() {
-    startTime := time.Now()
-    ticker := time.NewTicker(5 * time.Second)
-    defer ticker.Stop()
-
-    for range ticker.C {
-        // Update uptime
-        uptime := time.Since(startTime).Seconds()
-        runnerUptime.WithLabelValues(runnerName, runnerType).Set(uptime)
-
-        // TODO: Add logic to read job logs and update job metrics
-        // This would integrate with the runner's job execution logs
-    }
-}
-
-func getEnvOrDefault(key, defaultValue string) string {
-    if value := os.Getenv(key); value != "" {
-        return value
-    }
-    return defaultValue
-}
+while true; do
+    # Wait for connection
+    RESPONSE=$(echo -e "HTTP/1.1 200 OK\r\nContent-Type: text/plain; version=0.0.4\r\n\r\n$(cat \"$METRICS_FILE\" 2>/dev/null || echo '# No metrics available')" | nc -l -p "$PORT" -q 1)
+done
 ```
 
-**2. Create `go.mod`:**
+**2. Create Bash Metrics Collector (`docker/metrics-collector.sh`):**
 
-```go
-module github.com/grammatonic/github-runner/metrics-exporter
+```bash
+#!/bin/bash
+# Metrics collector - generates Prometheus metrics every 30 seconds
 
-go 1.22
+METRICS_FILE="/tmp/runner_metrics.prom"
+JOBS_LOG="/tmp/jobs.log"
+START_TIME=$(date +%s)
+RUNNER_NAME="${RUNNER_NAME:-$(hostname)}"
+RUNNER_TYPE="${RUNNER_TYPE:-standard}"
+RUNNER_VERSION="2.330.0"
 
-require (
-    github.com/prometheus/client_golang v1.19.0
-)
+while true; do
+    # Calculate uptime
+    CURRENT_TIME=$(date +%s)
+    UPTIME=$((CURRENT_TIME - START_TIME))
+    
+    # Count jobs from log
+    JOBS_TOTAL=$(wc -l < "$JOBS_LOG" 2>/dev/null || echo 0)
+    JOBS_SUCCESS=$(grep -c "success" "$JOBS_LOG" 2>/dev/null || echo 0)
+    JOBS_FAILED=$(grep -c "failed" "$JOBS_LOG" 2>/dev/null || echo 0)
+    
+    # Generate Prometheus metrics
+    cat > "$METRICS_FILE" <<EOF
+# HELP github_runner_status Runner online status (1=online, 0=offline)
+# TYPE github_runner_status gauge
+github_runner_status{runner_name="$RUNNER_NAME",runner_type="$RUNNER_TYPE"} 1
 
-require (
-    github.com/beorn7/perks v1.0.1 // indirect
-    github.com/cespare/xxhash/v2 v2.2.0 // indirect
-    github.com/prometheus/client_model v0.5.0 // indirect
-    github.com/prometheus/common v0.48.0 // indirect
-    github.com/prometheus/procfs v0.12.0 // indirect
-    golang.org/x/sys v0.16.0 // indirect
-    google.golang.org/protobuf v1.32.0 // indirect
-)
+# HELP github_runner_uptime_seconds Runner uptime in seconds
+# TYPE github_runner_uptime_seconds gauge
+github_runner_uptime_seconds{runner_name="$RUNNER_NAME",runner_type="$RUNNER_TYPE"} $UPTIME
+
+# HELP github_runner_jobs_total Total jobs executed by status
+# TYPE github_runner_jobs_total counter
+github_runner_jobs_total{runner_name="$RUNNER_NAME",runner_type="$RUNNER_TYPE",status="total"} $JOBS_TOTAL
+github_runner_jobs_total{runner_name="$RUNNER_NAME",runner_type="$RUNNER_TYPE",status="success"} $JOBS_SUCCESS
+github_runner_jobs_total{runner_name="$RUNNER_NAME",runner_type="$RUNNER_TYPE",status="failed"} $JOBS_FAILED
+
+# HELP github_runner_info Runner metadata
+# TYPE github_runner_info gauge
+github_runner_info{runner_name="$RUNNER_NAME",runner_type="$RUNNER_TYPE",version="$RUNNER_VERSION"} 1
+EOF
+    
+    # Wait 30 seconds before next update
+    sleep 30
+done
 ```
 
-**3. Update Dockerfile (add multi-stage build for Go binary):**
+**3. Update Dockerfile (add metrics scripts and expose port):**
 
 ```dockerfile
-# Stage 1: Build metrics exporter
-FROM golang:1.22-alpine AS metrics-builder
-
-WORKDIR /build
-COPY go.mod go.sum ./
-RUN go mod download
-
-COPY cmd/ ./cmd/
-COPY internal/ ./internal/
-
-RUN CGO_ENABLED=0 GOOS=linux go build -o metrics-exporter ./cmd/metrics-exporter
-
-# Stage 2: Final runner image
-FROM ubuntu:22.04
-
-# ... existing runner setup ...
-
-# Copy metrics exporter
-COPY --from=metrics-builder /build/metrics-exporter /usr/local/bin/metrics-exporter
-RUN chmod +x /usr/local/bin/metrics-exporter
+# Copy metrics scripts
+COPY metrics-server.sh /tmp/metrics-server.sh
+COPY metrics-collector.sh /tmp/metrics-collector.sh
+RUN chmod +x /tmp/metrics-server.sh /tmp/metrics-collector.sh
 
 # Expose metrics port
 EXPOSE 9091
@@ -384,16 +278,21 @@ EXPOSE 9091
 #!/bin/bash
 set -euo pipefail
 
-# Start metrics exporter in background
-RUNNER_NAME="${RUNNER_NAME:-$(hostname)}" \
-RUNNER_TYPE="${RUNNER_TYPE:-standard}" \
-/usr/local/bin/metrics-exporter &
+# Initialize job log
+touch /tmp/jobs.log
 
-METRICS_PID=$!
-echo "✅ Metrics exporter started (PID: $METRICS_PID) on port 9091"
+# Start metrics collector in background
+/tmp/metrics-collector.sh &
+COLLECTOR_PID=$!
+echo "✅ Metrics collector started (PID: $COLLECTOR_PID)"
 
-# Trap to cleanup metrics exporter on exit
-trap "kill $METRICS_PID 2>/dev/null || true" EXIT
+# Start metrics HTTP server in background
+/tmp/metrics-server.sh &
+SERVER_PID=$!
+echo "✅ Metrics server started (PID: $SERVER_PID) on port 9091"
+
+# Trap to cleanup on exit
+trap "kill $COLLECTOR_PID $SERVER_PID 2>/dev/null || true" EXIT
 
 # Continue with normal runner startup...
 ```
@@ -643,29 +542,29 @@ scrape_configs:
 ### Risk 1: Port 9091 Conflicts
 **Mitigation**: Document port requirements, make port configurable via environment variable
 
-### Risk 2: Go Binary Size
-**Mitigation**: Multi-stage Docker build, static compilation with CGO_ENABLED=0
+### Risk 2: Netcat Performance
+**Mitigation**: Simple HTTP response, pre-generated metrics file, minimal overhead
 
 ### Risk 3: Metric Format Compatibility
-**Mitigation**: Use official Prometheus client library (guaranteed compatibility)
+**Mitigation**: Use standard Prometheus text format specification, test with actual Prometheus
 
-### Risk 4: Dependency Management
-**Mitigation**: Pin Go module versions, use go.sum for reproducible builds
+### Risk 4: Bash Script Reliability
+**Mitigation**: Error handling with set -euo pipefail, process supervision, container restart policies
 
 ---
 
 ## 📖 References
 
-- [Prometheus Go Client Library](https://github.com/prometheus/client_golang)
 - [Prometheus Exposition Formats](https://prometheus.io/docs/instrumenting/exposition_formats/)
 - [Prometheus Best Practices](https://prometheus.io/docs/practices/naming/)
 - [Grafana Dashboard JSON Model](https://grafana.com/docs/grafana/latest/dashboards/json-model/)
 - [DORA Metrics](https://cloud.google.com/blog/products/devops-sre/using-the-four-keys-to-measure-your-devops-performance)
 - [OpenMetrics Specification](https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md)
+- [Netcat Usage Guide](https://www.computerhope.com/unix/nc.htm)
 
 ---
 
-**Last Updated:** 2025-11-16  
+**Last Updated:** 2025-12-18  
 **Scope:** Metrics Endpoint + Grafana Dashboard ONLY  
 **Status:** 🚧 Phase 1 - In Progress  
 **Completion:** 10%
