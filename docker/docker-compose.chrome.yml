@@ -3,6 +3,9 @@ services:
     image: ghcr.io/grammatonic/github-runner:chrome-latest
     container_name: github-runner-chrome
     restart: unless-stopped
+    # TASK-016: Expose metrics port on unique host port to avoid conflicts
+    ports:
+      - "9092:9091"  # Prometheus metrics endpoint (host:container)
     environment:
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
@@ -16,6 +19,10 @@ services:
       - RUNNER_REPLACE_EXISTING=${RUNNER_REPLACE_EXISTING:-true}
       - DISPLAY=${DISPLAY:-:99}
       - CHROME_FLAGS=${CHROME_FLAGS:---headless --no-sandbox --disable-dev-shm-usage --disable-gpu}
+      # TASK-018: Prometheus metrics configuration
+      - RUNNER_TYPE=chrome
+      - METRICS_PORT=9091
+      - METRICS_UPDATE_INTERVAL=${METRICS_UPDATE_INTERVAL:-30}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - chrome-cache:/home/runner/_work
@@ -23,6 +30,8 @@ services:
       - chrome-cache-npm:/home/runner/.runnercache/npm
       - chrome-cache-pip:/home/runner/.runnercache/pip
       - /dev/shm:/dev/shm
+      # TASK-016: Persist job log for metrics across restarts
+      - chrome-jobs-log:/tmp
     # Drop all capabilities except those needed for Chrome and Docker socket
     cap_drop:
       - ALL
@@ -60,6 +69,9 @@ volumes:
   chrome-cache-npm:
     driver: local
   chrome-cache-pip:
+    driver: local
+  # TASK-016: Volume for persistent job log
+  chrome-jobs-log:
     driver: local
 
 networks:
