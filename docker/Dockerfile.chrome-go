@@ -153,15 +153,15 @@ RUN --mount=type=cache,target=/tmp/npm-cache,uid=0,gid=0 \
 # Go supports both amd64 and arm64 architectures
 RUN --mount=type=cache,target=/tmp/downloads \
     GO_VERSION="1.25.5" \
-    && case ${TARGETARCH} in \
+    && case "${TARGETARCH}" in \
         "amd64")  GO_ARCH="amd64"  ;; \
         "arm64")  GO_ARCH="arm64"  ;; \
         *)        echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
        esac \
-    && if [ ! -f /tmp/downloads/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz ]; then \
-        curl -fsSL "https://golang.org/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz" -o /tmp/downloads/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz; \
+    && if [ ! -f "/tmp/downloads/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz" ]; then \
+        curl -fsSL "https://golang.org/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz" -o "/tmp/downloads/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz"; \
        fi \
-    && tar -C /usr/local -xzf /tmp/downloads/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz \
+    && tar -C /usr/local -xzf "/tmp/downloads/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz" \
     && ln -sf /usr/local/go/bin/go /usr/local/bin/go \
     && ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt \
     && ln -sf /usr/local/go/bin/godoc /usr/local/bin/godoc
