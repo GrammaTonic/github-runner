@@ -401,7 +401,8 @@ health_check() {
 	local healthy=0
 	local total=0
 
-	for container in $containers; do
+	while IFS= read -r container; do
+		[[ -z "$container" ]] && continue
 		total=$((total + 1))
 
 		echo -n "Checking $container... "
@@ -416,7 +417,7 @@ health_check() {
 			# shellcheck disable=SC2001
 			echo "$health_output" | sed 's/^/  /'
 		fi
-	done
+	done <<< "$containers"
 
 	echo ""
 	log_info "Health Summary: $healthy/$total runners healthy"
