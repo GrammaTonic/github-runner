@@ -16,6 +16,7 @@ process.on('unhandledRejection', (reason, promise) => {
 (async () => {
   console.log('[DEBUG] Starting Playwright screenshot script...');
   const fallbackMode = process.env.PLAYWRIGHT_FALLBACK_MODE || 'system-executable';
+  const testUrl = process.env.PLAYWRIGHT_TEST_URL;
   
   try {
     console.log('[DEBUG] Launching Chromium browser...');
@@ -65,14 +66,20 @@ process.on('unhandledRejection', (reason, promise) => {
     const page = await browser.newPage();
     console.log('[DEBUG] New page created');
     
-    console.log('[DEBUG] Navigating to https://www.google.com...');
-    try {
-      await page.goto('https://www.google.com', { waitUntil: 'domcontentloaded', timeout: 15000 });
-      console.log('[DEBUG] Page loaded successfully');
-    } catch (navigationError) {
-      console.warn(`[WARN] External navigation failed (${navigationError.message}). Falling back to local test content.`);
-      await page.setContent('<html><head><title>Playwright Local Fallback</title></head><body><h1>Playwright Fallback Page</h1><p>External network navigation was unavailable in CI.</p></body></html>');
-      console.log('[DEBUG] Local fallback page rendered successfully');
+    if (testUrl) {
+      console.log(`[DEBUG] Navigating to ${testUrl}...`);
+      try {
+        await page.goto(testUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
+        console.log('[DEBUG] Page loaded successfully');
+      } catch (navigationError) {
+        console.warn(`[WARN] External navigation failed (${navigationError.message}). Falling back to local test content.`);
+        await page.setContent('<html><head><title>Playwright Local Fallback</title></head><body><h1>Playwright Fallback Page</h1><p>External network navigation was unavailable in CI.</p></body></html>');
+        console.log('[DEBUG] Local fallback page rendered successfully');
+      }
+    } else {
+      console.log('[DEBUG] No PLAYWRIGHT_TEST_URL provided; using local test content.');
+      await page.setContent('<html><head><title>Playwright Local Test</title></head><body><h1>Playwright Local Test Page</h1><p>CI network-independent rendering path.</p></body></html>');
+      console.log('[DEBUG] Local test page rendered successfully');
     }
     
     // Check if page has content
