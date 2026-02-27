@@ -19,13 +19,13 @@ docker cp "$JS_SCRIPT_PATH" "$CONTAINER_NAME":/tmp/google_screenshot.js
 echo "[INFO] Verifying Playwright module availability in container..."
 if ! docker exec "$CONTAINER_NAME" node -e "require('playwright')" 2>/dev/null; then
 	echo "[ERROR] Playwright module not found in container. Attempting to install Playwright browsers..."
-	docker exec "$CONTAINER_NAME" npx playwright install chromium --yes
+	docker exec "$CONTAINER_NAME" npx playwright install chromium
 fi
 
 echo "[INFO] Checking Playwright Chromium browser availability in container..."
 if ! docker exec "$CONTAINER_NAME" node -e "const { chromium } = require('playwright'); const fs = require('fs'); const executablePath = chromium.executablePath(); if (!fs.existsSync(executablePath)) process.exit(1);" 2>/dev/null; then
 	echo "[WARNING] Playwright Chromium binary is missing. Attempting to install with Playwright..."
-	if docker exec "$CONTAINER_NAME" npx playwright install chromium --yes; then
+	if docker exec "$CONTAINER_NAME" npx playwright install chromium; then
 		echo "[INFO] Playwright Chromium install succeeded."
 	else
 		echo "[WARNING] Playwright Chromium install failed (expected on unsupported distro mappings)."
