@@ -43,7 +43,7 @@ process.on('unhandledRejection', (reason, promise) => {
           browser = await chromium.launch({
             executablePath: fallbackChromePath,
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-crashpad', '--disable-crash-reporter', '--disable-features=Crashpad']
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-crashpad', '--disable-crash-reporter', '--disable-crashpad-for-testing', '--disable-features=Crashpad']
           });
         }
       } else {
@@ -55,7 +55,7 @@ process.on('unhandledRejection', (reason, promise) => {
         browser = await chromium.launch({
           executablePath: fallbackChromePath,
           headless: true,
-          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-crashpad', '--disable-crash-reporter', '--disable-features=Crashpad']
+          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-crashpad', '--disable-crash-reporter', '--disable-crashpad-for-testing', '--disable-features=Crashpad']
         });
       }
     }
