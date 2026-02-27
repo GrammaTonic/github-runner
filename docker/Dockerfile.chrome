@@ -91,9 +91,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # ARM64 support is limited to macOS (mac-arm64). For now, Chrome runners are AMD64-only.
 RUN --mount=type=cache,target=/tmp/downloads \
     set -e; \
-    if ! command -v curl >/dev/null 2>&1 || ! command -v unzip >/dev/null 2>&1; then \
-        apt-get update && apt-get install -y --no-install-recommends curl unzip; \
-    fi; \
+    command -v curl >/dev/null 2>&1; \
+    command -v unzip >/dev/null 2>&1; \
     case ${TARGETARCH} in \
         "amd64")  CHROME_ARCH="linux64"      ;; \
         "arm64")  CHROME_ARCH="linux-arm64"  ;; \
