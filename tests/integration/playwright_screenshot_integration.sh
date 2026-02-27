@@ -22,6 +22,17 @@ if ! docker exec "$CONTAINER_NAME" node -e "require('playwright')" 2>/dev/null; 
 	docker exec "$CONTAINER_NAME" /usr/bin/npx playwright install chromium --yes
 fi
 
+echo "[INFO] Checking Playwright Chromium browser availability in container..."
+if ! docker exec "$CONTAINER_NAME" node -e "const { chromium } = require('playwright'); const fs = require('fs'); const executablePath = chromium.executablePath(); if (!fs.existsSync(executablePath)) process.exit(1);" 2>/dev/null; then
+	echo "[WARNING] Playwright Chromium binary is missing. Attempting to install with Playwright..."
+	if docker exec "$CONTAINER_NAME" /usr/bin/npx playwright install chromium --yes; then
+		echo "[INFO] Playwright Chromium install succeeded."
+	else
+		echo "[WARNING] Playwright Chromium install failed (expected on unsupported distro mappings)."
+		echo "[INFO] Continuing with system Chrome fallback in screenshot script."
+	fi
+fi
+
 echo "[INFO] Running Playwright screenshot script inside container..."
 mkdir -p "$HOST_RESULTS_DIR"
 docker exec -e SCREENSHOT_PATH="$SCREENSHOT_PATH" "$CONTAINER_NAME" node /tmp/google_screenshot.js 2>&1 | tee "$LOG_PATH"

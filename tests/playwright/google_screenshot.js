@@ -18,10 +18,24 @@ process.on('unhandledRejection', (reason, promise) => {
   
   try {
     console.log('[DEBUG] Launching Chromium browser...');
-    const browser = await chromium.launch({ 
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-    });
+    let browser;
+    try {
+      browser = await chromium.launch({ 
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+      });
+    } catch (launchError) {
+      const fallbackChromePath = '/usr/bin/google-chrome';
+      if (!fs.existsSync(fallbackChromePath)) {
+        throw launchError;
+      }
+      console.warn('[WARN] Playwright-managed Chromium is unavailable. Falling back to system Google Chrome channel.');
+      browser = await chromium.launch({
+        channel: 'chrome',
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+      });
+    }
     console.log('[DEBUG] Browser launched successfully');
     
     console.log('[DEBUG] Creating new page...');
