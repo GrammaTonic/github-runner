@@ -29,9 +29,9 @@ process.on('unhandledRejection', (reason, promise) => {
       if (!fs.existsSync(fallbackChromePath)) {
         throw launchError;
       }
-      console.warn('[WARN] Playwright-managed Chromium is unavailable. Falling back to system Google Chrome channel.');
+      console.warn('[WARN] Playwright-managed Chromium is unavailable. Falling back to system Google Chrome executable.');
       browser = await chromium.launch({
-        channel: 'chrome',
+        executablePath: fallbackChromePath,
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
       });
