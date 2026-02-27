@@ -42,6 +42,7 @@ Note: Documentation workflows and repo prompts were recently improved — see
 
 ## 🔒 Security Status & Workflow Sync
 
+- ✅ **CVE-2026-23950**: Node-tar arbitrary file overwrite vulnerability patched (`tar@7.5.4`)
 - ✅ **VDB-216777/CVE-2020-36632**: Flat package vulnerability patched (`flat@5.0.2`)
 - ✅ **CVE-2025-9288**: Cypress SHA.js vulnerability patched (`sha.js@2.4.12`)
 - ✅ **CVE-2024-37890**: WebSocket DoS vulnerability patched (`ws@8.17.1`)
@@ -74,7 +75,7 @@ Note: Documentation workflows and repo prompts were recently improved — see
 - ✅ **Image Size Optimizations**: Standard ~1.8GB, Chrome ~4.1GB, Chrome-Go ~4.5GB (all optimized)
 - ✅ **CI/CD Enhancements**: Conditional Dependabot provisioning, artifact status files, clean logs
 - ✅ Chrome runners updated to Chrome `142.0.7444.162`, Playwright `1.55.1`, and Cypress `13.15.0`
-- ✅ npm override to force `tar@7.5.2` inside all embedded npm distributions, closing CVE-2024-47554
+- ✅ npm override to force `tar@7.5.4` inside all embedded npm distributions, closing CVE-2026-23950 (upgraded from 7.5.2)
 
 ## 📦 Installation
 
