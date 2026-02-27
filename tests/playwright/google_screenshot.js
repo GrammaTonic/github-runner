@@ -15,6 +15,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 (async () => {
   console.log('[DEBUG] Starting Playwright screenshot script...');
+  const fallbackMode = process.env.PLAYWRIGHT_FALLBACK_MODE || 'system-executable';
   
   try {
     console.log('[DEBUG] Launching Chromium browser...');
@@ -25,16 +26,38 @@ process.on('unhandledRejection', (reason, promise) => {
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
       });
     } catch (launchError) {
-      const fallbackChromePath = '/usr/bin/google-chrome';
-      if (!fs.existsSync(fallbackChromePath)) {
-        throw launchError;
+      if (fallbackMode === 'channel-chrome') {
+        try {
+          console.warn('[WARN] Playwright-managed Chromium is unavailable. Falling back to Playwright Chrome channel.');
+          browser = await chromium.launch({
+            channel: 'chrome',
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+          });
+        } catch (channelError) {
+          console.warn('[WARN] Playwright Chrome channel fallback failed. Switching to system executable fallback.');
+          const fallbackChromePath = '/usr/bin/google-chrome';
+          if (!fs.existsSync(fallbackChromePath)) {
+            throw channelError;
+          }
+          browser = await chromium.launch({
+            executablePath: fallbackChromePath,
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-crashpad', '--disable-crash-reporter', '--disable-features=Crashpad']
+          });
+        }
+      } else {
+        const fallbackChromePath = '/usr/bin/google-chrome';
+        if (!fs.existsSync(fallbackChromePath)) {
+          throw launchError;
+        }
+        console.warn('[WARN] Playwright-managed Chromium is unavailable. Falling back to system Google Chrome executable.');
+        browser = await chromium.launch({
+          executablePath: fallbackChromePath,
+          headless: true,
+          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-crashpad', '--disable-crash-reporter', '--disable-features=Crashpad']
+        });
       }
-      console.warn('[WARN] Playwright-managed Chromium is unavailable. Falling back to system Google Chrome executable.');
-      browser = await chromium.launch({
-        executablePath: fallbackChromePath,
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-crashpad', '--disable-crash-reporter']
-      });
     }
     console.log('[DEBUG] Browser launched successfully');
     

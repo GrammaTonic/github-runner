@@ -11,6 +11,7 @@ SCREENSHOT_PATH="/tmp/google_screenshot_${TIMESTAMP}.png"
 HOST_RESULTS_DIR="test-results/playwright"
 HOST_SCREENSHOT_PATH="$HOST_RESULTS_DIR/google_screenshot_${TIMESTAMP}.png"
 LOG_PATH="$HOST_RESULTS_DIR/playwright_output_${TIMESTAMP}.log"
+PLAYWRIGHT_FALLBACK_MODE="system-executable"
 
 echo "[INFO] Using container: $CONTAINER_NAME"
 echo "[INFO] Copying Playwright screenshot script into container..."
@@ -27,6 +28,10 @@ if ! docker exec "$CONTAINER_NAME" node -e "const { chromium } = require('playwr
 	echo "[WARNING] Playwright Chromium binary is missing. Attempting to install with Playwright..."
 	if docker exec "$CONTAINER_NAME" npx playwright install chromium; then
 		echo "[INFO] Playwright Chromium install succeeded."
+		PLAYWRIGHT_FALLBACK_MODE="playwright-managed"
+	elif docker exec "$CONTAINER_NAME" npx playwright install chrome; then
+		echo "[INFO] Playwright Chrome channel install succeeded."
+		PLAYWRIGHT_FALLBACK_MODE="channel-chrome"
 	else
 		echo "[WARNING] Playwright Chromium install failed (expected on unsupported distro mappings)."
 		echo "[INFO] Continuing with system Chrome fallback in screenshot script."
@@ -35,7 +40,7 @@ fi
 
 echo "[INFO] Running Playwright screenshot script inside container..."
 mkdir -p "$HOST_RESULTS_DIR"
-docker exec -e SCREENSHOT_PATH="$SCREENSHOT_PATH" "$CONTAINER_NAME" node /tmp/google_screenshot.js 2>&1 | tee "$LOG_PATH"
+docker exec -e SCREENSHOT_PATH="$SCREENSHOT_PATH" -e PLAYWRIGHT_FALLBACK_MODE="$PLAYWRIGHT_FALLBACK_MODE" "$CONTAINER_NAME" node /tmp/google_screenshot.js 2>&1 | tee "$LOG_PATH"
 SCRIPT_EXIT_CODE="${PIPESTATUS[0]}"
 echo "[INFO] Playwright script exit code: $SCRIPT_EXIT_CODE"
 
