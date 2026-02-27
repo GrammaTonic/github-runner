@@ -3,6 +3,9 @@ services:
     image: ghcr.io/grammatonic/github-runner:chrome-go-latest
     container_name: github-runner-chrome-go
     restart: unless-stopped
+    # TASK-017: Expose metrics port on unique host port to avoid conflicts
+    ports:
+      - "9093:9091"  # Prometheus metrics endpoint (host:container)
     environment:
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
@@ -14,6 +17,10 @@ services:
       - RUNNER_REPLACE_EXISTING=${RUNNER_REPLACE_EXISTING:-true}
       - DISPLAY=${DISPLAY:-:99}
       - CHROME_FLAGS=${CHROME_FLAGS:---headless --no-sandbox --disable-dev-shm-usage --disable-gpu}
+      # TASK-019: Prometheus metrics configuration
+      - RUNNER_TYPE=chrome-go
+      - METRICS_PORT=9091
+      - METRICS_UPDATE_INTERVAL=${METRICS_UPDATE_INTERVAL:-30}
       # Go-specific environment variables
       - GO_VERSION=${GO_VERSION:-1.25.4}
       - GOPATH=${GOPATH:-/home/runner/go}
@@ -41,6 +48,8 @@ services:
       - chrome-go-cache-pip:/home/runner/.runnercache/pip
       - chrome-go-cache-go:/home/runner/go/pkg
       - /dev/shm:/dev/shm
+      # TASK-017: Persist job log for metrics across restarts
+      - chrome-go-jobs-log:/tmp
     # Drop all capabilities except those needed for Chrome and Docker socket
     cap_drop:
       - ALL
@@ -80,6 +89,9 @@ volumes:
   chrome-go-cache-pip:
     driver: local
   chrome-go-cache-go:
+    driver: local
+  # TASK-017: Volume for persistent job log
+  chrome-go-jobs-log:
     driver: local
 
 networks:

@@ -211,6 +211,15 @@ WORKDIR /home/runner
 COPY --chown=runner:runner entrypoint-chrome.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# Copy Prometheus metrics scripts (Phase 2: Prometheus Monitoring)
+# TASK-014: Add metrics scripts to Chrome runner
+COPY --chown=runner:runner metrics-server.sh /usr/local/bin/metrics-server.sh
+COPY --chown=runner:runner metrics-collector.sh /usr/local/bin/metrics-collector.sh
+RUN chmod +x /usr/local/bin/metrics-server.sh /usr/local/bin/metrics-collector.sh
+
+# TASK-014: Expose Prometheus metrics port
+EXPOSE 9091
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD pgrep -f "Runner.Listener" > /dev/null || exit 1
 
