@@ -1,6 +1,6 @@
 # Security and CVE Mitigation
 
- The runner images use `ubuntu:questing` (25.10 pre-release) for the latest browser and system dependencies.
+ The runner images use `ubuntu:resolute` (25.10 pre-release) for the latest browser and system dependencies.
  All dependencies are scanned with Trivy after build and container startup; results are saved to `test-results/docker/` for audit and compliance.
  CVEs in npm's internal modules are documented and monitored; all app-level dependencies are patched using npm overrides and local installs.
  For production, switch to a stable Ubuntu LTS base and rerun all security scans as documented in README and release notes.

@@ -1,6 +1,6 @@
-# Base Image: Ubuntu Questing (25.10 Pre-release)
+# Base Image: Ubuntu Resolute (25.10 Pre-release)
 
-This repository uses `ubuntu:questing` as the base image for Chrome runner containers. This is a pre-release version of Ubuntu (25.10) chosen for access to the latest system libraries and browser dependencies.
+This repository uses `ubuntu:resolute` as the base image for Chrome runner containers. This is a pre-release version of Ubuntu (25.10) chosen for access to the latest system libraries and browser dependencies.
 
 **CVE Mitigation Strategy:**
 - Many CVEs in Node.js, npm, and transitive dependencies cannot be patched directly due to upstream packaging.
@@ -30,7 +30,7 @@ Note: Documentation workflows and repo prompts were recently improved — see
 | ------------------------- | ---------------- | ---------------- | ---------------- | ----------------- |
 | **Image Version**         | v2.2.1           | v2.2.1           | v2.2.1           | ✅ Latest         |
 | **GitHub Actions Runner** | v2.329.0         | v2.329.0         | v2.329.0         | ✅ Latest         |
-| **Base OS**               | Ubuntu 25.10 Questing | Ubuntu 25.10 Questing | Ubuntu 25.10 Questing | ✅ Pre-release |
+| **Base OS**               | Ubuntu 25.10 Resolute | Ubuntu 25.10 Resolute | Ubuntu 25.10 Resolute | ✅ Pre-release |
 | **Node.js**               | -                | 24.11.1          | 24.11.1          | ✅ Latest         |
 | **Go**                    | -                | -                | 1.25.4           | ✅ Latest         |
 | **Python**                | 3.10+            | 3.10+            | 3.10+            | ✅ Latest         |

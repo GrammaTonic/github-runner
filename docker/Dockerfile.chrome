@@ -1,13 +1,13 @@
-# Dockerfile for Chrome Runner (ubuntu:questing)
+# Dockerfile for Chrome Runner (ubuntu:resolute)
 #
-# This image uses ubuntu:questing (25.10) for latest browser dependencies and multi-architecture support.
+# This image uses ubuntu:resolute (25.10) for latest browser dependencies and multi-architecture support.
 # Supports both linux/amd64 and linux/arm64 architectures.
 # Chrome for Testing supports both ARM64 and AMD64 architectures since version 93+.
 # CVE mitigation is performed via npm overrides and local installs for all app-level dependencies.
 # CVEs in npm's internal modules are documented and monitored; see README.md and DEPLOYMENT.md.
 # Example: Trivy scan results are saved to test-results/docker/ for audit.
 # Use a specific version for reproducible builds
-FROM ubuntu:questing
+FROM ubuntu:resolute
 
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"

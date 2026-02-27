@@ -1,6 +1,6 @@
-# Dockerfile for Chrome-Go Runner (ubuntu:questing)
+# Dockerfile for Chrome-Go Runner (ubuntu:resolute)
 #
-# This image uses ubuntu:questing (25.10) for latest browser and Go dependencies.
+# This image uses ubuntu:resolute (25.10) for latest browser and Go dependencies.
 # NOTE: Currently AMD64-only due to Chrome for Testing not providing linux-arm64 builds.
 # Chrome for Testing only provides linux64 (AMD64), NOT linux-arm64 (ARM64 limited to macOS).
 # Go official binaries available for both amd64 and arm64.
@@ -8,7 +8,7 @@
 # CVEs in npm's internal modules are documented and monitored; see README.md and DEPLOYMENT.md.
 # Example: Trivy scan results are saved to test-results/docker/ for audit.
 # Use a specific version for reproducible builds
-FROM ubuntu:questing
+FROM ubuntu:resolute
 
 # --- METADATA AND ARGUMENTS ---
 LABEL maintainer="GrammaTonic"
