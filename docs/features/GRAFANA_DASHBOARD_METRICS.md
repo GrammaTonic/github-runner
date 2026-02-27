@@ -205,7 +205,7 @@ PORT="${METRICS_PORT:-9091}"
 
 while true; do
     # Wait for connection
-    RESPONSE=$(echo -e "HTTP/1.1 200 OK\r\nContent-Type: text/plain; version=0.0.4\r\n\r\n$(cat \"$METRICS_FILE\" 2>/dev/null || echo '# No metrics available')" | nc -l -p "$PORT" -q 1)
+   echo -e "HTTP/1.1 200 OK\r\nContent-Type: text/plain; version=0.0.4\r\n\r\n$(cat \"$METRICS_FILE\" 2>/dev/null || echo '# No metrics available')" | nc -l -p "$PORT" -q 1
 done
 ```
 

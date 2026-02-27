@@ -56,6 +56,27 @@ METRICS_PORT="${METRICS_PORT:-9091}"
 METRICS_FILE="${METRICS_FILE:-/tmp/runner_metrics.prom}"
 RUNNER_TYPE="${RUNNER_TYPE:-chrome}"
 
+case "${METRICS_FILE}" in
+	/tmp/*.prom) ;;
+	*)
+		echo "Error: METRICS_FILE must be under /tmp and end with .prom"
+		exit 1
+		;;
+esac
+
+case "${JOBS_LOG}" in
+	/tmp/*.log) ;;
+	*)
+		echo "Error: JOBS_LOG must be under /tmp and end with .log"
+		exit 1
+		;;
+esac
+
+if [[ "${METRICS_FILE}" == *".."* ]] || [[ "${JOBS_LOG}" == *".."* ]]; then
+	echo "Error: Path traversal is not allowed in metrics paths"
+	exit 1
+fi
+
 echo "Starting Prometheus metrics services..."
 echo "  - Metrics endpoint: http://localhost:${METRICS_PORT}/metrics"
 echo "  - Runner type: ${RUNNER_TYPE}"

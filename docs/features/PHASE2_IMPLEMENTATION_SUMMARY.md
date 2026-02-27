@@ -111,13 +111,13 @@ All five core metrics from Phase 1 are available for Chrome and Chrome-Go runner
 
 1. **github_runner_status** (gauge)
    - Values: 1=online, 0=offline
-   - Labels: none
+   - Labels: runner_name, runner_type
 
 2. **github_runner_info** (gauge)
    - Value: always 1
    - Labels: runner_name, runner_type (chrome/chrome-go), version
 
-3. **github_runner_uptime_seconds** (counter)
+3. **github_runner_uptime_seconds** (gauge)
    - Tracks runner uptime since start
    - Updates every 30 seconds
 

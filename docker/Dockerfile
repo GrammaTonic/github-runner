@@ -63,6 +63,13 @@ RUN --mount=type=cache,target=/tmp/downloads,uid=1001,gid=1001 \
 # --- PATCH EMBEDDED NODE DISTRIBUTIONS IN BUILDER ---
 RUN --mount=type=cache,target=/tmp/npm-cache,uid=1001,gid=1001 \
     set -e; \
+    validate_semver() { \
+        printf '%s' "$1" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; \
+    }; \
+    validate_semver "${CROSS_SPAWN_VERSION}" || { echo "Invalid CROSS_SPAWN_VERSION: ${CROSS_SPAWN_VERSION}"; exit 1; }; \
+    validate_semver "${TAR_VERSION}" || { echo "Invalid TAR_VERSION: ${TAR_VERSION}"; exit 1; }; \
+    validate_semver "${BRACE_EXPANSION_VERSION}" || { echo "Invalid BRACE_EXPANSION_VERSION: ${BRACE_EXPANSION_VERSION}"; exit 1; }; \
+    validate_semver "${GLOB_VERSION}" || { echo "Invalid GLOB_VERSION: ${GLOB_VERSION}"; exit 1; }; \
     for NODE_ROOT in /actions-runner/externals/node*/ ; do \
         if [ -x "${NODE_ROOT}bin/node" ] && [ -d "${NODE_ROOT}lib/node_modules/npm" ]; then \
             NPM_DIR="${NODE_ROOT}lib/node_modules/npm"; \
