@@ -141,7 +141,7 @@ github_runner_cache_hit_rate{runner_name="runner-1", cache_type="buildkit"} 0.85
 github_runner_cache_hit_rate{runner_name="runner-1", cache_type="apt"} 0.95
 
 # Runner info (metadata)
-github_runner_info{runner_name="runner-1", runner_type="standard", version="2.329.0"} 1
+github_runner_info{runner_name="runner-1", runner_type="standard", version="2.331.0"} 1
 ```
 
 ### DORA Metrics (Calculated in Grafana)
@@ -220,7 +220,7 @@ JOBS_LOG="/tmp/jobs.log"
 START_TIME=$(date +%s)
 RUNNER_NAME="${RUNNER_NAME:-$(hostname)}"
 RUNNER_TYPE="${RUNNER_TYPE:-standard}"
-RUNNER_VERSION="2.330.0"
+RUNNER_VERSION="2.331.0"
 
 while true; do
     # Calculate uptime

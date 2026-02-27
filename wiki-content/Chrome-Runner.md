@@ -110,7 +110,7 @@ jobs:
 
 #### **GitHub Actions Runner**
 
-- ✅ **Version**: 2.329.0 (Latest stable)
+- ✅ **Version**: 2.331.0 (Latest stable)
 - ✅ **Image Version**: v2.2.0 (Chrome Runner)
 - ✅ **Architecture**: AMD64 only
 - ✅ **Auto-registration**: Automatic GitHub registration and cleanup
