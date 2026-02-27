@@ -2,7 +2,7 @@
 # Optimized to reduce image size by separating build and runtime dependencies
 # Supports multi-architecture builds (linux/amd64, linux/arm64)
 # Stage 1: Builder - Download and prepare runner with build tools
-FROM ubuntu:questing AS builder
+FROM ubuntu:resolute AS builder
 
 # --- METADATA AND ARGUMENTS ---
 # Multi-architecture build arguments (automatically provided by Docker Buildx)
@@ -83,7 +83,7 @@ RUN --mount=type=cache,target=/tmp/npm-cache,uid=1001,gid=1001 \
     done
 
 # Stage 2: Runtime - Minimal image with only runtime dependencies
-FROM ubuntu:questing AS runtime
+FROM ubuntu:resolute AS runtime
 
 # --- METADATA ---
 LABEL maintainer="GrammaTonic"

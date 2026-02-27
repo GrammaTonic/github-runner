@@ -9,14 +9,14 @@ This document provides a comprehensive overview of all software versions, depend
 ### 1. Standard Runner (`docker/Dockerfile`)
 
 **Image Version**: v2.2.0
-**Base Image**: `ubuntu:questing` (25.10 Pre-release)
+**Base Image**: `ubuntu:resolute` (25.10 Pre-release)
 **Purpose**: General-purpose GitHub Actions runner with development tools
 **Target Architectures**: `linux/amd64` only
 
 ### 2. Chrome Runner (`docker/Dockerfile.chrome`)
 
 **Image Version**: v2.2.0
-**Base Image**: `ubuntu:questing` (25.10 Pre-release)
+**Base Image**: `ubuntu:resolute` (25.10 Pre-release)
 **Purpose**: Chrome-optimized runner for web UI testing and browser automation
 **Target Architectures**: `linux/amd64` only (ARM builds are blocked for Chrome runner)
 
@@ -31,7 +31,7 @@ This document provides a comprehensive overview of all software versions, depend
 
 ### Operating System
 
-**Base OS**: Ubuntu 25.1sss0 Questing (Pre-release)
+**Base OS**: Ubuntu 25.10 Resolute (Pre-release)
 **Architecture Support**: amd64 only for Chrome Runner; Standard Runner is amd64
 **Kernel Version**: Linux kernel 6.10+
 - **Security Updates**: Applied via `apt-get update` during build
@@ -267,8 +267,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 ### Recent Changes
 
-- **2025-11-14**: Release v2.2.0 with npm `tar@7.5.2` override, Chrome 142.0.7444.162, Playwright 1.55.1, Cypress 13.15.0, and refreshed Questing-based documentation.
-- **2025-09-14**: Updated to Ubuntu 25.10 Questing, image version v2.0.9, Chrome 142.0.7444.162, Playwright 1.55.0, Cypress 15.1.0, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
+- **2025-11-14**: Release v2.2.0 with npm `tar@7.5.2` override, Chrome 142.0.7444.162, Playwright 1.55.1, Cypress 13.15.0, and refreshed Resolute-based documentation.
+- **2025-09-14**: Updated to Ubuntu 25.10 Resolute, image version v2.0.9, Chrome 142.0.7444.162, Playwright 1.55.0, Cypress 15.1.0, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
 - **2025-09-10**: Extensive documentation update for Ubuntu 24.04 LTS, image version v2.0.2, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
 - **2025-01-15**: Applied VDB-216777/CVE-2020-36632 flat package security fix
 - **2025-01-15**: Added comprehensive security patches for Chrome Runner

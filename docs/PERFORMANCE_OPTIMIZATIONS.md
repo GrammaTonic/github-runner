@@ -13,7 +13,7 @@ This document tracks the performance optimizations implemented based on the base
 ## ✅ Completed Optimizations
 
 ### 1. Base Image Fix (CRITICAL)
-**Issue:** All Dockerfiles used `ubuntu:questing` (invalid/unstable image)  
+**Issue:** All Dockerfiles used `ubuntu:resolute` (invalid/unstable image)  
 **Fix:** Changed to `ubuntu:24.04` LTS for stability and reproducibility  
 **Impact:** Stable base, consistent builds, better package support
 
@@ -200,13 +200,13 @@ npm cache clean --force
 **Implementation:**
 ```dockerfile
 # Stage 1: Builder - Download and prepare runner
-FROM ubuntu:questing AS builder
+FROM ubuntu:resolute AS builder
 RUN apt-get install curl ca-certificates
 # Download and extract runner, patch npm dependencies
 ...
 
 # Stage 2: Runtime - Minimal runtime dependencies only
-FROM ubuntu:questing AS runtime
+FROM ubuntu:resolute AS runtime
 RUN apt-get install ca-certificates git jq libicu-dev python3 docker.io iputils-ping
 # Copy prepared runner from builder
 COPY --from=builder /actions-runner /actions-runner
@@ -550,7 +550,7 @@ CACHE_TO:
 ## 🎯 Summary
 
 **Critical optimizations implemented:**
-- ✅ Fixed ubuntu:questing → ubuntu:24.04 (then reverted to ubuntu:questing for compatibility)
+- ✅ Fixed ubuntu:resolute → ubuntu:24.04 (then reverted to ubuntu:resolute for compatibility)
 - ✅ Implemented BuildKit cache mounts (apt, npm, downloads)
 - ✅ Added Playwright chromium browser installation for screenshot tests
 - ✅ Consolidated apt operations for fewer layers

@@ -14,7 +14,7 @@ This report documents the current performance characteristics of the GitHub Runn
 
 ### 1.1 Standard Runner (Dockerfile)
 
-**Base Image:** `ubuntu:questing`
+**Base Image:** `ubuntu:resolute`
 
 **Build Stages:**
 - APT setup and system upgrade
@@ -27,7 +27,7 @@ This report documents the current performance characteristics of the GitHub Runn
 1. ❌ **No Build Cache Strategy** - Each layer is rebuilt even when dependencies haven't changed
 2. ❌ **No Multi-Stage Build** - Single-stage build includes build tools in final image
 3. ❌ **Sequential Dependency Installation** - APT packages installed in one large RUN command
-4. ⚠️ **Typo in Base Image** - `ubuntu:questing` (should be `ubuntu:latest` or specific version like `ubuntu:24.04`)
+4. ⚠️ **Typo in Base Image** - `ubuntu:resolute` (should be `ubuntu:latest` or specific version like `ubuntu:24.04`)
 5. ⚠️ **Redundant APT Operations** - Multiple `apt-get update` and cleanup cycles
 6. ⚠️ **Large Layer Sizes** - No layer optimization or squashing
 
@@ -40,7 +40,7 @@ This report documents the current performance characteristics of the GitHub Runn
 
 ### 1.2 Chrome Runner (Dockerfile.chrome)
 
-**Base Image:** `ubuntu:questing`
+**Base Image:** `ubuntu:resolute`
 
 **Additional Components:**
 - Chrome browser (142.0.7444.162) - ~150MB download
@@ -146,7 +146,7 @@ build jobs → security scans → provision jobs → cleanup
 ### 2.4 Resource Usage Estimates
 
 **Standard Build Job:**
-- Pull ubuntu:questing: ~5s
+- Pull ubuntu:resolute: ~5s
 - APT update/upgrade: ~30-60s
 - Install system packages: ~45-90s
 - Download runner (130MB): ~10-20s
@@ -184,7 +184,7 @@ build jobs → security scans → provision jobs → cleanup
 ### 3.2 Layer Size Breakdown (Estimated)
 
 **Standard Runner Layers:**
-1. Base ubuntu:questing: ~200MB
+1. Base ubuntu:resolute: ~200MB
 2. APT update + upgrade: ~100-200MB
 3. System packages install: ~300-400MB
 4. Runner download + extract: ~200MB
@@ -290,7 +290,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3
 ## 6. Optimization Priorities
 
 ### High Priority (High Impact, Low Effort)
-1. **Fix ubuntu:questing typo** - Use stable base image
+1. **Fix ubuntu:resolute typo** - Use stable base image
 2. **Implement BuildKit cache mounts** - Massive build time improvement
 3. **Consolidate apt-get operations** - Reduce layers and build time
 4. **Remove Playwright browser downloads** - Chrome already installed (400MB saved)
@@ -371,7 +371,7 @@ gh run list --workflow="CI/CD Pipeline" --limit 10 --json databaseId,conclusion,
 ## Appendix A: Dockerfile Issues Summary
 
 ### Critical Issues (Fix Immediately)
-1. **Base image typo:** `ubuntu:questing` → `ubuntu:24.04` or `ubuntu:latest`
+1. **Base image typo:** `ubuntu:resolute` → `ubuntu:24.04` or `ubuntu:latest`
 2. **No caching strategy:** Implement BuildKit cache mounts
 3. **No version pinning:** Pin all external dependencies
 4. **Redundant operations:** Multiple apt-get updates, npm installs

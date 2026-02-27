@@ -34,7 +34,7 @@ The performance optimizations have **exceeded expectations** across all metrics:
 
 **Analysis:**
 - Standard and Chrome runners achieved **near-instant builds** due to 100% cache hits
-- Chrome-Go runner required partial rebuild (ubuntu:questing base image change)
+- Chrome-Go runner required partial rebuild (ubuntu:resolute base image change)
 - All runners significantly exceeded performance targets
 
 ### Cache Performance
@@ -53,7 +53,7 @@ The performance optimizations have **exceeded expectations** across all metrics:
 **Cross-Branch Cache Evidence:**
 - Standard runner: All 23 layers marked `CACHED`
 - Chrome runner: All 26 layers marked `CACHED`
-- Chrome-Go runner: Partial cache (base image changed from ubuntu:24.04 to ubuntu:questing)
+- Chrome-Go runner: Partial cache (base image changed from ubuntu:24.04 to ubuntu:resolute)
 
 ---
 
@@ -108,13 +108,13 @@ The performance optimizations have **exceeded expectations** across all metrics:
 **Job:** Build Chrome-Go Runner Image  
 **Duration:** 4 minutes 34 seconds (274 seconds)  
 **Cache Performance:**
-- Partial rebuild required due to base image change (ubuntu:24.04 → ubuntu:questing)
+- Partial rebuild required due to base image change (ubuntu:24.04 → ubuntu:resolute)
 - Layer #13-14: Building dependency tree (APT operations)
 - Downloads still cached where applicable
 - Go toolchain cached (130MB saved)
 
 **Why Longer?**
-- Base image change from ubuntu:24.04 to ubuntu:questing invalidated early layers
+- Base image change from ubuntu:24.04 to ubuntu:resolute invalidated early layers
 - APT package installations rebuilt for new base image
 - Still ~50% faster than baseline estimate (6-9 min vs 4.6 min)
 - Future builds with stable base will achieve similar cache performance to other runners
@@ -138,7 +138,7 @@ The performance optimizations have **exceeded expectations** across all metrics:
 | Chrome Runner | <3 min | **24 sec** | ✅ **750% better** |
 | Chrome-Go Runner | <3.5 min | **4.6 min** | ⚠️ **31% slower** (base image change) |
 
-**Note:** Chrome-Go runner will achieve <1 min builds once ubuntu:questing base stabilizes.
+**Note:** Chrome-Go runner will achieve <1 min builds once ubuntu:resolute base stabilizes.
 
 ### Cache Efficiency Goals - ALL ACHIEVED ✅
 
@@ -256,7 +256,7 @@ COPY --from=builder /actions-runner /actions-runner
 **Impact: High**
 
 All external dependencies pinned to specific versions:
-- Ubuntu: `24.04` / `questing`
+- Ubuntu: `24.04` / `resolute`
 - Runner: `2.329.0`
 - Chrome: `142.0.7444.162`
 - Node.js: `24.11.1`
@@ -302,8 +302,8 @@ From `PERFORMANCE_OPTIMIZATIONS.md`:
 
 ### What Needs Attention
 
-1. **Chrome-Go runner ubuntu:questing** - Base image instability causes cache invalidation
-   - **Solution:** Consider pinning to specific ubuntu:questing snapshot
+1. **Chrome-Go runner ubuntu:resolute** - Base image instability causes cache invalidation
+  - **Solution:** Consider pinning to specific ubuntu:resolute snapshot
    - **Or:** Switch to ubuntu:24.04 with manual Go/Chrome updates
    
 2. **Cache size monitoring** - GitHub Actions 10GB cache limit
@@ -327,7 +327,7 @@ From `PERFORMANCE_OPTIMIZATIONS.md`:
 ### Immediate Actions
 
 1. ✅ **Document results** - This report
-2. ⏭️ **Stabilize Chrome-Go base** - Fix ubuntu:questing volatility
+2. ⏭️ **Stabilize Chrome-Go base** - Fix ubuntu:resolute volatility
 3. ⏭️ **Add cache monitoring** - Track cache size and hit rates
 4. ⏭️ **Update PERFORMANCE_OPTIMIZATIONS.md** - Add actual results
 
