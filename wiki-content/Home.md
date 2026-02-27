@@ -33,7 +33,7 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 | Component                 | Standard Runner | Chrome Runner | Security Status         |
 | ------------------------- | --------------- | ------------- | ----------------------- |
 | **Image Version**         | v2.2.0          | v2.2.0        | ✅ Latest               |
-| **GitHub Actions Runner** | v2.329.0        | v2.329.0      | ✅ Latest               |
+| **GitHub Actions Runner** | v2.331.0        | v2.331.0      | ✅ Latest               |
 | **Node.js**               | -               | 24.11.1       | ✅ Chrome Runner Only   |
 | **Playwright**            | -               | 1.55.1        | ✅ Latest               |
 | **Cypress**               | -               | 13.15.0       | ✅ Security Patched |

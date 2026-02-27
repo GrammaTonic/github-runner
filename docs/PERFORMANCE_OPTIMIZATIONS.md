@@ -230,7 +230,7 @@ COPY --from=builder /actions-runner /actions-runner
 
 **Pinned Versions:**
 - Ubuntu: `24.04`
-- Runner: `2.329.0`
+- Runner: `2.331.0`
 - Chrome: `142.0.7444.162`
 - Node.js: `24.11.1`
 - npm: `11.6.2`

@@ -20,7 +20,7 @@ This report documents the current performance characteristics of the GitHub Runn
 - APT setup and system upgrade
 - System dependencies installation
 - User and directory creation
-- GitHub Actions runner download and extraction (2.329.0)
+- GitHub Actions runner download and extraction (2.331.0)
 - NPM security patches (cross-spawn, tar, brace-expansion)
 
 **Identified Issues:**

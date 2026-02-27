@@ -257,7 +257,7 @@ COPY --from=builder /actions-runner /actions-runner
 
 All external dependencies pinned to specific versions:
 - Ubuntu: `24.04` / `resolute`
-- Runner: `2.329.0`
+- Runner: `2.331.0`
 - Chrome: `142.0.7444.162`
 - Node.js: `24.11.1`
 - npm: `11.6.2`

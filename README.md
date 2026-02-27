@@ -29,7 +29,7 @@ Note: Documentation workflows and repo prompts were recently improved — see
 | Component                 | Standard Runner  | Chrome Runner    | Chrome-Go Runner | Status            |
 | ------------------------- | ---------------- | ---------------- | ---------------- | ----------------- |
 | **Image Version**         | v2.2.1           | v2.2.1           | v2.2.1           | ✅ Latest         |
-| **GitHub Actions Runner** | v2.329.0         | v2.329.0         | v2.329.0         | ✅ Latest         |
+| **GitHub Actions Runner** | v2.331.0         | v2.331.0         | v2.331.0         | ✅ Latest         |
 | **Base OS**               | Ubuntu 25.10 Resolute | Ubuntu 25.10 Resolute | Ubuntu 25.10 Resolute | ✅ Pre-release |
 | **Node.js**               | -                | 24.11.1          | 24.11.1          | ✅ Latest         |
 | **Go**                    | -                | -                | 1.25.4           | ✅ Latest         |
