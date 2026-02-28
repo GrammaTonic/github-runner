@@ -63,5 +63,5 @@ The repository already has good security practices in place:
 
 ## Related Documentation
 
-- [SECURITY.md](docs/SECURITY.md) - Security policy and vulnerability reporting
-- [CRITICAL_SECURITY_FIXES_2025.md](docs/archive/CRITICAL_SECURITY_FIXES_2025.md) - Past security fixes
+- [SECURITY.md](../.github/SECURITY.md) - Security policy and vulnerability reporting
+- [CRITICAL_SECURITY_FIXES_2025.md](archive/CRITICAL_SECURITY_FIXES_2025.md) - Past security fixes
