@@ -232,13 +232,13 @@ COPY --from=builder /actions-runner /actions-runner
 - Ubuntu: `24.04`
 - Runner: `2.331.0`
 - Chrome: `142.0.7444.162`
-- Node.js: `24.11.1`
-- npm: `11.6.2`
-- Playwright: `1.55.1`
-- Go: `1.25.4`
+- Node.js: `24.14.0`
+- npm: `11.11.0`
+- Playwright: `1.58.2`
+- Go: `1.26.0`
 - cross-spawn: `7.0.6`
-- tar: `7.5.2`
-- brace-expansion: `2.0.2`
+- tar: `7.5.9`
+- brace-expansion: `5.0.4`
 
 ---
 
@@ -438,7 +438,7 @@ PID_SECURITY=$!
 PID_PLAYWRIGHT=$!
 
 # Group 3: Cypress (background job)
-{ npm install -g cypress@13.15.0 && echo "ok" > /tmp/npm_cypress.status; } &
+{ npm install -g cypress@15.11.0 && echo "ok" > /tmp/npm_cypress.status; } &
 PID_CYPRESS=$!
 
 # Wait and verify

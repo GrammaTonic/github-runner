@@ -1,7 +1,12 @@
 # Changelog
 
 ## [Unreleased]
-- Pending items
+- Update Node.js to **24.14.0** (LTS Krypton) in Chrome and Chrome-Go runners.
+- Update npm to **11.11.0** in Chrome and Chrome-Go runners.
+- Update Go to **1.26.0** in Chrome-Go runner.
+- Update Playwright to **1.58.2** and `@playwright/test` to **1.58.2** in Chrome and Chrome-Go runners.
+- Update Cypress to **15.11.0** in Chrome and Chrome-Go runners.
+- Update security package overrides: `tar@7.5.9`, `brace-expansion@5.0.4`, `@isaacs/brace-expansion@5.0.1`, `glob@13.0.6`, `minimatch@10.2.4`, `diff@8.0.3`.
 
 ## [v2.2.0] - 2025-11-14
 - Promote standard, Chrome, and Chrome-Go runner images to **v2.2.0**.

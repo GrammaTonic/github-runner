@@ -259,9 +259,9 @@ All external dependencies pinned to specific versions:
 - Ubuntu: `24.04` / `resolute`
 - Runner: `2.331.0`
 - Chrome: `142.0.7444.162`
-- Node.js: `24.11.1`
-- npm: `11.6.2`
-- Go: `1.25.4`
+- Node.js: `24.14.0`
+- npm: `11.11.0`
+- Go: `1.26.0`
 
 **Result:** Consistent cache keys, better cache hit rates
 
