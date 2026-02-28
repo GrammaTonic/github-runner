@@ -42,7 +42,7 @@ This document provides a comprehensive overview of all software versions, depend
 
 | Package           | Version                            | Purpose                |
 | ----------------- | ---------------------------------- | ---------------------- |
-| `nodejs`          | 24.11.1 (Chrome Runner only)       | JavaScript runtime     |
+| `nodejs`          | 24.14.0 (Chrome Runner only)       | JavaScript runtime     |
 | `npm`             | Latest available                   | Package manager        |
 | `python3`         | 3.10+ (Ubuntu 25.10 default)       | Python runtime         |
 | `python3-pip`     | Latest available                   | Python package manager |
@@ -70,13 +70,13 @@ This document provides a comprehensive overview of all software versions, depend
 
 | Package            | Version    | Security Status                                  |
 | ------------------ | ---------- | ------------------------------------------------ |
-| `playwright`       | **1.55.1** | ✅ Latest stable                                 |
-| `cypress`          | **13.15.0** | ✅ **Security Fix** (CVE-2025-9288)              |
-| `@playwright/test` | **1.55.1** | ✅ Test framework                                |
+| `playwright`       | **1.58.2** | ✅ Latest stable                                 |
+| `cypress`          | **15.11.0** | ✅ Latest stable                                |
+| `@playwright/test` | **1.58.2** | ✅ Test framework                                |
 | `flat`             | **5.0.2**  | ✅ **Security Fix** (VDB-216777, CVE-2020-36632) |
 | `sha.js`           | **2.4.12** | ✅ **Security Fix** (CVE-2025-9288)              |
 | `ws`               | **8.17.1** | ✅ **Security Fix** (CVE-2024-37890)             |
-| `nodejs`           | **24.11.1** | ✅ Latest LTS for Chrome Runner                  |
+| `nodejs`           | **24.14.0** | ✅ Latest LTS for Chrome Runner                  |
 
 ### Python Ecosystem
 

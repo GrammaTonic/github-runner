@@ -20,17 +20,17 @@ ARG TARGETARCH
 ARG TARGETOS
 ARG RUNNER_VERSION="2.331.0"
 ARG CHROME_VERSION="142.0.7444.162"
-ARG NODE_VERSION="24.11.1"
-ARG NPM_VERSION="11.6.4"
-ARG PLAYWRIGHT_VERSION="1.55.1"
-ARG PLAYWRIGHT_TEST_VERSION="1.55.1"
+ARG NODE_VERSION="24.14.0"
+ARG NPM_VERSION="11.11.0"
+ARG PLAYWRIGHT_VERSION="1.58.2"
+ARG PLAYWRIGHT_TEST_VERSION="1.58.2"
 ARG CROSS_SPAWN_VERSION="7.0.6"
-ARG TAR_VERSION="7.5.6"
-ARG BRACE_EXPANSION_VERSION="2.0.2"
-ARG ISAACS_BRACE_EXPANSION_VERSION="5.0.0"
-ARG GLOB_VERSION="13.0.0"
-ARG MINIMATCH_VERSION="10.1.1"
-ARG DIFF_VERSION="8.0.2"
+ARG TAR_VERSION="7.5.9"
+ARG BRACE_EXPANSION_VERSION="5.0.4"
+ARG ISAACS_BRACE_EXPANSION_VERSION="5.0.1"
+ARG GLOB_VERSION="13.0.6"
+ARG MINIMATCH_VERSION="10.2.4"
+ARG DIFF_VERSION="8.0.3"
 
 # Environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -173,7 +173,7 @@ RUN --mount=type=cache,target=/home/runner/.npm-cache,uid=1001,gid=1001 \
         diff@${DIFF_VERSION} \
         playwright@${PLAYWRIGHT_VERSION} \
         @playwright/test@${PLAYWRIGHT_TEST_VERSION} \
-        cypress@13.15.0; \
+        cypress@15.11.0; \
     PATCH_DIR="$(mktemp -d)"; \
     printf '{\n  "name": "runner-patch",\n  "private": true,\n  "version": "1.0.0",\n  "dependencies": {\n    "cross-spawn": "%s",\n    "tar": "%s",\n    "brace-expansion": "%s",\n    "@isaacs/brace-expansion": "%s",\n    "minimatch": "%s",\n    "diff": "%s"\n  }\n}\n' "${CROSS_SPAWN_VERSION}" "${TAR_VERSION}" "${BRACE_EXPANSION_VERSION}" "${ISAACS_BRACE_EXPANSION_VERSION}" "${MINIMATCH_VERSION}" "${DIFF_VERSION}" > "${PATCH_DIR}/package.json"; \
     npm install --prefix="${PATCH_DIR}" --omit=dev --cache /home/runner/.npm-cache; \

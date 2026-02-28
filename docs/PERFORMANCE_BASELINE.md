@@ -45,9 +45,9 @@ This report documents the current performance characteristics of the GitHub Runn
 **Additional Components:**
 - Chrome browser (142.0.7444.162) - ~150MB download
 - ChromeDriver
-- Node.js (24.11.1) - ~50MB download
-- Playwright (1.55.1) + browsers
-- Cypress (13.15.0)
+- Node.js (24.14.0) - ~50MB download
+- Playwright (1.58.2) + browsers
+- Cypress (15.11.0)
 - Python virtual environment
 - Extensive system libraries for browser support
 
