@@ -2,16 +2,18 @@
 
 ### 🔀 Merge Strategy
 
-**This repository uses SQUASH MERGE as the standard merge strategy.**
+**This repository uses a DUAL merge strategy:**
+- **Feature branches → `develop`**: **Squash merge** (one clean commit per feature)
+- **`develop` → `main`**: **Regular merge** (preserves shared history, no back-sync needed)
 
-**Why Squash Merge?**
-- ✅ **Clean, linear commit history** on `main` branch - easier to understand project evolution
-- ✅ **One commit per feature/fix** - easier rollbacks and cherry-picking
-- ✅ **Better release notes** - automated changelog generation from squashed commits
-- ✅ **Simplified CI/CD** - cleaner git history for automated release processes
-- ✅ **Consistent with Dependabot** - auto-merge configuration uses squash strategy
-- ✅ **Reduced noise** - no "fix typo" or "address review comments" commits in main
-- ✅ **Easier bisecting** - each commit represents a complete, logical change
+**Why this approach?**
+- ✅ **Clean integration branch** - squash merging features into `develop` keeps one commit per feature/fix
+- ✅ **No back-sync required** - regular merging `develop` → `main` preserves commit ancestry
+- ✅ **Easier rollbacks** - each squashed commit on `develop` represents a complete, logical change
+- ✅ **Better release notes** - automated changelog generation from squashed commits on `develop`
+- ✅ **Simplified workflow** - no post-merge back-sync step eliminates an entire class of errors
+- ✅ **Reduced noise** - no "fix typo" or "address review comments" commits on `develop`
+- ✅ **Consistent Dependabot** - auto-merge uses squash strategy for PRs targeting `develop`
 
 **How to Create a PR (Recommended):**
 ```bash
@@ -27,17 +29,16 @@ gh pr create --base main --head develop --title "chore: promote develop to main"
 
 **How to Merge (Recommended):**
 ```bash
-# Via GitHub CLI (recommended - ensures squash merge):
-gh pr merge <PR_NUMBER> --squash --delete-branch --body "Squash merge: <brief summary>"
+# Feature branch → develop (SQUASH merge):
+gh pr merge <PR_NUMBER> --squash --delete-branch --body "<brief summary>"
+
+# develop → main (REGULAR merge — do NOT squash):
+gh pr merge <PR_NUMBER> --merge --body "Promote develop to main"
 
 # Via GitHub Web UI:
-# 1. Click "Squash and merge" button (NOT "Merge pull request" or "Rebase and merge")
-# 2. Edit the commit message if needed
-# 3. Confirm the merge
-# 4. Delete the branch
+# Feature → develop: Click "Squash and merge"
+# develop → main:    Click "Merge pull request" (NOT squash)
 ```
-
-**⚠️ CRITICAL: After squash merging to `main`, you MUST back-sync `develop`** (see Post-Merge Back-Sync section below).
 
 ### ⚠️ Pre-Submission Checklist
 
@@ -67,79 +68,7 @@ git checkout <your-feature-branch>
 git rebase develop  # or 'main' depending on your target branch
 ```
 
-**Post-Merge Back-Sync (CRITICAL after squash merging to main):**
-
-**⚠️ MANDATORY STEP - DO NOT SKIP THIS!**
-
-**Why is this needed?**
-When you squash merge a PR from `develop` to `main`, the individual commits from `develop` are condensed into a single commit on `main`. This causes `develop` to appear "ahead" of `main` in git history, even though the code is identical. The back-sync merge resolves this divergence and prevents:
-- ❌ Incorrect "X commits ahead" status on `develop`
-- ❌ Merge conflicts on subsequent PRs
-- ❌ CI/CD pipeline confusion
-- ❌ Duplicate commits in future merges
-
-**When to perform back-sync:**
-- ✅ **ALWAYS** after merging a promotion PR (`develop` → `main`) with squash merge
-- ✅ **ALWAYS** after merging any PR directly to `main` with squash merge
-- ✅ **IMMEDIATELY** after the squash merge completes (don't wait!)
-- ❌ NOT needed when merging feature branches to `develop` (develop will be promoted later)
-
-**How to perform back-sync:**
-```bash
-# Step 1: Ensure your local branches are up-to-date
-git fetch --all
-
-# Step 2: Switch to develop and pull latest
-git checkout develop
-git pull origin develop
-
-# Step 3: Merge main back into develop (creates a merge commit)
-git merge main -m "chore: sync develop with main after squash merge"
-
-# Step 4: Push the back-sync to remote
-git push origin develop
-
-# This ensures develop stays in sync with main after squash merges
-# The merge commit preserves the development history in develop
-# while keeping main's linear squashed history
-```
-
-**Alternative (using GitHub CLI):**
-```bash
-# Create a back-sync PR (for teams requiring PR workflow)
-git checkout develop
-git pull origin develop
-git checkout -b chore/backsync-main-to-develop
-git merge main -m "chore: sync develop with main after squash merge"
-git push origin chore/backsync-main-to-develop
-gh pr create --base develop --head chore/backsync-main-to-develop \
-  --title "chore: back-sync main to develop after squash merge" \
-  --body "Automatic back-sync after squash merging to main. This prevents 'ahead' status."
-gh pr merge --merge --delete-branch  # Use regular merge, not squash!
-```
-
-**Verification:**
-```bash
-# After back-sync, these commands should show no differences:
-git diff main..develop  # Should be empty (no code differences)
-git log --oneline main..develop  # Should only show merge commits (no unique commits)
-
-# Check branch status (should show "up to date"):
-git checkout develop
-git status
-# Should NOT say "Your branch is ahead of 'origin/develop'"
-```
-
-**Troubleshooting:**
-```bash
-# If you forgot to back-sync and now have conflicts:
-git checkout develop
-git pull origin develop
-git fetch origin main
-git merge origin/main -m "chore: late back-sync after squash merge"
-# Resolve any conflicts, then:
-git push origin develop
-```
+**ℹ️ No back-sync needed!** Because `develop` → `main` uses a regular merge (not squash), both branches share the same commit history. There is no divergence after merging.
 
 ### Summary
 

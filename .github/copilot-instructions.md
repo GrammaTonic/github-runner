@@ -295,20 +295,27 @@ docker compose -f docker/docker-compose.chrome.yml up -d --scale github-runner-c
 
 **CRITICAL**: Direct pushes to `main` and `develop` are blocked by branch protection rules.
 
-### Post-Merge Back-Sync Workflow
+### Merge Strategy
 
-After merging a PR from `develop` to `main` with squash merge:
+**This repository uses a DUAL merge strategy:**
+- **Feature branches → `develop`**: **Squash merge** (one clean commit per feature)
+- **`develop` → `main`**: **Regular merge** (preserves shared history, no back-sync needed)
 
+**Why this approach?**
+- Squash merging features into `develop` keeps one commit per feature/fix
+- Regular merging `develop` → `main` preserves commit ancestry so no back-sync is needed
+- No post-merge back-sync step eliminates an entire class of errors
+
+**How to merge:**
 ```bash
-# Sync develop with main to prevent "ahead" status
-git checkout develop
-git pull origin develop
-git merge main -m "chore: sync develop with main after squash merge"
-git push origin develop
+# Feature branch → develop (SQUASH merge):
+gh pr merge <PR_NUMBER> --squash --delete-branch --body "<brief summary>"
 
-# This triggers CI/CD validation on develop branch
-# Ensures develop stays in sync with main after squash merges
+# develop → main (REGULAR merge — do NOT squash):
+gh pr merge <PR_NUMBER> --merge --body "Promote develop to main"
 ```
+
+**ℹ️ No back-sync needed!** Because `develop` → `main` uses a regular merge (not squash), both branches share the same commit history. There is no divergence after merging.
 
 ### Dependabot Automation (ZERO-TOUCH UPDATES)
 
@@ -316,7 +323,7 @@ The repository has fully automated dependency management:
 
 **Auto-Merge Workflow** (`.github/workflows/dependabot-auto-merge.yml`):
 - Automatically approves Dependabot PRs
-- Enables auto-merge with squash strategy
+- Enables auto-merge with squash strategy (Dependabot PRs target `develop`)
 - Merges after all CI checks pass
 - To disable for specific PR: `gh pr merge <PR_NUMBER> --disable-auto`
 
