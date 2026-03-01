@@ -560,7 +560,7 @@ scrape_configs:
 - [Grafana Dashboard JSON Model](https://grafana.com/docs/grafana/latest/dashboards/json-model/)
 - [DORA Metrics](https://cloud.google.com/blog/products/devops-sre/using-the-four-keys-to-measure-your-devops-performance)
 - [OpenMetrics Specification](https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md)
-- [Netcat Usage Guide](https://www.computerhope.com/unix/nc.htm)
+- [Netcat Usage Guide](https://man7.org/linux/man-pages/man1/ncat.1.html)
 
 ---
 

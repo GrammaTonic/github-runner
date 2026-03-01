@@ -835,7 +835,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - [cAdvisor](https://github.com/google/cadvisor)
 - [Prometheus Best Practices](https://prometheus.io/docs/practices/)
 - [DORA Metrics](https://cloud.google.com/blog/products/devops-sre/using-the-four-keys-to-measure-your-devops-performance)
-- [GitHub Actions Monitoring](https://docs.github.com/en/actions/hosting-your-own-runners/monitoring-and-troubleshooting-self-hosted-runners)
+- [GitHub Actions Monitoring](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/monitor-and-troubleshoot)
 - [Prometheus Metric Types](https://prometheus.io/docs/concepts/metric_types/)
 - [PromQL Documentation](https://prometheus.io/docs/prometheus/latest/querying/basics/)
 
