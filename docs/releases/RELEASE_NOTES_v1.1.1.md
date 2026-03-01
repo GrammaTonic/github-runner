@@ -10,7 +10,7 @@
 **Fixed vulnerability in linux-libc-dev package**
 
 - **Issue**: CVE-2023-52576 kernel vulnerability affecting memblock allocator
-- **Impact**: Potential use-after-free in memblock_isolate_range() 
+- **Impact**: Potential use-after-free in memblock_isolate_range()
 - **Resolution**: Upgraded base Docker images from Ubuntu 22.04 to Ubuntu 24.04 LTS
 - **Package Update**: linux-libc-dev from 5.15.0-153.163 to 6.8.0-79.79
 
@@ -22,7 +22,7 @@
 
 - **Standard Runner**: Updated to Ubuntu 24.04 LTS
 - **Chrome Runner**: Updated to Ubuntu 24.04 LTS  
-- **Benefits**: 
+- **Benefits**:
   - Latest security patches
   - Improved hardware support
   - Better performance
@@ -31,14 +31,17 @@
 ## 🔧 Technical Changes
 
 ### Modified Files
+
 - `docker/Dockerfile`: Ubuntu 22.04 → 24.04
 - `docker/Dockerfile.chrome`: Ubuntu 22.04 → 24.04
 Updated version labels to v2.0.2 (Standard Runner and Chrome Runner)
 
 ### Compatibility
+
 ✅ Backward compatible (Standard Runner)
 ✅ Chrome Runner now enforces amd64-only architecture
 ✅ All existing features preserved
+
 - ✅ No breaking changes
 - ✅ Same GitHub Actions runner version (2.328.0)
 

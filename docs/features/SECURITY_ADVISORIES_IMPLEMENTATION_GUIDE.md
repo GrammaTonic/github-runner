@@ -1,16 +1,19 @@
 # Security Advisories Workflow - Manual Implementation Guide
 
 ## 📍 File to Edit
+
 `.github/workflows/security-advisories.yml`
 
 ## 🎯 Implementation Steps
 
 ### Step 1: Open the File in VS Code
+
 ```bash
 code .github/workflows/security-advisories.yml
 ```
 
 ### Step 2: Create Backup (Optional but Recommended)
+
 The backup has already been created at:
 `.github/workflows/security-advisories.yml.backup`
 
@@ -22,6 +25,7 @@ The complete refactored workflow is available in the GitHub repository. You can:
 https://github.com/GrammaTonic/github-runner/blob/develop/docs/features/SECURITY_ADVISORIES_REFACTORING.md
 
 **Option B**: View locally
+
 ```bash
 cat docs/features/SECURITY_ADVISORIES_REFACTORING.md
 ```
@@ -31,6 +35,7 @@ cat docs/features/SECURITY_ADVISORIES_REFACTORING.md
 Here's a summary of the main sections to replace:
 
 #### 1. Workflow Inputs (Lines ~7-20)
+
 **CHANGE**: Add `scan_targets` choice input and `fail_on_severity` boolean
 
 ```yaml
@@ -54,6 +59,7 @@ fail_on_severity:
 ```
 
 #### 2. Permissions (Lines ~30-35)
+
 **ADD** at workflow level:
 
 ```yaml
@@ -76,15 +82,18 @@ permissions:
 ### Step 5: Critical Updates
 
 #### Action Version Updates
+
 - `aquasecurity/trivy-action@master` → `@0.28.0` (all occurrences)
 - `github/codeql-action/upload-sarif@v4` → `@v3` (all occurrences)
 - `actions/upload-artifact@v5` → `@v4` (consistency)
 
 #### Add Timeouts
+
 - Filesystem scans: `timeout: "10m"`
 - Container scans: `timeout: "15m"`
 
 #### BuildKit Cache Alignment
+
 ```yaml
 cache-from: |
   type=gha
@@ -93,6 +102,7 @@ cache-from: |
 ```
 
 #### Multi-Arch Support
+
 ```yaml
 - name: Set up QEMU for multi-platform builds
   uses: docker/setup-qemu-action@v3
@@ -106,6 +116,7 @@ cache-from: |
 After making changes, test incrementally:
 
 #### Phase 1: Validate YAML Syntax
+
 ```bash
 # In VS Code, YAML should auto-validate
 # Or use yamllint if installed
@@ -113,6 +124,7 @@ yamllint .github/workflows/security-advisories.yml
 ```
 
 #### Phase 2: Test Filesystem Scan Only
+
 ```bash
 gh workflow run security-advisories.yml \
   -f scan_targets=filesystem-only \
@@ -120,6 +132,7 @@ gh workflow run security-advisories.yml \
 ```
 
 #### Phase 3: Test Container Scan (One Variant)
+
 ```bash
 gh workflow run security-advisories.yml \
   -f scan_targets=containers \
@@ -127,6 +140,7 @@ gh workflow run security-advisories.yml \
 ```
 
 #### Phase 4: Test Full Scan
+
 ```bash
 gh workflow run security-advisories.yml \
   -f scan_targets=all \
@@ -138,6 +152,7 @@ gh workflow run security-advisories.yml \
 After each test run, check:
 
 1. ✅ **Workflow completes successfully**
+
    ```bash
    gh run list --workflow=security-advisories.yml --limit 5
    ```
@@ -147,6 +162,7 @@ After each test run, check:
    - Should see 4 categories: filesystem, standard, chrome, chrome-go
 
 3. ✅ **Artifacts created**
+
    ```bash
    gh run view <run-id> --log
    ```
@@ -184,10 +200,12 @@ git push origin develop
 ## 🔍 Quick Reference - Line-by-Line Changes
 
 ### Inputs Section (~Line 7)
+
 - Replace string `scan_targets` with choice input
 - Add `fail_on_severity` boolean input
 
 ### Jobs Section (~Line 40+)
+
 - **DELETE**: Old `security-scan` job (single monolithic job)
 - **ADD**: `scan-filesystem` job (conditional on scan_targets)
 - **ADD**: `scan-containers` job (matrix: [standard, chrome, chrome-go])
@@ -195,6 +213,7 @@ git push origin develop
 - **UPDATE**: `cleanup-old-artifacts` job (90-day retention)
 
 ### Throughout File
+
 - Find/Replace: `@master` → `@0.28.0` (Trivy action)
 - Find/Replace: `@v4` → `@v3` (CodeQL action)
 - Find/Replace: `@v5` → `@v4` (Upload artifact action)
@@ -202,22 +221,28 @@ git push origin develop
 ## 🆘 Troubleshooting
 
 ### Issue: YAML Syntax Error
+
 **Solution**: Check indentation (use spaces, not tabs). YAML is whitespace-sensitive.
 
 ### Issue: Matrix Not Working
+
 **Solution**: Ensure `strategy.matrix.variant` is properly defined and referenced as `${{ matrix.variant }}`
 
 ### Issue: Cache Not Being Used
+
 **Solution**: Verify cache scope names match ci-cd.yml exactly:
+
 - `normal-runner` (not `standard-runner`)
 - `chrome-runner`
 - `chrome-go-runner`
 - `buildcache`
 
 ### Issue: SARIF Upload Fails
+
 **Solution**: Ensure `security-events: write` permission is set
 
 ### Issue: Workflow Doesn't Trigger
+
 **Solution**: Check conditional logic in job `if:` statements. Default to `schedule` trigger for testing.
 
 ## 📚 Resources

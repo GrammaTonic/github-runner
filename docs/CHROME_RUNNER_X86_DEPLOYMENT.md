@@ -1,26 +1,29 @@
-# Using Ubuntu Resolute for Chrome Runner
+# Chrome Runner x86 Deployment Guide
+
+## Ubuntu Resolute Base Image
 
 The Chrome runner image is built on `ubuntu:resolute` to ensure compatibility with the latest browser and UI testing dependencies. This approach may result in more reported CVEs due to pre-release packages.
 
-#### CVE Handling
+## CVE Handling
 
 - All app-level dependencies are patched using npm `overrides` and local installs.
 - CVEs in npm's internal modules are documented and tracked; they do not impact runner security.
 - Trivy scans are automated in all test scripts, and results are stored for compliance and audit.
 
-#### Example Trivy Scan Command
+### Example Trivy Scan Command
 
 ```bash
 docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
   aquasec/trivy:latest image github-runner-chrome:test-local > test-results/docker/trivy_scan_<timestamp>.txt
 ```
-# Chrome Runner x86 Deployment Guide
 
 ## Overview
+
 This guide helps you deploy the GitHub Actions Chrome runner on x86_64 architecture to resolve ARM64 compatibility issues.
 
 ## Prerequisites
+
 - **x86_64 system** (Linux/Windows with x86, AWS EC2, Google Cloud, etc.)
 - **Docker** installed and running
 - **GitHub Personal Access Token** with `repo` scope
@@ -28,6 +31,7 @@ This guide helps you deploy the GitHub Actions Chrome runner on x86_64 architect
 ## Quick Start
 
 ### 1. Configure Environment
+
 ```bash
 # Copy and edit configuration
 cp config/chrome-runner.env.example config/chrome-runner.env
@@ -37,18 +41,21 @@ nano config/chrome-runner.env  # or your preferred editor
 ```
 
 **Required configuration:**
+
 ```bash
 GITHUB_TOKEN=ghp_your_actual_token_here
 GITHUB_REPOSITORY=your-username/your-repo-name
 ```
 
 ### 2. Deploy Chrome Runner
+
 ```bash
 # Run the deployment script
 ./scripts/deploy-chrome-x86.sh
 ```
 
 ### 3. Verify Deployment
+
 ```bash
 # Check status
 ./scripts/deploy-chrome-x86.sh status
@@ -72,19 +79,23 @@ docker compose -f docker/docker-compose.chrome.yml --env-file config/chrome-runn
 ## Troubleshooting
 
 ### Architecture Issues
+
 - Ensure you're running on x86_64 architecture
 - Check with: `uname -m` (should return `x86_64`)
 
 ### Permission Issues
+
 - The deployment script handles permission fixes automatically
 - If manual deployment, ensure config.sh has execute permissions
 
 ### GitHub Token Issues
+
 - Verify token has `repo` scope for private repositories
 - Check token hasn't expired
 - Ensure repository name format is correct: `username/repo-name`
 
 ### Docker Issues
+
 - Ensure Docker daemon is running
 - Check available disk space
 - Verify no port conflicts
@@ -130,6 +141,7 @@ jobs:
 ## Support
 
 If you encounter issues:
+
 1. Check the logs: `docker logs github-runner-chrome`
 2. Verify configuration in `config/chrome-runner.env`
 3. Ensure GitHub token has correct permissions

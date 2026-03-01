@@ -157,6 +157,7 @@ Legend:
 ## 📦 Deliverable Checklist
 
 ### Code Deliverables
+
 - [ ] Metrics HTTP server script (`/tmp/metrics-server.sh`)
 - [ ] Metrics collector script (`/tmp/metrics-collector.sh`)
 - [ ] Updated `docker/entrypoint.sh`
@@ -165,12 +166,14 @@ Legend:
 - [ ] Updated Docker Compose files (3 files)
 
 ### Dashboard Deliverables
+
 - [ ] `monitoring/grafana/dashboards/runner-overview.json`
 - [ ] `monitoring/grafana/dashboards/dora-metrics.json`
 - [ ] `monitoring/grafana/dashboards/performance-trends.json`
 - [ ] `monitoring/grafana/dashboards/job-analysis.json`
 
 ### Documentation Deliverables
+
 - [ ] `docs/features/PROMETHEUS_SETUP.md`
 - [ ] `docs/features/PROMETHEUS_USAGE.md`
 - [ ] `docs/features/PROMETHEUS_TROUBLESHOOTING.md`
@@ -179,11 +182,13 @@ Legend:
 - [ ] `docs/features/PROMETHEUS_QUICKSTART.md`
 
 ### Test Deliverables
+
 - [ ] `tests/integration/test-metrics-endpoint.sh`
 - [ ] `tests/integration/test-metrics-performance.sh`
 - [ ] Updated `tests/README.md`
 
 ### Release Deliverables
+
 - [ ] `docs/releases/v2.3.0-prometheus-metrics.md`
 - [ ] Updated `VERSION` file (2.3.0)
 - [ ] GitHub Release with attachments
@@ -194,7 +199,8 @@ Legend:
 ---
 
 **Quick Navigation:**
+
 - 📋 [Full Roadmap](./PROMETHEUS_ROADMAP.md)
-- 📖 [Implementation Plan](/plan/feature-prometheus-monitoring-1.md)
+- 📖 [Implementation Plan](../../plan/feature-prometheus-monitoring-1.md)
 - 📄 [Feature Specification](./PROMETHEUS_IMPROVEMENTS.md)
 - 🔗 [GitHub Project #5](https://github.com/users/GrammaTonic/projects/5)

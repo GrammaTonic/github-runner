@@ -241,13 +241,14 @@ The monitoring workflow checks:
    gh run view <run-id>
    ```
 
-   # Check your repository permissions
+2. **Check Your Repository Permissions**
 
+   ```bash
+   gh api repos/GrammaTonic/github-runner/collaborators/$USER/permission --jq .permission
    ```
 
-   ```
+3. **Branch Protection Conflicts**
 
-2. **Branch Protection Conflicts**
    ```bash
    # View current protection rules
    gh api repos/GrammaTonic/github-runner/branches/main/protection

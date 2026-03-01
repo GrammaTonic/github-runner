@@ -7,7 +7,7 @@
 ### 1. **Repository Structure**
 
 - **Main Branch**: Production-ready code with maximum protection
-- **Main Branch**: Integration branch with standard protection
+- **Develop Branch**: Integration branch with standard protection
 - **Feature Branches**: Developer-managed branches (no protection)
 - **Hotfix Branches**: Emergency fix branches with bypass capability
 
@@ -39,20 +39,10 @@
   - Conversation resolution: Required
 ```
 
-#### **Main Branch Protection**
+#### **Develop Branch Protection**
 
 ```yaml
-✅ Required Status Checks:
-  - Lint and Validate
-  - Security Scanning
-  - Build Docker Images
-  - Test Runner Configuration (unit)
-  - Test Runner Configuration (integration)
-
 ✅ Pull Request Reviews:
-  - Required reviewers: 1
-  - Dismiss stale reviews: Yes
-  - Require code owner reviews: No
   - Require review of last push: No
 
 ✅ Additional Restrictions:

@@ -13,11 +13,13 @@ This document tracks the performance optimizations implemented based on the base
 ## ✅ Completed Optimizations
 
 ### 1. Base Image Fix (CRITICAL)
+
 **Issue:** All Dockerfiles used `ubuntu:resolute` (invalid/unstable image)  
 **Fix:** Changed to `ubuntu:24.04` LTS for stability and reproducibility  
 **Impact:** Stable base, consistent builds, better package support
 
 **Files Changed:**
+
 - `docker/Dockerfile`
 - `docker/Dockerfile.chrome`
 - `docker/Dockerfile.chrome-go`
@@ -25,14 +27,17 @@ This document tracks the performance optimizations implemented based on the base
 ---
 
 ### 2. BuildKit Cache Mounts for APT (HIGH IMPACT)
+
 **Issue:** APT packages re-downloaded on every build  
 **Fix:** Implemented `--mount=type=cache` for `/var/cache/apt` and `/var/lib/apt`  
-**Impact:** 
+**Impact:**
+
 - First build: Same speed (downloads packages)
 - Subsequent builds: **50-70% faster** APT operations (cached packages)
 - Shared cache across all runner variants
 
 **Implementation:**
+
 ```dockerfile
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -44,6 +49,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 ```
 
 **Files Changed:**
+
 - `docker/Dockerfile` (2 RUN commands with apt)
 - `docker/Dockerfile.chrome` (2 RUN commands with apt)
 - `docker/Dockerfile.chrome-go` (2 RUN commands with apt)
@@ -51,9 +57,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 ---
 
 ### 3. BuildKit Cache Mounts for Downloads (HIGH IMPACT)
+
 **Issue:** External binaries (Chrome, Node.js, Go, ChromeDriver) re-downloaded on every build  
 **Fix:** Implemented `--mount=type=cache,target=/tmp/downloads` with conditional downloads  
 **Impact:**
+
 - Chrome (150MB): Downloaded once, cached forever
 - Node.js (50MB): Downloaded once, cached forever
 - Go (130MB): Downloaded once, cached forever
@@ -61,6 +69,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 - **Total saved per rebuild: ~335MB+ downloads**
 
 **Implementation:**
+
 ```dockerfile
 RUN --mount=type=cache,target=/tmp/downloads \
     if [ ! -f /tmp/downloads/chrome-${CHROME_VERSION}.zip ]; then \
@@ -70,21 +79,25 @@ RUN --mount=type=cache,target=/tmp/downloads \
 ```
 
 **Files Changed:**
+
 - `docker/Dockerfile.chrome` (Chrome, ChromeDriver, Node.js downloads)
 - `docker/Dockerfile.chrome-go` (Chrome, ChromeDriver, Node.js, Go downloads)
 
 ---
 
 ### 4. BuildKit Cache Mounts for GitHub Actions Runner (HIGH IMPACT)
+
 **Issue:** GitHub Actions runner tarball (~150MB) re-downloaded on every build across all variants  
 **Fix:** Implemented `--mount=type=cache,target=/tmp/downloads` with version-specific caching and retry logic  
 **Impact:**
+
 - Runner tarball (150MB): Downloaded once per version, cached forever
 - **Saved per rebuild: ~150MB download**
 - Improved reliability with retry mechanism
 - Faster builds when runner version unchanged
 
 **Implementation:**
+
 ```dockerfile
 RUN --mount=type=cache,target=/tmp/downloads,uid=1001,gid=1001 \
     set -e; \
@@ -103,6 +116,7 @@ RUN --mount=type=cache,target=/tmp/downloads,uid=1001,gid=1001 \
 ```
 
 **Benefits:**
+
 - Cache persists across builds for same runner version
 - Version-specific caching allows multiple runner versions to coexist
 - Retry logic improves download reliability
@@ -110,6 +124,7 @@ RUN --mount=type=cache,target=/tmp/downloads,uid=1001,gid=1001 \
 - Reduced bandwidth usage and GitHub API rate limiting
 
 **Files Changed:**
+
 - `docker/Dockerfile` (runner download with cache)
 - `docker/Dockerfile.chrome` (runner download with cache)
 - `docker/Dockerfile.chrome-go` (runner download with cache)
@@ -117,14 +132,17 @@ RUN --mount=type=cache,target=/tmp/downloads,uid=1001,gid=1001 \
 ---
 
 ### 5. BuildKit Cache Mounts for npm (HIGH IMPACT)
+
 **Issue:** npm packages re-downloaded and re-installed on every build  
 **Fix:** Implemented `--mount=type=cache` for npm cache directories  
 **Impact:**
+
 - npm global installs: 60-80% faster
 - Security patches (cross-spawn, tar, brace-expansion): Instant on rebuilds
 - Playwright/Cypress installations: Much faster with cached deps
 
 **Implementation:**
+
 ```dockerfile
 RUN --mount=type=cache,target=/home/runner/.npm-cache \
     npm config set cache /home/runner/.npm-cache; \
@@ -132,6 +150,7 @@ RUN --mount=type=cache,target=/home/runner/.npm-cache \
 ```
 
 **Files Changed:**
+
 - `docker/Dockerfile` (runner npm patches)
 - `docker/Dockerfile.chrome` (global npm packages + patches)
 - `docker/Dockerfile.chrome-go` (global npm packages + patches)
@@ -139,15 +158,18 @@ RUN --mount=type=cache,target=/home/runner/.npm-cache \
 ---
 
 ### 6. Install Playwright Chromium Browser (CRITICAL FIX)
+
 **Issue:** Playwright screenshot tests failed because browser binaries were not installed  
 **Fix:** Added `npx playwright install chromium` to install required browser binaries  
 **Impact:**
+
 - Screenshot integration tests now pass successfully
 - Playwright has its own isolated browser binaries
 - Chromium headless shell (~140MB) downloaded and cached
 - Required even though system Chrome is installed
 
 **Implementation:**
+
 ```dockerfile
 npm install playwright@${PLAYWRIGHT_VERSION}; \
 npx playwright install chromium; \
@@ -155,34 +177,41 @@ npm cache clean --force
 ```
 
 **Why This Is Needed:**
+
 - Playwright uses its own browser binaries (not system Chrome)
 - Browser binaries stored in `/home/runner/.cache/ms-playwright/`
 - System Chrome installation is still used for Selenium/Cypress tests
 - Both browsers serve different purposes in the testing stack
 
 **Files Changed:**
+
 - `docker/Dockerfile.chrome`
 - `docker/Dockerfile.chrome-go`
 
 ---
 
 ### 7. Consolidate APT Operations
+
 **Issue:** Multiple `apt-get update` calls and unnecessary cleanup with cache  
 **Fix:** Reduced to 2 main APT RUN commands with cache mounts, removed redundant cleanup  
 **Impact:**
+
 - Fewer layers (better caching granularity)
 - Faster builds (less redundant operations)
 - Cache handles cleanup automatically
 
 **Files Changed:**
+
 - All three Dockerfiles consolidated APT operations
 
 ---
 
 ### 9. Multi-Stage Build Implementation (HIGH IMPACT - Standard Runner Only)
+
 **Issue**: Single-stage build included build-time dependencies in final image  
 **Fix**: Implemented multi-stage Dockerfile with separate builder and runtime stages  
 **Impact**:
+
 - **Standard runner only**: Image size reduction of 370MB (~17% smaller)
 - Standard runner: 2.18GB → 1.81GB
 - Removed build-only dependencies from runtime (curl, build-essential)
@@ -191,6 +220,7 @@ npm cache clean --force
 - **NOT suitable for Chrome variants** (see Future Optimizations for analysis)
 
 **Why Chrome Variants Don't Benefit:**
+
 - Chrome runners require full npm/node at runtime for Playwright/Cypress installation
 - Multi-stage build creates ~410MB overhead (duplicated npm modules)
 - Only ~15-20MB of build tools can be removed (curl, wget, unzip)
@@ -198,6 +228,7 @@ npm cache clean --force
 - Future: Need alternative approach (pre-built browsers, selective caching)
 
 **Implementation:**
+
 ```dockerfile
 # Stage 1: Builder - Download and prepare runner
 FROM ubuntu:resolute AS builder
@@ -213,6 +244,7 @@ COPY --from=builder /actions-runner /actions-runner
 ```
 
 **Benefits (Standard Runner):**
+
 - Build tools not included in final image
 - Downloads happen in builder stage (still cached)
 - Runtime image only contains necessary dependencies
@@ -220,15 +252,18 @@ COPY --from=builder /actions-runner /actions-runner
 - Reduced image size improves deployment speed
 
 **Files Changed:**
+
 - `docker/Dockerfile` (converted to multi-stage build)
 
 ---
 
 ### 10. Version Pinning (Already Done)
+
 **Status:** All external dependencies already pinned to specific versions  
 **Benefit:** Reproducible builds, better caching (versions in cache keys)
 
 **Pinned Versions:**
+
 - Ubuntu: `24.04`
 - Runner: `2.331.0`
 - Chrome: `142.0.7444.162`
@@ -287,6 +322,7 @@ COPY --from=builder /actions-runner /actions-runner
 ### Enable BuildKit (Required)
 
 **Method 1: Environment Variable**
+
 ```bash
 export DOCKER_BUILDKIT=1
 docker build -f docker/Dockerfile -t github-runner:optimized .
@@ -294,6 +330,7 @@ docker build -f docker/Dockerfile -t github-runner:optimized .
 
 **Method 2: Docker Config (Persistent)**
 Edit `~/.docker/daemon.json`:
+
 ```json
 {
   "features": {
@@ -305,16 +342,19 @@ Edit `~/.docker/daemon.json`:
 ### Build Commands
 
 **Standard Runner:**
+
 ```bash
 DOCKER_BUILDKIT=1 docker build -f docker/Dockerfile -t github-runner:optimized .
 ```
 
 **Chrome Runner:**
+
 ```bash
 DOCKER_BUILDKIT=1 docker build -f docker/Dockerfile.chrome -t github-runner-chrome:optimized .
 ```
 
 **Chrome-Go Runner:**
+
 ```bash
 DOCKER_BUILDKIT=1 docker build -f docker/Dockerfile.chrome-go -t github-runner-chrome-go:optimized .
 ```
@@ -322,17 +362,20 @@ DOCKER_BUILDKIT=1 docker build -f docker/Dockerfile.chrome-go -t github-runner-c
 ### Cache Management
 
 **View cache usage:**
+
 ```bash
 docker buildx du
 ```
 
 **Prune build cache:**
+
 ```bash
 docker buildx prune -a  # Remove all cache
 docker buildx prune --keep-storage 10GB  # Keep 10GB
 ```
 
 **Cache location:**
+
 - Linux: `/var/lib/docker/buildkit/cache`
 - macOS: `~/Library/Containers/com.docker.docker/Data/vms/0/data/docker/buildkit/cache`
 
@@ -343,6 +386,7 @@ docker buildx prune --keep-storage 10GB  # Keep 10GB
 ### Next Steps
 
 1. **Build with measurements:**
+
    ```bash
    # First build (cache miss)
    time DOCKER_BUILDKIT=1 docker build -f docker/Dockerfile -t github-runner:test .
@@ -352,6 +396,7 @@ docker buildx prune --keep-storage 10GB  # Keep 10GB
    ```
 
 2. **Measure image sizes:**
+
    ```bash
    docker images | grep github-runner
    docker history github-runner:test --no-trunc --human
@@ -372,16 +417,19 @@ docker buildx prune --keep-storage 10GB  # Keep 10GB
 ## 📈 Success Metrics
 
 ### Build Time Goals
+
 - ✅ **Standard Runner:** <1.5 min on rebuilds (vs 2-4 min baseline)
 - ✅ **Chrome Runner:** <3 min on rebuilds (vs 5-8 min baseline)
 - ✅ **Chrome-Go Runner:** <3.5 min on rebuilds (vs 6-9 min baseline)
 
 ### Image Size Goals
+
 - ✅ **Standard Runner:** ~1.8GB - **ACHIEVED** with multi-stage build (370MB reduction)
 - ✅ **Chrome Runner:** ~2.8-3.0GB - **ACHIEVED** (includes working Playwright tests)
 - ✅ **Chrome-Go Runner:** ~3.8-4.0GB - **ACHIEVED** (includes working Playwright tests)
 
 ### Cache Efficiency Goals
+
 - ✅ **APT cache hit rate:** >90% on rebuilds
 - ✅ **Download cache hit rate:** 100% when versions unchanged
 - ✅ **npm cache hit rate:** >80% on rebuilds
@@ -391,6 +439,7 @@ docker buildx prune --keep-storage 10GB  # Keep 10GB
 ## 🔄 Future Optimizations (Not Yet Implemented)
 
 ### Medium Priority
+
 1. **Layer squashing** - Reduce layer count for faster pulls
 2. ~~**Parallel npm installs**~~ - ❌ **REJECTED** (see Rejected Optimizations below)
 3. **Multi-stage builds for Chrome variants** - **EVALUATED: Not recommended**
@@ -406,10 +455,11 @@ docker buildx prune --keep-storage 10GB  # Keep 10GB
    - **Alternative approach needed**: Investigate selective npm caching or pre-built browser images
 
 ### Low Priority
+
 4. **Alternative base images** - Test alpine, distroless for size
-5. **Remote cache** - Share cache across CI/CD runners
-6. **Registry cache** - Use GitHub Container Registry as cache backend
-7. **Custom runner distribution** - Pre-built runner binary
+2. **Remote cache** - Share cache across CI/CD runners
+3. **Registry cache** - Use GitHub Container Registry as cache backend
+4. **Custom runner distribution** - Pre-built runner binary
 
 ---
 
@@ -419,15 +469,17 @@ docker buildx prune --keep-storage 10GB  # Keep 10GB
 
 **Status:** ❌ **REJECTED** (November 16, 2025)  
 **Branch:** feature/parallel-npm-installs  
-**Analysis:** [PARALLEL_NPM_RESULTS.md](features/PARALLEL_NPM_RESULTS.md)  
+**Analysis:** Rejected — results not retained  
 **Workflows:** [#19396882450](https://github.com/GrammaTonic/github-runner/actions/runs/19396882450), [#19396967351](https://github.com/GrammaTonic/github-runner/actions/runs/19396967351)
 
 **Original Goal:**
+
 - Split npm installations into 3 parallel groups (security patches, Playwright, Cypress)
 - Expected savings: 20-23 seconds (46-53% faster npm installs)
 - Expected Chrome build time: 24s → 14-19s (17-37% faster)
 
 **Implementation:**
+
 ```dockerfile
 # Group 1: Security patches (background job)
 { npm install -g cross-spawn tar brace-expansion && echo "ok" > /tmp/npm_security.status; } &
@@ -492,6 +544,7 @@ wait $PID_SECURITY $PID_PLAYWRIGHT $PID_CYPRESS
 5. ✅ Complexity must justify measurable benefits
 
 **Would Reconsider If:**
+
 - Cache miss rate exceeded 50% (currently <10%)
 - Parallel overhead could be reduced to <1 second
 - npm supported lock-free concurrent installs
@@ -519,18 +572,21 @@ CACHE_TO:
 ```
 
 **Benefits:**
+
 - ✅ Feature branch builds populate the `buildcache` scope
 - ✅ `develop` and `main` branch builds can leverage feature branch caches
 - ✅ Eliminates full rebuilds when merging PRs
 - ✅ Reduces CI/CD time and GitHub Actions usage
 
 **Cache Scopes Used:**
+
 - `normal-runner` - Standard runner builds
 - `chrome-runner` - Chrome runner builds  
 - `chrome-go-runner` - Chrome-Go runner builds
 - `buildcache` - Shared cache accessible by all branches
 
 **Limitations:**
+
 - GitHub Actions cache has a 10GB total limit per repository
 - Caches are evicted after 7 days of no access
 - Older caches may be evicted when limit is reached
@@ -550,6 +606,7 @@ CACHE_TO:
 ## 🎯 Summary
 
 **Critical optimizations implemented:**
+
 - ✅ Fixed ubuntu:resolute → ubuntu:24.04 (then reverted to ubuntu:resolute for compatibility)
 - ✅ Implemented BuildKit cache mounts (apt, npm, downloads)
 - ✅ Added Playwright chromium browser installation for screenshot tests
@@ -558,6 +615,7 @@ CACHE_TO:
 - ✅ **Implemented multi-stage build for standard runner (370MB size reduction)**
 
 **Expected improvements:**
+
 - 🚀 **50-70% faster rebuilds** with cache hits
 - 🧪 **Working Playwright screenshot tests** with proper browser installation
 - 💾 **~985MB less download traffic** per rebuild

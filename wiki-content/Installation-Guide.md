@@ -43,15 +43,17 @@ gh repo clone GrammaTonic/github-runner
 cd github-runner
 ```
 
-### 2. Configure Environment
+## 2. Configure Environment
 
-# Copy configuration example
- # Copy the example environment file into a working runner.env before editing
-# Copy configuration example
+Copy the example environment file into a working runner.env before editing:
+
+```bash
 cp config/runner.env.example config/runner.env
 
 # Edit configuration
+
 nano config/runner.env
+
 ```
 
 Required environment variables:
@@ -67,7 +69,7 @@ RUNNER_LABELS=self-hosted,docker,linux
 RUNNER_GROUP=default
 ```
 
-### 3. Set Up GitHub Token
+## 3. Set Up GitHub Token
 
 1. Go to GitHub Settings → Developer settings → Personal access tokens
 2. Generate new token with permissions:
@@ -213,7 +215,7 @@ After successful installation:
 2. **[Docker Configuration](Docker-Configuration.md)** - Customize Docker setup
 
 <!-- Security Configuration doc not available. Link removed for CI/CD compliance. -->
-4. **[Production Deployment](Production-Deployment.md)** - Production checklist
+1. **[Production Deployment](Production-Deployment.md)** - Production checklist
 
 ## 📞 Getting Help
 

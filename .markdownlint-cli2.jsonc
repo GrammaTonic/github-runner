@@ -1,0 +1,33 @@
+// Configuration for markdownlint-cli2 — replaces super-linter for Markdown validation.
+// See: https://github.com/DavidAnson/markdownlint-cli2#configuration
+{
+  "config": {
+    // Allow long lines — many docs contain URLs, tables, and code blocks
+    "MD013": false,
+    // Allow duplicate headings in sibling sections (e.g. multiple "Usage" under different parents)
+    "MD024": { "siblings_only": true },
+    // Allow multiple top-level headings — some docs combine related guides
+    "MD025": false,
+    // Allow ordered lists with non-sequential prefixes (continuation numbering)
+    "MD029": false,
+    // Allow inline HTML (badges, images, diagrams, details/summary blocks)
+    "MD033": false,
+    // Allow bare URLs — common in reference docs and config examples
+    "MD034": false,
+    // Allow emphasis used as visual separators (bold sub-headings in lists)
+    "MD036": false,
+    // Allow fenced code blocks without language (plain text output examples)
+    "MD040": false,
+    // Allow multiple blank lines (common after HTML blocks)
+    "MD012": false,
+    // Allow first line to be non-heading (frontmatter, comments, etc.)
+    "MD041": false,
+    // Skip link-fragment validation — many anchors are generated or context-dependent
+    "MD060": false
+  },
+  "globs": [
+    "docs/**/*.md",
+    "wiki-content/**/*.md",
+    "!docs/archive/**"
+  ]
+}

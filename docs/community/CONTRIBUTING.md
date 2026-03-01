@@ -6,30 +6,40 @@ Thank you for considering contributing to this project! We welcome contributions
 
 1. **Fork the Repository**: Create a fork of this repository on GitHub.
 2. **Clone Your Fork**: Clone your fork to your local machine.
+
    ```bash
    git clone https://github.com/your-username/github-runner.git
    ```
+
 3. **Start from Develop**: This repository uses an integration branch workflow. Create feature branches from `develop` and open pull requests to `develop`.
+
    ```bash
    git checkout develop
    git pull origin develop
    ```
+
 4. **Create a Branch**: Create a new branch for your changes from `develop`.
+
    ```bash
    git checkout -b feature/your-feature-name
    # For urgent production hotfixes, branch from main instead:
    # git checkout -b hotfix/your-fix-name main
    ```
+
 5. **Make Changes**: Make your changes in the new branch.
 6. **Test Your Changes**: Ensure your changes work as expected and do not break existing functionality.
 7. **Commit Your Changes**: Commit your changes with a clear and concise commit message.
+
    ```bash
    git commit -m "Description of your changes"
    ```
+
 8. **Push Your Changes**: Push your changes to your fork.
+
    ```bash
    git push origin feature/your-feature-name
    ```
+
 9. **Open a Pull Request**: Open a pull request from your feature branch to the `develop` branch of this repository.
 
 10. **Release / Promote**: After your change is merged into `develop`, the integration branch is promoted to `main` via a pull request from `develop` → `main`. The release flow is:

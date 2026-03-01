@@ -41,7 +41,8 @@ jobs:
           DOCS_COUNT=$(find docs -type f -name '*.md' ! -path 'docs/archive/*' 2>/dev/null | wc -l | tr -d ' ' || true)
           if [ -n "$DOCS_COUNT" ] && [ "$DOCS_COUNT" -gt 0 ]; then
             echo "Running markdown-link-check on $DOCS_COUNT docs files..."
-            find docs -type f -name '*.md' ! -path 'docs/archive/*' -print0 | xargs -0 npx -y markdown-link-check || true
+            find docs -type f -name '*.md' ! -path 'docs/archive/*' -print0 \
+              | xargs -0 npx -y markdown-link-check@3.14.2 --config .markdown-link-check.json
           else
             echo "No docs markdown files found to check."
           fi
@@ -51,7 +52,8 @@ jobs:
             WIKI_COUNT=$(find wiki-content -type f -name '*.md' 2>/dev/null | wc -l | tr -d ' ' || true)
             if [ -n "$WIKI_COUNT" ] && [ "$WIKI_COUNT" -gt 0 ]; then
               echo "Running markdown-link-check on $WIKI_COUNT wiki files..."
-              find wiki-content -type f -name '*.md' -print0 | xargs -0 npx -y markdown-link-check || true
+              find wiki-content -type f -name '*.md' -print0 \
+                | xargs -0 npx -y markdown-link-check@3.14.2 --config .markdown-link-check.json
             else
               echo "No wiki markdown files found to check."
             fi
@@ -184,12 +186,11 @@ jobs:
 
           resp=$(curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -X POST "$API_URL" --data "$PAYLOAD" || true)
           echo "$resp" | jq -r '.html_url // .message'
-      - name: Run GitHub Super Linter for Docs
-        uses: github/super-linter@v7
-        env:
-          DEFAULT_BRANCH: develop
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_ALL_CODEBASE: false
-          VALIDATE_MD: true
-          FILTER_REGEX_INCLUDE: docs/**,wiki-content/**
-          FILTER_REGEX_EXCLUDE: docs/archive/**
+      - name: Lint Markdown
+        # yamllint disable-line rule:line-length
+        uses: DavidAnson/markdownlint-cli2-action@07035fd053f7be764496c0f8d8f9f41f98305101  # v22.0.0
+        with:
+          globs: |
+            docs/**/*.md
+            wiki-content/**/*.md
+            !docs/archive/**

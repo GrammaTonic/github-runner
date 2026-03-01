@@ -14,6 +14,7 @@
 Implement multi-architecture container image support for GitHub Actions self-hosted runners, enabling deployment on both AMD64 (x86_64) and ARM64 (aarch64) platforms. This will support diverse infrastructure including Apple Silicon Macs, AWS Graviton instances, Raspberry Pi clusters, and traditional x86 servers.
 
 **What's Included:**
+
 - ✅ Multi-architecture Docker builds (linux/amd64, linux/arm64)
 - ✅ GitHub Actions workflow for automated multi-arch builds
 - ✅ Docker Buildx configuration with QEMU emulation
@@ -22,6 +23,7 @@ Implement multi-architecture container image support for GitHub Actions self-hos
 - ✅ Documentation for deployment on ARM platforms
 
 **Out of Scope:**
+
 - ❌ Windows containers
 - ❌ macOS containers
 - ❌ Other architectures (s390x, ppc64le, riscv64)
@@ -31,6 +33,7 @@ Implement multi-architecture container image support for GitHub Actions self-hos
 ## 🎯 Objectives
 
 ### Primary Goals
+
 1. **Cross-Platform Support**: Enable runner deployment on AMD64 and ARM64 Linux hosts
 2. **Automated Builds**: Multi-arch builds via GitHub Actions CI/CD
 3. **Performance**: Native performance on ARM platforms (no emulation overhead)
@@ -38,6 +41,7 @@ Implement multi-architecture container image support for GitHub Actions self-hos
 5. **Easy Deployment**: Automatic architecture detection via Docker manifest
 
 ### Success Criteria
+
 - [ ] Docker images built for both linux/amd64 and linux/arm64
 - [ ] All 3 runner variants support multi-arch (standard, Chrome, Chrome-Go)
 - [ ] CI/CD pipeline builds and tests both architectures
@@ -110,12 +114,14 @@ Implement multi-architecture container image support for GitHub Actions self-hos
 ### Components
 
 #### 1. Docker Buildx with QEMU
+
 - **Purpose**: Enable cross-platform builds on GitHub Actions runners
 - **Technology**: Docker Buildx, QEMU static binaries
 - **Build Strategy**: Native AMD64 build, emulated ARM64 build
 - **Alternative**: Use GitHub's ARM runners when available (faster)
 
 #### 2. Multi-Stage Dockerfiles (Architecture-Aware)
+
 - **Base Images**: Multi-arch Ubuntu 24.04 (supports both platforms)
 - **Dependencies**: Architecture-specific package selection
 - **Binary Downloads**: Conditional URLs based on `TARGETPLATFORM`
@@ -124,12 +130,14 @@ Implement multi-architecture container image support for GitHub Actions self-hos
 - **Go**: Use official Go ARM64 binaries for Chrome-Go variant
 
 #### 3. GitHub Actions Workflow Updates
+
 - **Builder Setup**: Configure buildx with platforms
 - **Build Command**: `docker buildx build --platform linux/amd64,linux/arm64`
 - **Push Strategy**: Create and push manifest list
 - **Testing**: Test images on both architectures (emulated or native)
 
 #### 4. Image Manifest Lists
+
 - **Format**: OCI/Docker manifest list
 - **Contents**: References to architecture-specific images
 - **Automatic Selection**: Docker pulls correct image for host architecture
@@ -144,6 +152,7 @@ Implement multi-architecture container image support for GitHub Actions self-hos
 **Objective:** Configure build infrastructure for multi-arch support.
 
 **Tasks:**
+
 - [ ] Research base image multi-arch support (Ubuntu 24.04)
 - [ ] Update Dockerfiles with `ARG TARGETPLATFORM` and `ARG TARGETARCH`
 - [ ] Add architecture-specific dependency installation logic
@@ -152,12 +161,14 @@ Implement multi-architecture container image support for GitHub Actions self-hos
 - [ ] Test basic multi-arch build locally
 
 **Files to Modify:**
+
 - `.github/workflows/ci-cd.yml` - Add buildx setup
 - `docker/Dockerfile` - Add multi-arch support
 - `docker/Dockerfile.chrome` - Add multi-arch support
 - `docker/Dockerfile.chrome-go` - Add multi-arch support
 
 **Example Dockerfile Changes:**
+
 ```dockerfile
 # Before (AMD64 only)
 FROM ubuntu:24.04
@@ -182,6 +193,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 ```
 
 **Example Workflow Changes:**
+
 ```yaml
 # .github/workflows/ci-cd.yml
 - name: Set up QEMU
@@ -211,6 +223,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 **Standard Runner (`docker/Dockerfile`):**
 
 **Key Changes:**
+
 - [ ] Use multi-arch base image (ubuntu:24.04 already supports both)
 - [ ] Add `TARGETPLATFORM` and `TARGETARCH` args
 - [ ] Update Node.js download for architecture detection
@@ -218,6 +231,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 - [ ] Test on both architectures
 
 **Architecture-Specific Downloads:**
+
 ```dockerfile
 # GitHub Actions Runner
 ARG TARGETARCH
@@ -242,12 +256,14 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 **Chrome Runner (`docker/Dockerfile.chrome`):**
 
 **Key Changes:**
+
 - [ ] Chrome for ARM64 (available since Chrome 93+)
 - [ ] Playwright ARM64 support
 - [ ] Architecture-specific Chrome download
 - [ ] Test Chrome browser functionality on ARM64
 
 **Chrome ARM64 Installation:**
+
 ```dockerfile
 # Google Chrome (supports ARM64 since Chrome 93)
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
@@ -263,11 +279,13 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 **Chrome-Go Runner (`docker/Dockerfile.chrome-go`):**
 
 **Key Changes:**
+
 - [ ] Go ARM64 binaries (official support available)
 - [ ] Chrome ARM64 (same as Chrome runner)
 - [ ] Test Go compilation on ARM64
 
 **Go ARM64 Installation:**
+
 ```dockerfile
 # Go toolchain
 ARG GO_VERSION=1.25.4
@@ -289,6 +307,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 **Objective:** Automate multi-arch builds in GitHub Actions.
 
 **Tasks:**
+
 - [ ] Update workflow to use `docker/setup-qemu-action@v3`
 - [ ] Update workflow to use `docker/setup-buildx-action@v3`
 - [ ] Add platform specification to build steps
@@ -297,6 +316,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 - [ ] Update release workflow for multi-arch manifests
 
 **Workflow Structure:**
+
 ```yaml
 name: CI/CD Pipeline
 
@@ -352,12 +372,14 @@ jobs:
 ```
 
 **Build Time Expectations:**
+
 - AMD64 build: ~3-5 minutes (native)
 - ARM64 build: ~15-25 minutes (emulated via QEMU)
 - Total build time: ~20-30 minutes per variant
 - Parallel builds: 3 variants × 2 architectures = ~30 minutes total
 
 **Optimization Strategies:**
+
 - Use GitHub Actions cache for layer caching
 - Consider ARM64 GitHub runners when available (faster native builds)
 - Parallelize builds across runner types
@@ -370,6 +392,7 @@ jobs:
 **Objective:** Validate multi-arch images work correctly on both platforms.
 
 **Tasks:**
+
 - [ ] Create test workflow for ARM64 validation
 - [ ] Test standard runner on emulated ARM64
 - [ ] Test Chrome runner on emulated ARM64 (browser functionality)
@@ -380,6 +403,7 @@ jobs:
 **Testing Strategy:**
 
 **Emulated Testing (GitHub Actions):**
+
 ```yaml
 - name: Test ARM64 image (emulated)
   run: |
@@ -391,12 +415,14 @@ jobs:
 ```
 
 **Native ARM64 Testing (if available):**
+
 - AWS Graviton EC2 instances (t4g, c7g, r7g families)
 - Azure ARM-based VMs (Dpsv5, Epsv5 series)
 - Raspberry Pi 4/5 (hobbyist testing)
 - Apple Silicon Mac with Docker Desktop (local testing)
 
 **Test Cases:**
+
 - [ ] Runner registration and startup
 - [ ] Job execution (simple workflow)
 - [ ] Docker-in-Docker functionality
@@ -413,6 +439,7 @@ jobs:
 **Objective:** Document multi-arch support and deployment patterns.
 
 **Tasks:**
+
 - [ ] Update README with multi-arch information
 - [ ] Create ARM deployment guide
 - [ ] Document AWS Graviton deployment
@@ -421,6 +448,7 @@ jobs:
 - [ ] Update troubleshooting guide
 
 **Documentation Files:**
+
 - [ ] `docs/MULTI_ARCH_DEPLOYMENT.md` - Comprehensive deployment guide
 - [ ] `docs/ARM64_PLATFORMS.md` - Platform-specific guides
 - [ ] `docs/PERFORMANCE_ARM64.md` - Performance benchmarks
@@ -428,6 +456,7 @@ jobs:
 - [ ] Update `docs/DEPLOYMENT.md` - Add architecture selection
 
 **Example Documentation:**
+
 ```markdown
 ## Multi-Architecture Support
 
@@ -464,6 +493,7 @@ docker pull --platform linux/arm64 ghcr.io/grammatonic/github-runner:latest
 - **Raspberry Pi**: Pi 4/5 with 64-bit OS
 - **Apple Silicon**: M1/M2/M3 Macs with Docker Desktop
 - **Oracle Cloud**: Ampere A1 instances (ARM-based)
+
 ```
 
 ---
@@ -571,6 +601,7 @@ RUN case ${TARGETARCH} in \
 ### GitHub Actions Runner Platform Support
 
 GitHub Actions runner supports ARM64 since v2.285.0:
+
 - Download: `actions-runner-linux-arm64-${VERSION}.tar.gz`
 - Full feature parity with AMD64
 - Official support from GitHub
@@ -578,11 +609,13 @@ GitHub Actions runner supports ARM64 since v2.285.0:
 ### Known Limitations
 
 **Standard Runner:**
+
 - ✅ Full multi-arch support (AMD64 + ARM64)
 - ✅ GitHub Actions Runner supports ARM64 since v2.285.0
 - ✅ All dependencies available for both architectures
 
 **Chrome Runner:**
+
 - ⚠️ **AMD64-ONLY** - Chrome for Testing does NOT provide linux-arm64 builds
 - Chrome for Testing only supports:
   - ✅ `linux64` (AMD64/x86_64)
@@ -593,6 +626,7 @@ GitHub Actions runner supports ARM64 since v2.285.0:
 - Reference: https://github.com/GoogleChromeLabs/chrome-for-testing#platform-support
 
 **Chrome-Go Runner:**
+
 - ⚠️ **AMD64-ONLY** - Same Chrome limitation as Chrome Runner
 - Go has full ARM64 support since Go 1.5 ✅
 - Limitation is purely Chrome-related, not Go-related

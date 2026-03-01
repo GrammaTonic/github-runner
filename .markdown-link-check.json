@@ -1,0 +1,44 @@
+{
+  "retryOn429": true,
+  "retryCount": 3,
+  "fallbackRetryDelay": "10s",
+  "timeout": "15s",
+  "httpHeaders": [
+    {
+      "urls": ["https://github.com"],
+      "headers": {
+        "Accept": "text/html"
+      }
+    }
+  ],
+  "aliveStatusCodes": [200, 206],
+  "ignorePatterns": [
+    {
+      "pattern": "^https://github\\.com/.*/actions/runs/"
+    },
+    {
+      "pattern": "^https://github\\.com/.*/settings/"
+    },
+    {
+      "pattern": "^https://github\\.com/.*/wiki/"
+    },
+    {
+      "pattern": "^https://github\\.com/.*/discussions"
+    },
+    {
+      "pattern": "^https://github\\.com/users/"
+    },
+    {
+      "pattern": "^https?://localhost"
+    },
+    {
+      "pattern": "^mailto:"
+    },
+    {
+      "pattern": "^https?://www\\.computerhope\\.com"
+    },
+    {
+      "pattern": "^#"
+    }
+  ]
+}

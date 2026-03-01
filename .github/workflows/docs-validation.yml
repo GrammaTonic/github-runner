@@ -5,6 +5,14 @@ on:
     paths:
       - 'docs/**'
       - 'wiki-content/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate-docs:
@@ -12,34 +20,60 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 0
-      - name: Check for outdated references
+          fetch-depth: 1
+
+      - name: Prepare results directory
+        run: mkdir -p /tmp/docs-results
+
+      - name: Fetch PR base for patch diff
+        if: github.event_name == 'pull_request'
         run: |
-          # Search for 'template' (case-insensitive) and print matches with line numbers.
-          # In CI (GITHUB_ACTIONS set) fail the step; when run locally do not exit the user's shell.
+          git fetch origin ${{ github.event.pull_request.base.sha }} --depth=1
+
+      - name: Validate documentation structure
+        id: structure
+        continue-on-error: true
+        run: |
+          echo "Validating docs directory structure and root-level markdown rules..."
+          if bash scripts/check-docs-structure.sh > /tmp/docs-results/structure.txt 2>&1; then
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+          fi
+          cat /tmp/docs-results/structure.txt
+
+      - name: Check for outdated references
+        id: outdated
+        continue-on-error: true
+        run: |
           # Search for filename-style references ending with '.template' (e.g. runner.env.template)
           # This avoids matching unrelated uses of the word 'template' in prose or cloud templates
-          if grep -rnI --line-number -E '\.template\b' docs/ wiki-content/ | grep -v -E '^docs/archive/|--web.console.templates=' > /tmp/outdated_refs.txt; then
+          if grep -rnI --line-number -E '\.template\b' docs/ wiki-content/ | grep -v -E '^docs/archive/|--web.console.templates=' > /tmp/docs-results/outdated.txt; then
             echo "❌ Outdated references found:"
-            cat /tmp/outdated_refs.txt
-            if [ -n "${GITHUB_ACTIONS:-}" ]; then
-              echo "::error::Outdated references detected. Failing the job."
-              exit 1
-            else
-              echo "Running locally — not exiting shell. Please fix the listed files."
-            fi
+            cat /tmp/docs-results/outdated.txt
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+            exit 1
           else
             echo "✅ No outdated references found."
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+            true > /tmp/docs-results/outdated.txt
           fi
+
       - name: Validate Markdown links
+        id: links
+        continue-on-error: true
         run: |
-          set -euo pipefail
+          set -uo pipefail
           echo "Validating markdown links (excluding docs/archive/)"
+          LINK_EXIT=0
+
           # Docs: run link-check if any files exist
           DOCS_COUNT=$(find docs -type f -name '*.md' ! -path 'docs/archive/*' 2>/dev/null | wc -l | tr -d ' ' || true)
           if [ -n "$DOCS_COUNT" ] && [ "$DOCS_COUNT" -gt 0 ]; then
             echo "Running markdown-link-check on $DOCS_COUNT docs files..."
-            find docs -type f -name '*.md' ! -path 'docs/archive/*' -print0 | xargs -0 npx -y markdown-link-check || true
+            find docs -type f -name '*.md' ! -path 'docs/archive/*' -print0 \
+              | xargs -0 npx -y markdown-link-check@3.14.2 --config .markdown-link-check.json \
+              2>&1 | tee /tmp/docs-results/links-docs.txt || LINK_EXIT=1
           else
             echo "No docs markdown files found to check."
           fi
@@ -49,29 +83,172 @@ jobs:
             WIKI_COUNT=$(find wiki-content -type f -name '*.md' 2>/dev/null | wc -l | tr -d ' ' || true)
             if [ -n "$WIKI_COUNT" ] && [ "$WIKI_COUNT" -gt 0 ]; then
               echo "Running markdown-link-check on $WIKI_COUNT wiki files..."
-              find wiki-content -type f -name '*.md' -print0 | xargs -0 npx -y markdown-link-check || true
+              find wiki-content -type f -name '*.md' -print0 \
+                | xargs -0 npx -y markdown-link-check@3.14.2 --config .markdown-link-check.json \
+                2>&1 | tee /tmp/docs-results/links-wiki.txt || LINK_EXIT=1
             else
               echo "No wiki markdown files found to check."
             fi
           else
             echo "No wiki-content directory present, skipping wiki link-check."
           fi
+
+          if [ "$LINK_EXIT" -ne 0 ]; then
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+            exit 1
+          else
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Generate Documentation Patch
+        if: github.event_name == 'pull_request'
         run: |
-          git diff origin/main -- docs/ wiki-content/ > docs-full-patch.diff || echo "No doc changes detected."
+          git diff ${{ github.event.pull_request.base.sha }} -- docs/ wiki-content/ > docs-full-patch.diff || echo "No doc changes detected."
+
       - name: Upload Patch Artifact
+        if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v6
         with:
           name: docs-full-patch
           path: docs-full-patch.diff
-      - name: Run GitHub Super Linter for Docs
-        uses: github/super-linter@v7
+
+      - name: Lint Markdown
+        id: lint
+        continue-on-error: true
+        # yamllint disable-line rule:line-length
+        uses: DavidAnson/markdownlint-cli2-action@07035fd053f7be764496c0f8d8f9f41f98305101  # v22.0.0
+        with:
+          globs: |
+            docs/**/*.md
+            wiki-content/**/*.md
+            !docs/archive/**
+
+      # -----------------------------------------------------------
+      # Job Summary — collects results from every check above and
+      # writes a Markdown table + per-check details with fix hints.
+      # -----------------------------------------------------------
+      - name: Generate Job Summary
+        if: always()
         env:
-          DEFAULT_BRANCH: develop
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_ALL_CODEBASE: false
-          VALIDATE_MD: true
-          VALIDATE_JSCPD: false
-          VALIDATE_CHECKOV: false
-          FILTER_REGEX_INCLUDE: docs/**,wiki-content/**
-          FILTER_REGEX_EXCLUDE: docs/archive/**
+          STRUCTURE_STATUS: ${{ steps.structure.outcome }}
+          OUTDATED_STATUS: ${{ steps.outdated.outcome }}
+          LINKS_STATUS: ${{ steps.links.outcome }}
+          LINT_STATUS: ${{ steps.lint.outcome }}
+        # yamllint disable rule:line-length
+        run: |
+          icon() { if [ "$1" = "success" ]; then echo "✅"; else echo "❌"; fi; }
+
+          OVERALL="success"
+          for s in "$STRUCTURE_STATUS" "$OUTDATED_STATUS" "$LINKS_STATUS" "$LINT_STATUS"; do
+            [ "$s" != "success" ] && OVERALL="failure"
+          done
+
+          {
+            echo "## 📄 Docs & Wiki Validation Summary"
+            echo ""
+            if [ "$OVERALL" = "success" ]; then
+              echo "> **Result: ✅ All checks passed**"
+            else
+              echo "> **Result: ❌ One or more checks failed — see details below**"
+            fi
+            echo ""
+
+            # ── Overview table ──
+            echo "| Check | Status |"
+            echo "|-------|--------|"
+            echo "| Documentation structure | $(icon "$STRUCTURE_STATUS") |"
+            echo "| Outdated references | $(icon "$OUTDATED_STATUS") |"
+            echo "| Markdown link validation | $(icon "$LINKS_STATUS") |"
+            echo "| Markdown lint | $(icon "$LINT_STATUS") |"
+            echo ""
+
+            # ── Structure details ──
+            if [ "$STRUCTURE_STATUS" != "success" ] && [ -s /tmp/docs-results/structure.txt ]; then
+              echo "### ❌ Documentation Structure"
+              echo ""
+              echo "<details><summary>Show output</summary>"
+              echo ""
+              echo '```'
+              cat /tmp/docs-results/structure.txt
+              echo '```'
+              echo "</details>"
+              echo ""
+              echo "**How to fix:** Move misplaced markdown files into the correct \`docs/\` subdirectory."
+              echo "Run \`bash scripts/check-docs-structure.sh --fix\` locally to auto-organize."
+              echo ""
+            fi
+
+            # ── Outdated references details ──
+            if [ "$OUTDATED_STATUS" != "success" ] && [ -s /tmp/docs-results/outdated.txt ]; then
+              echo "### ❌ Outdated References"
+              echo ""
+              echo "The following files still reference \`.template\` filenames that were renamed to \`.example\`:"
+              echo ""
+              echo '```'
+              cat /tmp/docs-results/outdated.txt
+              echo '```'
+              echo ""
+              echo "**How to fix:** Replace every \`.template\` reference with the matching \`.example\` filename"
+              echo "(e.g. \`runner.env.template\` → \`runner.env.example\`)."
+              echo ""
+            fi
+
+            # ── Dead links details ──
+            if [ "$LINKS_STATUS" != "success" ]; then
+              echo "### ❌ Markdown Link Validation"
+              echo ""
+              # Extract only the dead-link lines from the check output
+              DEAD_LINKS=""
+              for f in /tmp/docs-results/links-docs.txt /tmp/docs-results/links-wiki.txt; do
+                [ -s "$f" ] && DEAD_LINKS="${DEAD_LINKS}$(grep -E '^\s*\[✖\]' "$f" || true)"$'\n'
+              done
+              if [ -n "$(echo "$DEAD_LINKS" | tr -d '[:space:]')" ]; then
+                echo "<details><summary>Dead links found</summary>"
+                echo ""
+                echo '```'
+                echo "$DEAD_LINKS" | sed '/^$/d' | sort -u
+                echo '```'
+                echo "</details>"
+              fi
+              echo ""
+              echo "**How to fix:**"
+              echo "- **404 errors:** Update or remove the broken URL."
+              echo "- **403 errors:** The remote server blocks automated checks — add an ignore pattern"
+              echo "  to \`.markdown-link-check.json\` if the link is valid."
+              echo "- **\`localhost\` URLs:** These cannot be reached in CI. Add an ignore pattern to"
+              echo "  \`.markdown-link-check.json\` (pattern: \`^https?://localhost[:/]\`)."
+              echo ""
+            fi
+
+            # ── Lint details ──
+            if [ "$LINT_STATUS" != "success" ]; then
+              echo "### ❌ Markdown Lint"
+              echo ""
+              echo "The markdownlint-cli2 action detected style violations. Check the"
+              echo "**Lint Markdown** step log above for the full list of rule violations."
+              echo ""
+              echo "**How to fix:**"
+              echo "- Run \`npx markdownlint-cli2 'docs/**/*.md' 'wiki-content/**/*.md' '!docs/archive/**'\` locally."
+              echo "- Common rules: **MD013** (line length), **MD033** (inline HTML), **MD041** (first-line heading)."
+              echo "- Auto-fix supported rules: \`npx markdownlint-cli2-fix 'docs/**/*.md'\`."
+              echo ""
+            fi
+
+          } >> "$GITHUB_STEP_SUMMARY"
+        # yamllint enable rule:line-length
+
+      - name: Fail if any check failed
+        if: always()
+        run: |
+          FAILED=0
+          for outcome in \
+            "${{ steps.structure.outcome }}" \
+            "${{ steps.outdated.outcome }}" \
+            "${{ steps.links.outcome }}" \
+            "${{ steps.lint.outcome }}"; do
+            [ "$outcome" != "success" ] && FAILED=1
+          done
+          if [ "$FAILED" -ne 0 ]; then
+            echo "::error::One or more documentation checks failed. See the Job Summary for details and fixes."
+            exit 1
+          fi
