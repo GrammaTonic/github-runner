@@ -59,10 +59,11 @@ jobs:
       - name: Create results directory
         run: mkdir -p trivy-results
 
-      - name: Install Trivy
+      - name: Install Trivy via apt
         run: |
-          wget -qO /tmp/trivy.tar.gz https://github.com/aquasecurity/trivy/releases/download/v0.69.1/trivy_0.69.1_Linux-64bit.tar.gz
-          tar xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update -qq && sudo apt-get install -y trivy
 
       # Filesystem vulnerability scan
       - name: Run Trivy filesystem scan
