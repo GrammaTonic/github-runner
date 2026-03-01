@@ -62,7 +62,7 @@ jobs:
       # Filesystem vulnerability scan
       - name: Run Trivy filesystem scan
         if: contains(steps.params.outputs.scan_targets, 'filesystem')
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -80,7 +80,7 @@ jobs:
 
       - name: Generate filesystem JSON report
         if: contains(steps.params.outputs.scan_targets, 'filesystem')
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -118,7 +118,7 @@ jobs:
 
       - name: Run Trivy container scan
         if: contains(steps.params.outputs.scan_targets, 'container')
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           image-ref: "github-runner:scan"
           format: "sarif"
@@ -136,7 +136,7 @@ jobs:
 
       - name: Generate container JSON report
         if: contains(steps.params.outputs.scan_targets, 'container')
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           image-ref: "github-runner:scan"
           format: "json"
@@ -178,7 +178,7 @@ jobs:
 
       - name: Run Trivy Chrome container scan
         if: contains(steps.params.outputs.scan_targets, 'chrome')
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           image-ref: "github-runner-chrome:scan"
           format: "sarif"
@@ -196,7 +196,7 @@ jobs:
 
       - name: Generate Chrome JSON report
         if: contains(steps.params.outputs.scan_targets, 'chrome')
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           image-ref: "github-runner-chrome:scan"
           format: "json"
