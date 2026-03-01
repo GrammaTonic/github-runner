@@ -521,6 +521,65 @@ jobs:
               console.log('No stale PR caches found — nothing to clean up.');
             }
 
+      - name: Cleanup caches from deleted branches
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // 1. Collect all existing branch refs (e.g. "refs/heads/develop")
+            const existingBranches = new Set();
+            for await (const response of github.paginate.iterator(
+              github.rest.repos.listBranches,
+              { owner, repo, per_page: 100 }
+            )) {
+              for (const branch of response.data) {
+                existingBranches.add(`refs/heads/${branch.name}`);
+              }
+            }
+            console.log(`Existing branches: ${existingBranches.size}`);
+
+            // 2. Walk every cache entry, delete those referencing deleted branches
+            let deletedCount = 0;
+            let totalBranchCaches = 0;
+            let freedBytes = 0;
+
+            for await (const response of github.paginate.iterator(
+              github.rest.actions.getActionsCacheList,
+              { owner, repo, per_page: 100 }
+            )) {
+              for (const cache of response.data) {
+                const ref = cache.ref;
+
+                // Only target branch refs; skip PR refs (handled in previous step)
+                if (ref && ref.startsWith('refs/heads/')) {
+                  totalBranchCaches++;
+                  if (!existingBranches.has(ref)) {
+                    console.log(`Deleting cache "${cache.key}" (ref: ${ref}, ${(cache.size_in_bytes / 1024 / 1024).toFixed(1)} MB)`);
+                    try {
+                      await github.rest.actions.deleteActionsCacheById({
+                        owner,
+                        repo,
+                        cache_id: cache.id
+                      });
+                      deletedCount++;
+                      freedBytes += cache.size_in_bytes;
+                    } catch (error) {
+                      console.log(`Failed to delete cache ${cache.id}: ${error.message}`);
+                    }
+                  }
+                }
+              }
+            }
+
+            const freedMB = (freedBytes / 1024 / 1024).toFixed(1);
+            console.log(`\nSummary: deleted ${deletedCount} of ${totalBranchCaches} branch caches (freed ${freedMB} MB)`);
+
+            if (deletedCount === 0) {
+              console.log('No stale branch caches found — nothing to clean up.');
+            }
+
   comprehensive-health-check:
     name: Comprehensive Repository Health Check
     runs-on: ubuntu-latest
