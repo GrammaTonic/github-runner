@@ -464,10 +464,62 @@ jobs:
 
             console.log(`Deleted ${deletedCount} old workflow runs`);
 
-      - name: Cleanup old container images
-        run: |
-          echo "::notice::Container image cleanup is a placeholder — manual review recommended"
-          echo "Retention policy: keep images from last $WORKFLOW_RUN_RETENTION_DAYS days"
+      - name: Cleanup caches from closed PRs
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // 1. Collect all open PR refs (e.g. "refs/pull/123/merge")
+            const openRefs = new Set();
+            for await (const response of github.paginate.iterator(
+              github.rest.pulls.list,
+              { owner, repo, state: 'open', per_page: 100 }
+            )) {
+              for (const pr of response.data) {
+                openRefs.add(`refs/pull/${pr.number}/merge`);
+              }
+            }
+            console.log(`Open PRs: ${openRefs.size}`);
+
+            // 2. Walk every cache entry, delete those referencing closed PRs
+            let deletedCount = 0;
+            let totalCaches = 0;
+            let freedBytes = 0;
+
+            for await (const response of github.paginate.iterator(
+              github.rest.actions.getActionsCacheList,
+              { owner, repo, per_page: 100 }
+            )) {
+              for (const cache of response.data) {
+                totalCaches++;
+                const ref = cache.ref;
+
+                // Only target PR refs; skip branch caches (develop, main, etc.)
+                if (ref && ref.startsWith('refs/pull/') && !openRefs.has(ref)) {
+                  console.log(`Deleting cache "${cache.key}" (ref: ${ref}, ${(cache.size_in_bytes / 1024 / 1024).toFixed(1)} MB)`);
+                  try {
+                    await github.rest.actions.deleteActionsCacheById({
+                      owner,
+                      repo,
+                      cache_id: cache.id
+                    });
+                    deletedCount++;
+                    freedBytes += cache.size_in_bytes;
+                  } catch (error) {
+                    console.log(`Failed to delete cache ${cache.id}: ${error.message}`);
+                  }
+                }
+              }
+            }
+
+            const freedMB = (freedBytes / 1024 / 1024).toFixed(1);
+            console.log(`\nSummary: deleted ${deletedCount} of ${totalCaches} caches (freed ${freedMB} MB)`);
+
+            if (deletedCount === 0) {
+              console.log('No stale PR caches found — nothing to clean up.');
+            }
 
   comprehensive-health-check:
     name: Comprehensive Repository Health Check
