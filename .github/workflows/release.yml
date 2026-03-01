@@ -239,6 +239,8 @@ jobs:
       matrix:
         scan: [standard, chrome, chrome-go]
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
       - name: Install Trivy
         uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner (standard)
