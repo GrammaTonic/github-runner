@@ -411,7 +411,7 @@ jobs:
           recursive: true
           failure-threshold: warning
       - name: Lint Shell Scripts with ShellCheck
-        uses: ludeeus/action-shellcheck@master
+        uses: ludeeus/action-shellcheck@2.4.1
         with:
           scandir: './scripts'
           severity: warning
@@ -453,11 +453,8 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Install Trivy via apt
-        run: |
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -qq && sudo apt-get install -y trivy
+      - name: Install Trivy
+        uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner on filesystem
         uses: aquasecurity/trivy-action@0.34.1
         with:
@@ -474,9 +471,9 @@ jobs:
         continue-on-error: true
         with:
           sarif_file: "trivy-results.sarif"
-          category: "security-scan"
+          category: "cicd-filesystem-scan"
       - name: Check for secrets in repository
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@v3.88.1
         with:
           path: ./
           base: ${{ github.event.before }}
@@ -1122,11 +1119,8 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Install Trivy via apt
-        run: |
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -qq && sudo apt-get install -y trivy
+      - name: Install Trivy
+        uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner on container
         uses: aquasecurity/trivy-action@0.34.1
         with:
@@ -1142,7 +1136,7 @@ jobs:
         continue-on-error: true
         with:
           sarif_file: "trivy-container-results.sarif"
-          category: "container-scan"
+          category: "cicd-container-scan"
   security-chrome-scan:
     name: Chrome Container Security Scan
     runs-on: ubuntu-latest
@@ -1155,11 +1149,8 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Install Trivy via apt
-        run: |
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -qq && sudo apt-get install -y trivy
+      - name: Install Trivy
+        uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner on Chrome container
         uses: aquasecurity/trivy-action@0.34.1
         with:
@@ -1175,7 +1166,7 @@ jobs:
         continue-on-error: true
         with:
           sarif_file: "trivy-chrome-results.sarif"
-          category: "chrome-container-scan"
+          category: "cicd-chrome-container-scan"
   security-chrome-go-scan:
     name: Chrome-Go Container Security Scan
     runs-on: ubuntu-latest
@@ -1188,11 +1179,8 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Install Trivy via apt
-        run: |
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -qq && sudo apt-get install -y trivy
+      - name: Install Trivy
+        uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner on Chrome-Go container
         uses: aquasecurity/trivy-action@0.34.1
         with:
@@ -1208,7 +1196,7 @@ jobs:
         continue-on-error: true
         with:
           sarif_file: "trivy-chrome-go-results.sarif"
-          category: "chrome-go-container-scan"
+          category: "cicd-chrome-go-container-scan"
   cleanup:
     name: Cleanup Resources
     runs-on: ubuntu-latest

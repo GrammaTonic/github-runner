@@ -239,11 +239,8 @@ jobs:
       matrix:
         scan: [standard, chrome, chrome-go]
     steps:
-      - name: Install Trivy via apt
-        run: |
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -qq && sudo apt-get install -y trivy
+      - name: Install Trivy
+        uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner (standard)
         if: matrix.scan == 'standard'
         uses: aquasecurity/trivy-action@0.34.1
@@ -274,25 +271,25 @@ jobs:
         continue-on-error: true
         with:
           sarif_file: "release-security-scan.sarif"
-          category: "container-scan"
+          category: "release-container-scan-standard"
       - name: Upload security scan results (chrome)
         if: matrix.scan == 'chrome'
         uses: github/codeql-action/upload-sarif@v4
         continue-on-error: true
         with:
           sarif_file: "release-chrome-security-scan.sarif"
-          category: "container-scan-chrome"
+          category: "release-container-scan-chrome"
       - name: Upload security scan results (chrome-go)
         if: matrix.scan == 'chrome-go'
         uses: github/codeql-action/upload-sarif@v4
         continue-on-error: true
         with:
           sarif_file: "release-chrome-go-security-scan.sarif"
-          category: "container-scan-chrome-go"
+          category: "release-container-scan-chrome-go"
       - name: Check for critical vulnerabilities (standard)
         if: matrix.scan == 'standard'
         run: |
-          critical_count=$(grep -c "CRITICAL" release-security-scan.sarif || echo "0")
+          critical_count=$(jq '[.runs[].results[] | select(.level == "error")] | length' release-security-scan.sarif 2>/dev/null || echo "0")
           if [[ $critical_count -gt 0 ]]; then
             echo "::error::Critical vulnerabilities found in standard release image!"
             echo "::error::Cannot proceed with release. Please fix vulnerabilities first."
@@ -302,7 +299,7 @@ jobs:
       - name: Check for critical vulnerabilities (chrome)
         if: matrix.scan == 'chrome'
         run: |
-          critical_count=$(grep -c "CRITICAL" release-chrome-security-scan.sarif || echo "0")
+          critical_count=$(jq '[.runs[].results[] | select(.level == "error")] | length' release-chrome-security-scan.sarif 2>/dev/null || echo "0")
           if [[ $critical_count -gt 0 ]]; then
             echo "::error::Critical vulnerabilities found in Chrome release image!"
             echo "::error::Cannot proceed with release. Please fix vulnerabilities first."
@@ -312,7 +309,7 @@ jobs:
       - name: Check for critical vulnerabilities (chrome-go)
         if: matrix.scan == 'chrome-go'
         run: |
-          critical_count=$(grep -c "CRITICAL" release-chrome-go-security-scan.sarif || echo "0")
+          critical_count=$(jq '[.runs[].results[] | select(.level == "error")] | length' release-chrome-go-security-scan.sarif 2>/dev/null || echo "0")
           if [[ $critical_count -gt 0 ]]; then
             echo "::error::Critical vulnerabilities found in Chrome-Go release image!"
             echo "::error::Cannot proceed with release. Please fix vulnerabilities first."

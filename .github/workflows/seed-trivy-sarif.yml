@@ -41,7 +41,7 @@ on:
   push:
     branches: [main]  # Only on production deployments
   schedule:
-    - cron: '0 2 * * 1'  # Weekly deep scan on Monday 2 AM UTC
+    - cron: '0 4 * * 1'  # Weekly deep scan on Monday 4 AM UTC (staggered from maintenance at 2AM, advisories at 3AM)
 
 permissions:
   contents: read
@@ -57,11 +57,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Install Trivy via apt
-        run: |
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -qq && sudo apt-get install -y trivy
+      - name: Install Trivy
+        uses: ./.github/actions/install-trivy
 
       - name: Run Trivy filesystem scan (generate SARIF)
         uses: aquasecurity/trivy-action@0.34.1
@@ -81,7 +78,7 @@ jobs:
         if: always()
         with:
           sarif_file: "trivy-filesystem-baseline.sarif"
-          category: "filesystem-scan"
+          category: "baseline-filesystem-scan"
 
       - name: Upload SARIF as artifact
         uses: actions/upload-artifact@v6
@@ -126,11 +123,8 @@ jobs:
       - name: Verify image loaded
         run: docker images | grep github-runner-${{ matrix.variant }}
 
-      - name: Install Trivy via apt
-        run: |
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -qq && sudo apt-get install -y trivy
+      - name: Install Trivy
+        uses: ./.github/actions/install-trivy
 
       - name: Run Trivy container scan (generate SARIF)
         uses: aquasecurity/trivy-action@0.34.1
@@ -150,7 +144,7 @@ jobs:
         if: always()
         with:
           sarif_file: "trivy-container-${{ matrix.variant }}-baseline.sarif"
-          category: "container-scan-${{ matrix.variant }}"
+          category: "baseline-container-scan-${{ matrix.variant }}"
 
       - name: Upload SARIF as artifact
         uses: actions/upload-artifact@v6
