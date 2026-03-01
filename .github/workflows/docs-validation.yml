@@ -5,10 +5,10 @@ on:
     paths:
       - 'docs/**'
       - 'wiki-content/**'
+  workflow_dispatch:
 
 permissions:
   contents: read
-  statuses: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -23,6 +23,7 @@ jobs:
           fetch-depth: 1
 
       - name: Fetch PR base for patch diff
+        if: github.event_name == 'pull_request'
         run: |
           git fetch origin ${{ github.event.pull_request.base.sha }} --depth=1
 
@@ -78,24 +79,22 @@ jobs:
           fi
 
       - name: Generate Documentation Patch
+        if: github.event_name == 'pull_request'
         run: |
           git diff ${{ github.event.pull_request.base.sha }} -- docs/ wiki-content/ > docs-full-patch.diff || echo "No doc changes detected."
 
       - name: Upload Patch Artifact
+        if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v6
         with:
           name: docs-full-patch
           path: docs-full-patch.diff
 
-      - name: Run GitHub Super Linter for Docs
+      - name: Lint Markdown
         # yamllint disable-line rule:line-length
-        uses: super-linter/super-linter@12150456a73e248bdc94d0794898f94e23127c88  # v7
-        env:
-          DEFAULT_BRANCH: develop
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_ALL_CODEBASE: false
-          VALIDATE_MARKDOWN: true
-          VALIDATE_JSCPD: false
-          VALIDATE_CHECKOV: false
-          FILTER_REGEX_INCLUDE: (docs|wiki-content)/.*
-          FILTER_REGEX_EXCLUDE: docs/archive/.*
+        uses: DavidAnson/markdownlint-cli2-action@07035fd053f7be764496c0f8d8f9f41f98305101  # v22.0.0
+        with:
+          globs: |
+            docs/**/*.md
+            wiki-content/**/*.md
+            !docs/archive/**
