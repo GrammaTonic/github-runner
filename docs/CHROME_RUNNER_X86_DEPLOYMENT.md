@@ -1,26 +1,29 @@
-# Using Ubuntu Resolute for Chrome Runner
+# Chrome Runner x86 Deployment Guide
+
+## Ubuntu Resolute Base Image
 
 The Chrome runner image is built on `ubuntu:resolute` to ensure compatibility with the latest browser and UI testing dependencies. This approach may result in more reported CVEs due to pre-release packages.
 
-#### CVE Handling
+## CVE Handling
 
 - All app-level dependencies are patched using npm `overrides` and local installs.
 - CVEs in npm's internal modules are documented and tracked; they do not impact runner security.
 - Trivy scans are automated in all test scripts, and results are stored for compliance and audit.
 
-#### Example Trivy Scan Command
+### Example Trivy Scan Command
 
 ```bash
 docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
   aquasec/trivy:latest image github-runner-chrome:test-local > test-results/docker/trivy_scan_<timestamp>.txt
 ```
-# Chrome Runner x86 Deployment Guide
 
 ## Overview
+
 This guide helps you deploy the GitHub Actions Chrome runner on x86_64 architecture to resolve ARM64 compatibility issues.
 
 ## Prerequisites
+
 - **x86_64 system** (Linux/Windows with x86, AWS EC2, Google Cloud, etc.)
 - **Docker** installed and running
 - **GitHub Personal Access Token** with `repo` scope
