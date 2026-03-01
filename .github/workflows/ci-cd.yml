@@ -411,7 +411,7 @@ jobs:
           recursive: true
           failure-threshold: warning
       - name: Lint Shell Scripts with ShellCheck
-        uses: ludeeus/action-shellcheck@2.4.1
+        uses: ludeeus/action-shellcheck@00b27aa7cb85167568cb48a3838b75f4265f2bca # master 2024-06-20
         with:
           scandir: './scripts'
           severity: warning
