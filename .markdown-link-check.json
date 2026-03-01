@@ -5,13 +5,13 @@
   "timeout": "15s",
   "httpHeaders": [
     {
-      "urls": ["https://github.com", "https://api.github.com"],
+      "urls": ["https://github.com"],
       "headers": {
         "Accept": "text/html"
       }
     }
   ],
-  "aliveStatusCodes": [200, 206, 301, 302],
+  "aliveStatusCodes": [200, 206],
   "ignorePatterns": [
     {
       "pattern": "^https://github\\.com/.*/actions/runs/"
