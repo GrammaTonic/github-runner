@@ -14,12 +14,14 @@
 Implement a lightweight custom metrics endpoint on each GitHub Actions runner (port 9091) and a pre-built Grafana dashboard for visualization. This implementation assumes users have their own Prometheus and Grafana infrastructure and focuses solely on runner-specific application metrics.
 
 **What's Included:**
+
 - ✅ Custom metrics HTTP endpoint (port 9091) on all runners
 - ✅ Grafana dashboard JSON for import
 - ✅ Example Prometheus scrape configuration
 - ✅ Documentation for integration
 
 **What's NOT Included (User Responsibility):**
+
 - ❌ Prometheus server deployment
 - ❌ Grafana server deployment
 - ❌ System metrics (CPU, memory, disk) - use Node Exporter
@@ -31,12 +33,14 @@ Implement a lightweight custom metrics endpoint on each GitHub Actions runner (p
 ## 🎯 Objectives
 
 ### Primary Goals
+
 1. **Metrics Endpoint**: Expose runner-specific metrics using Go Prometheus client on port 9091
 2. **Grafana Dashboard**: Pre-built dashboard showing runner health, jobs, and DORA metrics
 3. **Production-Grade**: Official Prometheus client library for reliability and performance
 4. **Easy Integration**: Drop-in compatibility with existing Prometheus/Grafana
 
 ### Success Criteria
+
 - [ ] Metrics endpoint running on all runner types (standard, Chrome, Chrome-Go)
 - [ ] Grafana dashboard JSON ready for import
 - [ ] Example Prometheus scrape config documented
@@ -86,6 +90,7 @@ Implement a lightweight custom metrics endpoint on each GitHub Actions runner (p
 ### Components
 
 #### 1. Custom Metrics Endpoint (Port 9091) - **We Provide**
+
 - **Implementation**: Lightweight bash script using netcat for HTTP server
 - **HTTP Server**: netcat (nc) listening on port 9091
 - **Metrics Generation**: Bash script generating Prometheus text format
@@ -95,12 +100,14 @@ Implement a lightweight custom metrics endpoint on each GitHub Actions runner (p
 - **Metrics**: Runner status, job counts, uptime, cache hit rates, job duration
 
 #### 2. Grafana Dashboard JSON - **We Provide**
+
 - **File**: `monitoring/grafana/dashboards/github-runner-dashboard.json`
 - **Panels**: 12 panels covering all key metrics
 - **Variables**: Filter by runner_name, runner_type
 - **Import**: Users import JSON into their Grafana instance
 
 #### 3. Example Prometheus Config - **We Provide Documentation**
+
 - **File**: `docs/PROMETHEUS_INTEGRATION.md`
 - **Content**: Example scrape_configs for Prometheus
 
@@ -166,6 +173,7 @@ avg(rate(github_runner_job_duration_seconds_sum[5m]) / rate(github_runner_job_du
 **Objective:** Add metrics endpoint to all runner types.
 
 **Tasks:**
+
 - [x] Create feature branch
 - [x] Create feature specification
 - [ ] Create bash metrics server script using netcat
@@ -178,10 +186,12 @@ avg(rate(github_runner_job_duration_seconds_sum[5m]) / rate(github_runner_job_du
 - [ ] Test metrics endpoint on all runner types
 
 **Files to Create:**
+
 - `docker/metrics-server.sh` - Netcat-based HTTP server for /metrics endpoint
 - `docker/metrics-collector.sh` - Bash script to generate Prometheus metrics
 
 **Files to Modify:**
+
 - `docker/entrypoint.sh`
 - `docker/entrypoint-chrome.sh`
 - `docker/Dockerfile` (add `EXPOSE 9091`)
@@ -296,7 +306,9 @@ trap "kill $COLLECTOR_PID $SERVER_PID 2>/dev/null || true" EXIT
 
 # Continue with normal runner startup...
 ```
+
 # TYPE github_runner_info gauge
+
 github_runner_info{runner_name="$RUNNER_NAME",runner_type="$RUNNER_TYPE",version="$RUNNER_VERSION"} 1
 METRICS
 
@@ -309,7 +321,8 @@ chmod +x /tmp/metrics-collector.sh
 
 echo "✅ Metrics endpoint started on port $METRICS_PORT"
 
-# Continue with normal runner startup...
+# Continue with normal runner startup
+
 ```
 
 **Deliverables:**
@@ -353,11 +366,12 @@ curl http://localhost:9091/health
 
 ---
 
-### Phase 2: Grafana Dashboard (Week 2)
+## Phase 2: Grafana Dashboard (Week 2)
 
 **Objective:** Create pre-built Grafana dashboard JSON for users to import.
 
 **Tasks:**
+
 - [ ] Design dashboard layout
 - [ ] Create dashboard JSON with all panels
 - [ ] Test dashboard with sample data
@@ -367,6 +381,7 @@ curl http://localhost:9091/health
 - [ ] Write integration guide
 
 **Files to Create:**
+
 - `monitoring/grafana/dashboards/github-runner-dashboard.json`
 - `docs/PROMETHEUS_INTEGRATION.md`
 - `docs/GRAFANA_DASHBOARD_SETUP.md`
@@ -416,10 +431,12 @@ curl http://localhost:9091/health
     - Query: `count(github_runner_status == 1)`
 
 **Dashboard Variables:**
+
 - `runner_name`: Dropdown to filter by runner name
 - `runner_type`: Dropdown to filter by runner type (standard, chrome, chrome-go)
 
 **Deliverables:**
+
 - [ ] Dashboard JSON file ready for import
 - [ ] All 12 panels working
 - [ ] Dashboard variables functional
@@ -427,6 +444,7 @@ curl http://localhost:9091/health
 - [ ] Example Prometheus scrape config
 
 **Testing:**
+
 ```bash
 # Import dashboard into Grafana
 # 1. Open Grafana UI
@@ -489,6 +507,7 @@ scrape_configs:
 ## ✅ Acceptance Criteria
 
 ### Functional Requirements
+
 - [ ] Custom metrics endpoint running on port 9091 for all runner types
 - [ ] Metrics in valid Prometheus format
 - [ ] Grafana dashboard JSON file created
@@ -497,6 +516,7 @@ scrape_configs:
 - [ ] Documentation complete
 
 ### Non-Functional Requirements
+
 - [ ] Performance overhead <1% CPU, <50MB RAM per runner
 - [ ] Metrics endpoint response time <100ms
 - [ ] Metrics update frequency: 30 seconds
@@ -504,6 +524,7 @@ scrape_configs:
 - [ ] Works with Prometheus 2.x and Grafana 8.x+
 
 ### Documentation Requirements
+
 - [ ] Prometheus integration guide
 - [ ] Grafana dashboard setup guide
 - [ ] README updated
@@ -540,15 +561,19 @@ scrape_configs:
 ## 🚨 Risks & Mitigations
 
 ### Risk 1: Port 9091 Conflicts
+
 **Mitigation**: Document port requirements, make port configurable via environment variable
 
 ### Risk 2: Netcat Performance
+
 **Mitigation**: Simple HTTP response, pre-generated metrics file, minimal overhead
 
 ### Risk 3: Metric Format Compatibility
+
 **Mitigation**: Use standard Prometheus text format specification, test with actual Prometheus
 
 ### Risk 4: Bash Script Reliability
+
 **Mitigation**: Error handling with set -euo pipefail, process supervision, container restart policies
 
 ---

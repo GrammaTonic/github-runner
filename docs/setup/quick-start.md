@@ -71,6 +71,7 @@ The script will:
    ```
 
 3. **Deploy runners:**
+
    ```bash
    cd docker
    docker compose -f docker-compose.production.yml --env-file ../config/runner.env up -d
@@ -279,6 +280,7 @@ docker stats
    ```
 
 3. **Check container logs:**
+
    ```bash
    docker compose logs github-runner-main
    ```
@@ -303,6 +305,7 @@ docker stats
    ```
 
 3. **Check system resources:**
+
    ```bash
    docker system df
    free -h
@@ -322,6 +325,7 @@ docker stats
    ```
 
 2. **Check Docker socket permissions:**
+
    ```bash
    sudo chmod 666 /var/run/docker.sock
    ```
@@ -346,6 +350,7 @@ docker stats
    ```
 
 3. **Verify shared memory:**
+
    ```bash
    docker exec github-runner-chrome df -h /dev/shm
    ```

@@ -58,11 +58,15 @@
    cd /opt/github-runner
 
    # Configure environment
-  cp config/runner.env.example config/runner.env
-   # Edit config/runner.env with production values
 
-   # Start runners
+  cp config/runner.env.example config/runner.env
+
+# Edit config/runner.env with production values
+
+# Start runners
+
   ./scripts/quick-start.sh
+
    ```
 
 3. **Monitoring Setup**
@@ -75,7 +79,7 @@
    curl -f http://localhost:3000/api/health
    ```
 
-### Post-deployment
+## Post-deployment
 
 - [ ] Verify runner registration in GitHub
 - [ ] Test job execution

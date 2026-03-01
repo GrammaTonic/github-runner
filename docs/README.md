@@ -11,6 +11,7 @@ For details, see [docs-validation.yml](../.github/workflows/docs-validation.yml)
 ## 📁 Directory Structure
 
 docs/
+
 ```
 
 ├── community/          # Community health files
@@ -41,6 +42,7 @@ docs/
 ├── VERSION_OVERVIEW.md # Version tracking
 └── README.md           # This file
 ```
+
 ## 🔗 Quick Links
 
 ### Community
@@ -51,6 +53,7 @@ docs/
 
 
 ### Features
+
 - [Chrome Runner Feature](features/CHROME_RUNNER_FEATURE.md) - Specialized Chrome runner implementation
 - [Automated Staging Runner](features/AUTOMATED_STAGING_RUNNER_FEATURE.md) - Staging runner bridge and job acceptance
 - [Development Workflow](features/DEVELOPMENT_WORKFLOW.md) - Branching and PR strategy
@@ -58,6 +61,7 @@ docs/
 
 
 ### Releases
+
 - [Changelog](releases/CHANGELOG.md) - Full release history
 - [Release Notes v2.2.0](releases/RELEASE_NOTES_v2.2.0.md) - Latest release information
 - [Release Notes v2.1.0](releases/RELEASE_NOTES_v2.1.0.md)
@@ -67,6 +71,7 @@ docs/
 
 
 ### Main Documentation
+
 - [Project README](../README.md) - Main project documentation
 - [Setup Guide](setup/quick-start.md) - Quick setup instructions
 - [API Documentation](API.md) - API reference
@@ -78,6 +83,7 @@ docs/
 
 
 ### File Organization Rules
+
 - All documentation must be placed in `/docs/` subdirectories (never in root)
 - Feature specs: `/docs/features/`
 - Community files: `/docs/community/`
@@ -100,13 +106,16 @@ docs/
 
 
 ### Architecture Enforcement
+
 - Chrome runner image only supports `linux/amd64` (x86_64). Builds on ARM (Apple Silicon) will fail with a clear error.
 
 ### Security Scanning
+
 - Automated Trivy scans for filesystem, container, and Chrome runner images
 - Security scan jobs and workflow files are kept in sync across branches
 
 ### Recent Improvements
+
 - Critical security patches for prototype pollution and DoS vulnerabilities
 - Optimized Docker image sizes and cache cleaning
 - Enhanced Chrome Runner with latest Playwright, Cypress, and Chrome

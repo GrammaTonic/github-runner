@@ -7,6 +7,7 @@ Phase 2 of the Prometheus Monitoring Implementation has been successfully comple
 ## ✅ Completed Tasks (9 of 14)
 
 ### Implementation Tasks (TASK-013 to TASK-019)
+
 - ✅ **TASK-013**: Integrated metrics into `entrypoint-chrome.sh`
 - ✅ **TASK-014**: Added EXPOSE 9091 to `Dockerfile.chrome`
 - ✅ **TASK-015**: Added EXPOSE 9091 to `Dockerfile.chrome-go`
@@ -16,11 +17,14 @@ Phase 2 of the Prometheus Monitoring Implementation has been successfully comple
 - ✅ **TASK-019**: Added environment variables to Chrome-Go compose (RUNNER_TYPE=chrome-go, METRICS_PORT=9091)
 
 ### Testing Infrastructure
+
 - ✅ Created automated integration test: `tests/integration/test-phase2-metrics.sh`
 - ✅ Created deployment guide: `tests/integration/PHASE2_TESTING_GUIDE.md`
 
 ### Pending Tasks (TASK-020 to TASK-026)
+
 These tasks require actual deployment and are ready for execution:
+
 - ⏳ **TASK-020**: Build Chrome runner image
 - ⏳ **TASK-021**: Build Chrome-Go runner image
 - ⏳ **TASK-022**: Deploy Chrome runner container
@@ -32,6 +36,7 @@ These tasks require actual deployment and are ready for execution:
 ## 📦 Files Changed
 
 ### Core Implementation (5 Files, 100 Lines Added)
+
 1. **docker/entrypoint-chrome.sh** (+58 lines)
    - Added metrics setup section before token validation
    - Integrated metrics collector and server background processes
@@ -59,6 +64,7 @@ These tasks require actual deployment and are ready for execution:
    - Added chrome-go-jobs-log volume for persistence
 
 ### Testing Infrastructure (2 Files, 519 Lines Added)
+
 6. **tests/integration/test-phase2-metrics.sh** (217 lines)
    - Automated validation script for TASK-024, TASK-025, TASK-026
    - Checks all required metrics are present
@@ -66,7 +72,7 @@ These tasks require actual deployment and are ready for execution:
    - Tests concurrent multi-runner deployment
    - Verifies no port conflicts
 
-7. **tests/integration/PHASE2_TESTING_GUIDE.md** (300+ lines)
+2. **tests/integration/PHASE2_TESTING_GUIDE.md** (300+ lines)
    - Comprehensive build instructions
    - Deployment procedures
    - Manual and automated validation steps
@@ -76,6 +82,7 @@ These tasks require actual deployment and are ready for execution:
 ## 🔧 Technical Implementation
 
 ### Metrics Port Mapping Strategy
+
 To enable concurrent deployment of all three runner types, unique host port mappings are used:
 
 | Runner Type | Internal Port | Host Port | Endpoint |
@@ -85,11 +92,13 @@ To enable concurrent deployment of all three runner types, unique host port mapp
 | Chrome-Go | 9091 | 9093 | http://localhost:9093/metrics |
 
 ### Shared Components
+
 - **Entrypoint Script**: Chrome and Chrome-Go runners share `entrypoint-chrome.sh`
 - **Metrics Scripts**: Both variants use the same `metrics-server.sh` and `metrics-collector.sh` from Phase 1
 - **Configuration Pattern**: Consistent environment variables across all runner types
 
 ### Metrics Lifecycle
+
 1. **Startup**: Metrics services start BEFORE GitHub token validation
    - Enables standalone testing without runner registration
    - Metrics collector runs every 30 seconds (configurable)
@@ -132,6 +141,7 @@ All five core metrics from Phase 1 are available for Chrome and Chrome-Go runner
 ## 🚀 Deployment
 
 ### Quick Start
+
 ```bash
 # Build Chrome runner
 docker build -t github-runner:chrome-test -f docker/Dockerfile.chrome docker/
@@ -166,12 +176,15 @@ All acceptance criteria from Issue #1060 have been implemented:
 ## 🔍 Testing
 
 ### Automated Testing
+
 Run the integration test script to validate all requirements:
+
 ```bash
 ./tests/integration/test-phase2-metrics.sh
 ```
 
 The script validates:
+
 - Metrics endpoints are accessible
 - All required metrics are present
 - runner_type labels are correct
@@ -179,6 +192,7 @@ The script validates:
 - Prometheus format compliance
 
 ### Manual Testing
+
 ```bash
 # Chrome runner
 curl http://localhost:9092/metrics | grep runner_type
@@ -192,6 +206,7 @@ curl http://localhost:9093/metrics | grep runner_type
 ## 📈 Prometheus Integration
 
 ### Scrape Configuration
+
 Add to your `prometheus.yml`:
 
 ```yaml
@@ -206,6 +221,7 @@ scrape_configs:
 ```
 
 ### Example Queries
+
 ```promql
 # All runners status
 github_runner_status
@@ -220,18 +236,21 @@ sum(github_runner_jobs_total) by (runner_type, status)
 ## 🎯 Next Steps
 
 ### Phase 3: Enhanced Metrics & Job Tracking (Issue #1061)
+
 - Add job duration histogram
 - Track queue time
 - Measure cache hit rates
 - Enable DORA metrics calculations
 
 ### Phase 4: Grafana Dashboards (Issue #1062)
+
 - Create Runner Overview dashboard
 - Create DORA Metrics dashboard
 - Create Performance Trends dashboard
 - Create Job Analysis dashboard
 
 ### Phase 5: Documentation (Issue #1063)
+
 - Setup guide for Prometheus/Grafana
 - Usage guide with PromQL examples
 - Troubleshooting guide

@@ -17,6 +17,7 @@ This report documents the current performance characteristics of the GitHub Runn
 **Base Image:** `ubuntu:resolute`
 
 **Build Stages:**
+
 - APT setup and system upgrade
 - System dependencies installation
 - User and directory creation
@@ -24,6 +25,7 @@ This report documents the current performance characteristics of the GitHub Runn
 - NPM security patches (cross-spawn, tar, brace-expansion)
 
 **Identified Issues:**
+
 1. ❌ **No Build Cache Strategy** - Each layer is rebuilt even when dependencies haven't changed
 2. ❌ **No Multi-Stage Build** - Single-stage build includes build tools in final image
 3. ❌ **Sequential Dependency Installation** - APT packages installed in one large RUN command
@@ -32,6 +34,7 @@ This report documents the current performance characteristics of the GitHub Runn
 6. ⚠️ **Large Layer Sizes** - No layer optimization or squashing
 
 **Optimization Opportunities:**
+
 - Implement BuildKit cache mounts for apt, npm
 - Use multi-stage builds to reduce final image size
 - Pin base image version for reproducibility
@@ -43,6 +46,7 @@ This report documents the current performance characteristics of the GitHub Runn
 **Base Image:** `ubuntu:resolute`
 
 **Additional Components:**
+
 - Chrome browser (142.0.7444.162) - ~150MB download
 - ChromeDriver
 - Node.js (24.14.0) - ~50MB download
@@ -52,6 +56,7 @@ This report documents the current performance characteristics of the GitHub Runn
 - Extensive system libraries for browser support
 
 **Identified Issues:**
+
 1. ❌ **Massive Image Size** - Chrome + Node + Playwright + Cypress + system libs = ~2-3GB estimated
 2. ❌ **No Caching for Downloads** - Chrome, Node, runner downloads repeated on every build
 3. ❌ **Multiple npm install Operations** - npm packages installed multiple times in different contexts
@@ -60,6 +65,7 @@ This report documents the current performance characteristics of the GitHub Runn
 6. ⚠️ **Complex Patching Logic** - Patches npm modules 3+ times (global, user, runner)
 
 **Optimization Opportunities:**
+
 - Use BuildKit cache mounts for curl downloads
 - Skip redundant browser installations (already have Chrome)
 - Consolidate npm patching into single operation
@@ -69,10 +75,12 @@ This report documents the current performance characteristics of the GitHub Runn
 ### 1.3 Chrome-Go Runner (Dockerfile.chrome-go)
 
 **Inherits all Chrome Runner issues PLUS:**
+
 - Go installation (1.25.4) - ~130MB download
 - Additional PATH complexity
 
 **Identified Issues:**
+
 1. ❌ **Largest Image** - All Chrome runner deps + Go toolchain
 2. ❌ **No Go Build Caching** - Would benefit from BuildKit cache for Go modules
 3. ❌ **Same Chrome Runner Issues** - Inherits all inefficiencies from Dockerfile.chrome
@@ -98,27 +106,28 @@ This report documents the current performance characteristics of the GitHub Runn
 **Total Jobs:** 15 jobs identified in ci-cd.yml
 
 **Job Categories:**
+
 1. **Validation Jobs** (fast):
    - lint-and-validate
    - version-check
-   
+
 2. **Build Jobs** (slow):
    - build-runner (standard)
    - build-chrome-runner
    - build-chrome-go-runner
-   
+
 3. **Test Jobs** (medium):
    - unit-tests
    - integration-tests
    - docker-validation
    - configuration-validation
-   
+
 4. **Security Scan Jobs** (slow):
    - security-scan (Trivy on code)
    - security-container-scan (standard runner)
    - security-chrome-scan
    - security-chrome-go-scan
-   
+
 5. **Deployment/Cleanup** (medium):
    - provision-runner
    - provision-chrome-runner
@@ -127,11 +136,13 @@ This report documents the current performance characteristics of the GitHub Runn
 ### 2.3 Identified Bottlenecks
 
 **Sequential Dependencies:**
+
 ```
 build jobs → security scans → provision jobs → cleanup
 ```
 
 **Parallelization Opportunities:**
+
 1. ✅ Build jobs already run in parallel (3 concurrent builds)
 2. ✅ Security scans already run in parallel (4 concurrent scans)
 3. ❌ **Unit/integration tests could run in parallel** with builds (currently sequential)
@@ -139,6 +150,7 @@ build jobs → security scans → provision jobs → cleanup
 5. ❌ **No caching strategy** for Docker layers between jobs
 
 **Cache Utilization:**
+
 - ❌ No Docker layer caching in GitHub Actions
 - ❌ No dependency caching (apt, npm, pip)
 - ✅ GitHub Actions cache action available but not used
@@ -146,6 +158,7 @@ build jobs → security scans → provision jobs → cleanup
 ### 2.4 Resource Usage Estimates
 
 **Standard Build Job:**
+
 - Pull ubuntu:resolute: ~5s
 - APT update/upgrade: ~30-60s
 - Install system packages: ~45-90s
@@ -154,6 +167,7 @@ build jobs → security scans → provision jobs → cleanup
 - **Estimated Total:** 2-4 minutes
 
 **Chrome Build Job:**
+
 - All standard build steps: ~2-4 min
 - Download Node.js (50MB): ~5-10s
 - Download Chrome (150MB): ~15-30s
@@ -163,6 +177,7 @@ build jobs → security scans → provision jobs → cleanup
 - **Estimated Total:** 5-8 minutes
 
 **Chrome-Go Build Job:**
+
 - All Chrome build steps: ~5-8 min
 - Download Go (130MB): ~15-30s
 - **Estimated Total:** 6-9 minutes
@@ -184,6 +199,7 @@ build jobs → security scans → provision jobs → cleanup
 ### 3.2 Layer Size Breakdown (Estimated)
 
 **Standard Runner Layers:**
+
 1. Base ubuntu:resolute: ~200MB
 2. APT update + upgrade: ~100-200MB
 3. System packages install: ~300-400MB
@@ -200,17 +216,20 @@ build jobs → security scans → provision jobs → cleanup
 ### 3.3 Optimization Potential
 
 **Standard Runner:**
+
 - Multi-stage build could reduce to: ~600-800MB (remove build tools)
 - Optimized layering: Save ~100-200MB
 - **Target:** ~500-600MB
 
 **Chrome Runner:**
+
 - Remove redundant browsers: ~400MB savings
 - Multi-stage build: ~300MB savings
 - Optimized npm caching: ~200MB savings
 - **Target:** ~1.5-2GB (from ~3GB)
 
 **Chrome-Go Runner:**
+
 - Same Chrome optimizations apply
 - **Target:** ~1.7-2.2GB (from ~3.5GB+)
 
@@ -221,15 +240,18 @@ build jobs → security scans → provision jobs → cleanup
 ### 4.1 Container Startup Time
 
 **Measured Components:**
+
 - Entrypoint script execution
 - Runner registration with GitHub API
 - Health check initialization
 
 **Current Observations:**
+
 - Health check configured: 60s start period (indicates expected slow startup)
 - No startup time metrics currently collected
 
 **Optimization Opportunities:**
+
 - Measure actual startup times
 - Optimize entrypoint scripts
 - Pre-configure runner where possible
@@ -238,16 +260,19 @@ build jobs → security scans → provision jobs → cleanup
 ### 4.2 Resource Usage Patterns
 
 **Health Check Configuration:**
+
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3
 ```
 
 **Observations:**
+
 - 60-second start period suggests containers take significant time to become healthy
 - 30-second interval is reasonable for production
 - No resource limit configurations in Dockerfiles
 
 **Optimization Opportunities:**
+
 - Add resource limits (CPU, memory) to Docker Compose
 - Monitor actual resource usage patterns
 - Implement auto-scaling based on resource thresholds
@@ -257,6 +282,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3
 ## 5. Key Performance Metrics to Track
 
 ### 5.1 Build Metrics
+
 - [ ] Docker build time (all variants)
 - [ ] Docker layer cache hit rate
 - [ ] Download time for external dependencies
@@ -264,6 +290,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3
 - [ ] apt-get operations duration
 
 ### 5.2 Pipeline Metrics
+
 - [ ] Total CI/CD pipeline duration
 - [ ] Individual job durations
 - [ ] Parallel job efficiency
@@ -271,6 +298,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3
 - [ ] Artifact upload/download times
 
 ### 5.3 Image Metrics
+
 - [ ] Final image sizes (all variants)
 - [ ] Layer count per image
 - [ ] Largest layers by size
@@ -278,6 +306,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3
 - [ ] Push/pull times to GHCR
 
 ### 5.4 Runtime Metrics
+
 - [ ] Container startup time
 - [ ] Time to runner registration
 - [ ] Memory usage (idle and under load)
@@ -290,6 +319,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3
 ## 6. Optimization Priorities
 
 ### High Priority (High Impact, Low Effort)
+
 1. **Fix ubuntu:resolute typo** - Use stable base image
 2. **Implement BuildKit cache mounts** - Massive build time improvement
 3. **Consolidate apt-get operations** - Reduce layers and build time
@@ -297,36 +327,41 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3
 5. **Enable Docker layer caching in CI/CD** - Reuse layers between builds
 
 ### Medium Priority (High Impact, Medium Effort)
+
 6. **Multi-stage builds** - Reduce final image sizes by 30-40%
-7. **Optimize npm patching** - Single consolidated patch operation
-8. **Parallel test execution** - Run tests during/after builds
-9. **Dependency caching in CI/CD** - Cache apt, npm, pip packages
-10. **Version pinning** - Reproducible builds, better caching
+2. **Optimize npm patching** - Single consolidated patch operation
+3. **Parallel test execution** - Run tests during/after builds
+4. **Dependency caching in CI/CD** - Cache apt, npm, pip packages
+5. **Version pinning** - Reproducible builds, better caching
 
 ### Low Priority (Medium Impact, High Effort)
+
 11. **Custom runner base image** - Pre-baked dependencies
-12. **Advanced caching strategies** - Remote cache, registry cache
-13. **Resource limit tuning** - CPU/memory optimization
-14. **Startup time optimization** - Lazy initialization patterns
-15. **Alternative base images** - Alpine, distroless evaluation
+2. **Advanced caching strategies** - Remote cache, registry cache
+3. **Resource limit tuning** - CPU/memory optimization
+4. **Startup time optimization** - Lazy initialization patterns
+5. **Alternative base images** - Alpine, distroless evaluation
 
 ---
 
 ## 7. Next Steps
 
 ### Immediate Actions
+
 1. ✅ **Measure actual build times** - Run timed builds for all variants
 2. ✅ **Measure actual image sizes** - Check GHCR for current sizes
 3. ✅ **Analyze successful CI/CD run** - Get complete job timing data
 4. ⏺️ **Create optimization implementation plan** - Prioritize quick wins
 
 ### Testing Strategy
+
 1. Build baseline images with `time` measurements
 2. Implement optimizations incrementally
 3. Measure performance improvements after each change
 4. Document results for comparison
 
 ### Success Criteria
+
 - **Build Time:** Reduce by 40-60% (target: 1-2min standard, 2-4min Chrome)
 - **Image Size:** Reduce by 30-50% (target: ~500MB standard, ~1.5-2GB Chrome)
 - **Pipeline Duration:** Reduce by 30-40% (target: <6 minutes for full pipeline)
@@ -337,6 +372,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3
 ## 8. Measurement Commands
 
 ### Build Time Measurement
+
 ```bash
 # Standard runner
 time docker build -f docker/Dockerfile -t github-runner:baseline .
@@ -349,18 +385,21 @@ time docker build -f docker/Dockerfile.chrome-go -t github-runner-chrome-go:base
 ```
 
 ### Image Size Measurement
+
 ```bash
 docker images | grep github-runner
 docker history github-runner:baseline --no-trunc --human
 ```
 
 ### Layer Analysis
+
 ```bash
 docker inspect github-runner:baseline | jq '.[0].RootFS.Layers'
 dive github-runner:baseline  # Interactive layer exploration
 ```
 
 ### CI/CD Analysis
+
 ```bash
 gh run view <run-id> --log
 gh run list --workflow="CI/CD Pipeline" --limit 10 --json databaseId,conclusion,createdAt,updatedAt
@@ -371,39 +410,45 @@ gh run list --workflow="CI/CD Pipeline" --limit 10 --json databaseId,conclusion,
 ## Appendix A: Dockerfile Issues Summary
 
 ### Critical Issues (Fix Immediately)
+
 1. **Base image typo:** `ubuntu:resolute` → `ubuntu:24.04` or `ubuntu:latest`
 2. **No caching strategy:** Implement BuildKit cache mounts
 3. **No version pinning:** Pin all external dependencies
 4. **Redundant operations:** Multiple apt-get updates, npm installs
 
 ### Major Issues (High Impact)
+
 5. **No multi-stage builds:** Final images include build tools
-6. **Large image sizes:** 2-4GB per variant
-7. **Slow builds:** 5-9 minutes for Chrome variants
-8. **Duplicate installations:** Playwright installs browsers when Chrome exists
+2. **Large image sizes:** 2-4GB per variant
+3. **Slow builds:** 5-9 minutes for Chrome variants
+4. **Duplicate installations:** Playwright installs browsers when Chrome exists
 
 ### Minor Issues (Low Impact)
+
 9. **Layer optimization:** Too many layers, could be consolidated
-10. **Documentation:** Missing inline comments for complex operations
-11. **Health check tuning:** 60s start period could be optimized
+2. **Documentation:** Missing inline comments for complex operations
+3. **Health check tuning:** 60s start period could be optimized
 
 ---
 
 ## Appendix B: Tool Recommendations
 
 ### Build Optimization
+
 - **BuildKit:** Docker's advanced build engine with caching
 - **dive:** Explore Docker image layers interactively
 - **docker-slim:** Automatic image size reduction
 - **hadolint:** Dockerfile linter (already in use)
 
 ### Performance Monitoring
+
 - **time:** Measure build durations
 - **docker stats:** Monitor runtime resource usage
 - **cAdvisor:** Container metrics collection
 - **Prometheus + Grafana:** Metrics visualization
 
 ### CI/CD Optimization
+
 - **GitHub Actions cache action:** Cache dependencies
 - **Docker layer caching:** Reuse layers between runs
 - **Self-hosted runners:** Faster builds with local cache

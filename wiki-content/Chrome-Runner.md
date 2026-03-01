@@ -83,6 +83,7 @@ jobs:
 
 **OS**: Ubuntu 24.04 LTS
 **Architecture**: AMD64 only (ARM builds blocked for Chrome Runner)
+
 - **Size**: ~2.5GB (optimized layers)
 
 ### **Installed Software**

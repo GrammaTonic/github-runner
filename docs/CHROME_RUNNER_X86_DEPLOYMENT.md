@@ -89,11 +89,13 @@ docker compose -f docker/docker-compose.chrome.yml --env-file config/chrome-runn
 - If manual deployment, ensure config.sh has execute permissions
 
 ### GitHub Token Issues
+
 - Verify token has `repo` scope for private repositories
 - Check token hasn't expired
 - Ensure repository name format is correct: `username/repo-name`
 
 ### Docker Issues
+
 - Ensure Docker daemon is running
 - Check available disk space
 - Verify no port conflicts
@@ -139,6 +141,7 @@ jobs:
 ## Support
 
 If you encounter issues:
+
 1. Check the logs: `docker logs github-runner-chrome`
 2. Verify configuration in `config/chrome-runner.env`
 3. Ensure GitHub token has correct permissions

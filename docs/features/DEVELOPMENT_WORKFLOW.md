@@ -99,11 +99,13 @@ gh pr merge <PR_NUMBER> --merge --body "Promote develop to main"
 | Dependabot PRs → `develop` | **Squash merge** | Auto-merged with squash (targets `develop` only) |
 
 **Key benefits:**
+
 - **No back-sync required** — regular merging `develop` → `main` preserves commit ancestry
 - **Clean integration branch** — each feature is a single squashed commit on `develop`
 - **Simplified workflow** — no post-merge back-sync step eliminates an entire class of errors
 
 **How to merge:**
+
 ```bash
 # Feature branch → develop (SQUASH merge):
 gh pr merge <PR_NUMBER> --squash --delete-branch --body "<brief summary>"

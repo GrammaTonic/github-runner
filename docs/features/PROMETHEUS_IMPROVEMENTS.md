@@ -24,12 +24,14 @@ Implement custom metrics endpoint and Grafana dashboard for GitHub Actions self-
 ## 🎯 Objectives
 
 ### Primary Goals
+
 1. **Metrics Endpoint**: Expose runner-specific metrics in Prometheus format on port 9091
 2. **Grafana Dashboard**: Visualize runner health, performance, and DORA metrics
 3. **Minimal Overhead**: <1% CPU impact on runner performance
 4. **Easy Integration**: Works with existing Prometheus infrastructure
 
 ### Success Criteria
+
 - [ ] Custom metrics endpoint running on all runner types (standard, Chrome, Chrome-Go)
 - [ ] Grafana dashboard visualizing key runner metrics
 - [ ] DORA metrics tracked and calculated
@@ -73,6 +75,7 @@ Implement custom metrics endpoint and Grafana dashboard for GitHub Actions self-
 ### Components (In Scope)
 
 #### 1. Custom Metrics Endpoint
+
 - **Port**: 9091 (per runner container)
 - **Format**: Prometheus text format (OpenMetrics compatible)
 - **Update Frequency**: 30 seconds
@@ -81,6 +84,7 @@ Implement custom metrics endpoint and Grafana dashboard for GitHub Actions self-
 - **Location**: Embedded in runner entrypoint scripts
 
 #### 2. Grafana Dashboard
+
 - **Dashboard JSON**: Pre-configured dashboard for import
 - **Panels**: 10+ panels covering runner health, jobs, and DORA metrics
 - **Variables**: Filter by runner name, runner type
@@ -90,11 +94,13 @@ Implement custom metrics endpoint and Grafana dashboard for GitHub Actions self-
 ### Components (Out of Scope - User Responsibility)
 
 #### External Prometheus Server
+
 - User must provide their own Prometheus server
 - Must be configured to scrape runners on port 9091
 - Example scrape config provided in documentation
 
 #### External Grafana Instance
+
 - User must provide their own Grafana instance
 - Must have Prometheus datasource configured
 - Dashboard JSON provided for import
@@ -161,6 +167,7 @@ avg(github_runner_recovery_time_seconds)
 **Objective:** Deploy basic monitoring stack with Prometheus, Grafana, Node Exporter, and cAdvisor.
 
 **Tasks:**
+
 1. ✅ Create feature branch `feature/prometheus-improvements`
 2. ✅ Create feature specification document
 3. Create `docker/docker-compose.monitoring.yml`
@@ -172,6 +179,7 @@ avg(github_runner_recovery_time_seconds)
 9. Configure Docker network connectivity
 
 **Files to Create:**
+
 - `docker/docker-compose.monitoring.yml`
 - `monitoring/prometheus.yml`
 - `monitoring/prometheus/alerts.yml`
@@ -179,6 +187,7 @@ avg(github_runner_recovery_time_seconds)
 - `monitoring/grafana/provisioning/dashboards/default.yml`
 
 **Deliverables:**
+
 - [ ] Monitoring stack deployable via `docker-compose -f docker-compose.monitoring.yml up`
 - [ ] Prometheus UI accessible on http://localhost:9090
 - [ ] Grafana UI accessible on http://localhost:3000
@@ -187,6 +196,7 @@ avg(github_runner_recovery_time_seconds)
 - [ ] Data persists across container restarts
 
 **Testing:**
+
 ```bash
 # Deploy monitoring stack
 cd /Users/grammatonic/Git/github-runner/docker
@@ -206,6 +216,7 @@ curl -u admin:admin http://localhost:3000/api/datasources | jq '.[].name'
 **Objective:** Add custom metrics endpoint to each runner type for runner-specific metrics.
 
 **Tasks:**
+
 1. Design metrics collection strategy
 2. Create metrics HTTP server using bash + netcat
 3. Implement metrics collector script
@@ -217,6 +228,7 @@ curl -u admin:admin http://localhost:3000/api/datasources | jq '.[].name'
 9. Implement job logging for metrics tracking
 
 **Files to Modify:**
+
 - `docker/entrypoint.sh`
 - `docker/entrypoint-chrome.sh`
 - `docker/Dockerfile` (EXPOSE 9091)
@@ -313,6 +325,7 @@ echo "Metrics endpoint started on port $METRICS_PORT"
 ```
 
 **Deliverables:**
+
 - [ ] Custom metrics endpoint running on port 9091 for each runner
 - [ ] Metrics accessible via `curl http://localhost:9091/metrics`
 - [ ] Prometheus successfully scraping runner metrics
@@ -320,6 +333,7 @@ echo "Metrics endpoint started on port $METRICS_PORT"
 - [ ] Job counts tracked accurately
 
 **Testing:**
+
 ```bash
 # Test metrics endpoint
 docker exec github-runner-1 curl -s http://localhost:9091/metrics
@@ -337,6 +351,7 @@ docker exec github-runner-1 curl -s http://localhost:9091/metrics
 **Objective:** Create comprehensive Grafana dashboards for visualization.
 
 **Tasks:**
+
 1. Design dashboard layouts
 2. Create Runner Overview dashboard
 3. Create DORA Metrics dashboard
@@ -346,6 +361,7 @@ docker exec github-runner-1 curl -s http://localhost:9091/metrics
 7. Add dashboard documentation
 
 **Files to Create:**
+
 - `monitoring/grafana/dashboards/runner-overview.json`
 - `monitoring/grafana/dashboards/dora-metrics.json`
 - `monitoring/grafana/dashboards/resource-utilization.json`
@@ -354,6 +370,7 @@ docker exec github-runner-1 curl -s http://localhost:9091/metrics
 **Dashboard 1: Runner Overview**
 
 Panels:
+
 - **Runner Status** (Stat): `github_runner_status` - Shows online/offline status
 - **Total Jobs** (Stat): `sum(github_runner_jobs_total{status="total"})`
 - **Success Rate** (Gauge): `sum(github_runner_jobs_total{status="success"}) / sum(github_runner_jobs_total{status="total"}) * 100`
@@ -365,6 +382,7 @@ Panels:
 **Dashboard 2: DORA Metrics**
 
 Panels:
+
 - **Deployment Frequency** (Stat): `sum(increase(github_runner_jobs_total{status="success"}[24h]))`
 - **Lead Time** (Gauge): Average job duration
 - **Change Failure Rate** (Gauge): Failed jobs / Total jobs * 100
@@ -375,6 +393,7 @@ Panels:
 **Dashboard 3: Resource Utilization**
 
 Panels:
+
 - **CPU Usage** (Graph): `100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)`
 - **Memory Usage** (Graph): `(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100`
 - **Disk Usage** (Graph): Filesystem usage percentage
@@ -385,6 +404,7 @@ Panels:
 **Dashboard 4: Performance Trends**
 
 Panels:
+
 - **Build Time Trends** (Graph): Average job duration over time
 - **Cache Hit Rate** (Graph): Cache effectiveness over time
 - **Job Queue Depth** (Graph): Jobs waiting to run
@@ -392,6 +412,7 @@ Panels:
 - **Error Rate** (Graph): Failed jobs over time
 
 **Deliverables:**
+
 - [ ] 4 Grafana dashboards created
 - [ ] Dashboards auto-provisioned on Grafana startup
 - [ ] All panels displaying data correctly
@@ -399,6 +420,7 @@ Panels:
 - [ ] Screenshots captured for documentation
 
 **Testing:**
+
 - Open http://localhost:3000
 - Navigate to Dashboards
 - Verify all panels load without errors
@@ -413,6 +435,7 @@ Panels:
 **Objective:** Configure Prometheus alert rules for proactive monitoring.
 
 **Tasks:**
+
 1. Define alert thresholds
 2. Create alert rule groups
 3. Test alert triggering
@@ -420,6 +443,7 @@ Panels:
 5. (Optional) Configure Alertmanager for notifications
 
 **Files to Create:**
+
 - `monitoring/prometheus/alerts.yml`
 - `docs/runbooks/PROMETHEUS_ALERTS.md`
 - `monitoring/alertmanager.yml` (optional)
@@ -531,6 +555,7 @@ groups:
 ```
 
 **Deliverables:**
+
 - [ ] Alert rules configured in Prometheus
 - [ ] Alerts visible in Prometheus UI
 - [ ] Runbook created for each alert type
@@ -538,6 +563,7 @@ groups:
 - [ ] Test alerts triggered and verified
 
 **Testing:**
+
 ```bash
 # Trigger test alert by stopping a runner
 docker stop github-runner-1
@@ -556,6 +582,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 **Objective:** Complete documentation and comprehensive testing.
 
 **Tasks:**
+
 1. Write Prometheus setup guide
 2. Write Prometheus usage guide
 3. Write troubleshooting guide
@@ -566,6 +593,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 8. Create demo video/screenshots
 
 **Files to Create:**
+
 - `docs/PROMETHEUS_SETUP.md`
 - `docs/PROMETHEUS_USAGE.md`
 - `docs/PROMETHEUS_TROUBLESHOOTING.md`
@@ -573,12 +601,14 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - `docs/runbooks/PROMETHEUS_ALERTS.md`
 
 **Files to Update:**
+
 - `README.md` (add Monitoring section)
 - `docs/README.md` (add monitoring links)
 
 **Testing Checklist:**
 
 **Functional Testing:**
+
 - [ ] Monitoring stack deploys successfully
 - [ ] All Prometheus targets are up
 - [ ] Grafana datasource connects to Prometheus
@@ -590,6 +620,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - [ ] Metrics persist across container restarts
 
 **Performance Testing:**
+
 - [ ] Metrics collection has <1% CPU overhead
 - [ ] Metrics collection has <50MB memory overhead
 - [ ] Prometheus storage growth is predictable (<1GB/week)
@@ -597,6 +628,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - [ ] Dashboard queries execute in <2s
 
 **Integration Testing:**
+
 - [ ] Standard runner with metrics
 - [ ] Chrome runner with metrics
 - [ ] Chrome-Go runner with metrics
@@ -604,12 +636,14 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - [ ] Scaling runners (1 → 5 → 1)
 
 **User Acceptance Testing:**
+
 - [ ] Setup documentation is clear and complete
 - [ ] Dashboards answer key questions
 - [ ] Alerts are actionable
 - [ ] Troubleshooting guide resolves common issues
 
 **Deliverables:**
+
 - [ ] Complete documentation suite
 - [ ] All runner types validated
 - [ ] Performance benchmarks documented
@@ -621,6 +655,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 ## 📚 Documentation Outline
 
 ### 1. PROMETHEUS_SETUP.md
+
 - Prerequisites
 - Installation steps
 - Configuration
@@ -629,6 +664,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - Troubleshooting setup issues
 
 ### 2. PROMETHEUS_USAGE.md
+
 - Accessing Prometheus UI
 - Accessing Grafana dashboards
 - Understanding metrics
@@ -637,6 +673,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - Configuring alerts
 
 ### 3. PROMETHEUS_TROUBLESHOOTING.md
+
 - Common issues and solutions
 - Debugging metrics collection
 - Dashboard troubleshooting
@@ -644,6 +681,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - Performance optimization
 
 ### 4. PROMETHEUS_ARCHITECTURE.md
+
 - System architecture
 - Component descriptions
 - Data flow
@@ -652,6 +690,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - Scalability considerations
 
 ### 5. runbooks/PROMETHEUS_ALERTS.md
+
 - Alert descriptions
 - Severity levels
 - Investigation steps
@@ -663,6 +702,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 ## ✅ Acceptance Criteria
 
 ### Functional Requirements
+
 - [ ] Prometheus server deployed and collecting metrics from all components
 - [ ] Grafana dashboards showing runner, system, container, and DORA metrics
 - [ ] Alert rules configured for critical, warning, and info levels
@@ -671,6 +711,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - [ ] All runner types supported (standard, Chrome, Chrome-Go)
 
 ### Non-Functional Requirements
+
 - [ ] Performance overhead <1% CPU, <50MB RAM per runner
 - [ ] Metrics endpoint response time <100ms
 - [ ] Dashboard query execution time <2s
@@ -678,6 +719,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - [ ] Zero downtime deployment of monitoring stack
 
 ### Documentation Requirements
+
 - [ ] Complete setup guide with examples
 - [ ] Usage guide with screenshots
 - [ ] Troubleshooting guide with solutions
@@ -686,6 +728,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - [ ] README updated with monitoring section
 
 ### Quality Requirements
+
 - [ ] No security vulnerabilities in monitoring components
 - [ ] Monitoring stack passes CI/CD validation
 - [ ] Code follows project conventions
@@ -697,9 +740,11 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 ## 🚨 Risks & Mitigations
 
 ### Risk 1: Performance Overhead
+
 **Impact**: Metrics collection slows down runners  
 **Probability**: Low  
-**Mitigation**: 
+**Mitigation**:
+
 - Lightweight bash scripts (not heavy HTTP servers)
 - 30-second update interval (not real-time)
 - Use netcat for HTTP server (minimal resources)
@@ -707,9 +752,11 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - Make metrics collection optional via environment variable
 
 ### Risk 2: Storage Growth
+
 **Impact**: Prometheus storage fills disk  
 **Probability**: Medium  
 **Mitigation**:
+
 - 30-day retention (configurable)
 - Monitor Prometheus storage usage
 - Alert when storage >80% full
@@ -717,9 +764,11 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - Provide cleanup/archival scripts
 
 ### Risk 3: Configuration Complexity
+
 **Impact**: Users struggle to set up monitoring  
 **Probability**: Medium  
 **Mitigation**:
+
 - Single command deployment (`docker-compose up`)
 - Pre-configured dashboards and alerts
 - Comprehensive step-by-step documentation
@@ -728,9 +777,11 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - Automated setup script
 
 ### Risk 4: False Positive Alerts
+
 **Impact**: Alert fatigue, ignored alerts  
 **Probability**: Medium  
 **Mitigation**:
+
 - Tune alert thresholds based on real baseline data
 - Use `for` duration to avoid flapping (e.g., 5m, 10m)
 - Clear runbooks for investigation
@@ -738,9 +789,11 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 - Severity levels (critical, warning, info)
 
 ### Risk 5: Metric Naming Changes
+
 **Impact**: Breaking changes to metric names  
 **Probability**: Low  
 **Mitigation**:
+
 - Version metric definitions
 - Document metric schema
 - Use semantic versioning for dashboards
@@ -754,26 +807,31 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 ### Quantified Impact
 
 #### Visibility
+
 - **Before**: 0% visibility into runner health
 - **After**: 100% visibility with <15s lag
 - **Benefit**: Complete observability
 
 #### Incident Resolution
+
 - **Before**: Blind debugging, ~2 hours average
 - **After**: Historical data, ~30 minutes average
 - **Benefit**: 75% faster resolution
 
 #### Resource Optimization
+
 - **Before**: 30% over-provisioned (estimated)
 - **After**: Right-sized based on actual usage
 - **Benefit**: 20-30% cost reduction potential
 
 #### Proactive Detection
+
 - **Before**: 100% reactive (user reports failures)
 - **After**: 90% proactive (alerts before user impact)
 - **Benefit**: 90% reduction in user-facing incidents
 
 #### DevOps Maturity
+
 - **Before**: No DORA metrics
 - **After**: Automated tracking of all 4 metrics
 - **Benefit**: Data-driven improvement
@@ -783,6 +841,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 ## 🔄 Future Enhancements (Post-MVP)
 
 ### Phase 6: Advanced Features
+
 - [ ] Alertmanager integration for Slack/email notifications
 - [ ] Anomaly detection using ML (Prometheus ML)
 - [ ] Cost tracking and optimization recommendations
@@ -812,6 +871,7 @@ curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname, stat
 | **Total** | **5 weeks** | **2025-11-16** | **2025-12-21** | **🚧 In Progress** |
 
 **📊 Roadmap Visualizations:**
+
 - [Detailed 5-Week Roadmap](./PROMETHEUS_ROADMAP.md) - Week-by-week breakdown with Gantt charts
 - [Visual Timeline](./PROMETHEUS_TIMELINE_VISUAL.md) - Progress forecasts and milestone calendar
 - [GitHub Project Board](https://github.com/users/GrammaTonic/projects/5) - Live task tracking
