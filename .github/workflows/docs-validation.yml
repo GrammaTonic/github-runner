@@ -6,17 +6,33 @@ on:
       - 'docs/**'
       - 'wiki-content/**'
 
+permissions:
+  contents: read
+  statuses: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate-docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+
+      - name: Fetch PR base for patch diff
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.sha }} --depth=1
+
+      - name: Validate documentation structure
+        run: |
+          echo "Validating docs directory structure and root-level markdown rules..."
+          bash scripts/check-docs-structure.sh
+
       - name: Check for outdated references
         run: |
-          # Search for 'template' (case-insensitive) and print matches with line numbers.
-          # In CI (GITHUB_ACTIONS set) fail the step; when run locally do not exit the user's shell.
           # Search for filename-style references ending with '.template' (e.g. runner.env.template)
           # This avoids matching unrelated uses of the word 'template' in prose or cloud templates
           if grep -rnI --line-number -E '\.template\b' docs/ wiki-content/ | grep -v -E '^docs/archive/|--web.console.templates=' > /tmp/outdated_refs.txt; then
@@ -31,15 +47,18 @@ jobs:
           else
             echo "✅ No outdated references found."
           fi
+
       - name: Validate Markdown links
         run: |
           set -euo pipefail
           echo "Validating markdown links (excluding docs/archive/)"
+
           # Docs: run link-check if any files exist
           DOCS_COUNT=$(find docs -type f -name '*.md' ! -path 'docs/archive/*' 2>/dev/null | wc -l | tr -d ' ' || true)
           if [ -n "$DOCS_COUNT" ] && [ "$DOCS_COUNT" -gt 0 ]; then
             echo "Running markdown-link-check on $DOCS_COUNT docs files..."
-            find docs -type f -name '*.md' ! -path 'docs/archive/*' -print0 | xargs -0 npx -y markdown-link-check || true
+            find docs -type f -name '*.md' ! -path 'docs/archive/*' -print0 \
+              | xargs -0 npx -y markdown-link-check@3.14.2 --config .markdown-link-check.json
           else
             echo "No docs markdown files found to check."
           fi
@@ -49,29 +68,34 @@ jobs:
             WIKI_COUNT=$(find wiki-content -type f -name '*.md' 2>/dev/null | wc -l | tr -d ' ' || true)
             if [ -n "$WIKI_COUNT" ] && [ "$WIKI_COUNT" -gt 0 ]; then
               echo "Running markdown-link-check on $WIKI_COUNT wiki files..."
-              find wiki-content -type f -name '*.md' -print0 | xargs -0 npx -y markdown-link-check || true
+              find wiki-content -type f -name '*.md' -print0 \
+                | xargs -0 npx -y markdown-link-check@3.14.2 --config .markdown-link-check.json
             else
               echo "No wiki markdown files found to check."
             fi
           else
             echo "No wiki-content directory present, skipping wiki link-check."
           fi
+
       - name: Generate Documentation Patch
         run: |
-          git diff origin/main -- docs/ wiki-content/ > docs-full-patch.diff || echo "No doc changes detected."
+          git diff ${{ github.event.pull_request.base.sha }} -- docs/ wiki-content/ > docs-full-patch.diff || echo "No doc changes detected."
+
       - name: Upload Patch Artifact
         uses: actions/upload-artifact@v6
         with:
           name: docs-full-patch
           path: docs-full-patch.diff
+
       - name: Run GitHub Super Linter for Docs
-        uses: github/super-linter@v7
+        # yamllint disable-line rule:line-length
+        uses: super-linter/super-linter@12150456a73e248bdc94d0794898f94e23127c88  # v7
         env:
           DEFAULT_BRANCH: develop
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: false
-          VALIDATE_MD: true
+          VALIDATE_MARKDOWN: true
           VALIDATE_JSCPD: false
           VALIDATE_CHECKOV: false
-          FILTER_REGEX_INCLUDE: docs/**,wiki-content/**
-          FILTER_REGEX_EXCLUDE: docs/archive/**
+          FILTER_REGEX_INCLUDE: (docs|wiki-content)/.*
+          FILTER_REGEX_EXCLUDE: docs/archive/.*
