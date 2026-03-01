@@ -26,7 +26,7 @@ create_wiki_pages() {
 		cd wiki-repo || exit 1
 	else
 		cd wiki-repo || exit 1
-		git pull origin main
+		git pull origin master
 	fi
 
 	echo "Copying wiki content..."
@@ -50,7 +50,7 @@ create_wiki_pages() {
 - Add common issues and troubleshooting guide
 - Include quick start links and external resources"
 
-	git push origin main
+	git push origin master
 
 	echo ""
 	echo "✅ Wiki populated successfully!"
