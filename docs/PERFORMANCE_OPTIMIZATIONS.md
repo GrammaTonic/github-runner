@@ -419,7 +419,7 @@ docker buildx prune --keep-storage 10GB  # Keep 10GB
 
 **Status:** ❌ **REJECTED** (November 16, 2025)  
 **Branch:** feature/parallel-npm-installs  
-**Analysis:** [PARALLEL_NPM_RESULTS.md](features/PARALLEL_NPM_RESULTS.md)  
+**Analysis:** Rejected — results not retained  
 **Workflows:** [#19396882450](https://github.com/GrammaTonic/github-runner/actions/runs/19396882450), [#19396967351](https://github.com/GrammaTonic/github-runner/actions/runs/19396967351)
 
 **Original Goal:**
