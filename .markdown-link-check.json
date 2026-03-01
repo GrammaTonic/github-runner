@@ -23,6 +23,9 @@
       "pattern": "^https://github\\.com/.*/wiki/"
     },
     {
+      "pattern": "^https://github\\.com/.*/discussions"
+    },
+    {
       "pattern": "^https://github\\.com/users/"
     },
     {
