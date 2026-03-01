@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [v2.5.0] - 2026-03-01
+- Bump GitHub Actions runner to **2.332.0**.
+- Optimize CI/CD pipeline for speed and cost — faster builds, reduced runner minutes (#1111).
+- Fix critical and high priority security workflow optimizations (#1112).
+- Improve maintenance workflow reliability, cache cleanup, and issue automation (#1115).
+- Switch to dual merge strategy — squash to develop, regular merge to main (#1119).
+- Replace push trigger with `workflow_run` in seed-trivy-sarif workflow (#1118).
+- Strip trailing whitespace across YAML workflow files for yamllint compliance.
+- Streamline PR template and copilot instructions for dual merge workflow.
+
 ## [v2.4.0] - 2026-03-01
 - Update Node.js to **24.14.0** (LTS Krypton) in Chrome and Chrome-Go runners.
 - Update npm to **11.11.0** in Chrome and Chrome-Go runners.
