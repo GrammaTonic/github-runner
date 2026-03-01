@@ -29,6 +29,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
   security-events: write
   packages: read
   actions: write
@@ -143,7 +144,7 @@ jobs:
           fi
 
       - name: Report version status
-        if: inputs.force_update == true || steps.check-updates.outputs.runner-needs-update == 'true'
+        if: always()
         run: |
           echo "## Version Status Report"
           echo "Current runner: ${{ steps.extract-versions.outputs.runner-version }}"
@@ -154,6 +155,111 @@ jobs:
           if [[ "${{ steps.check-updates.outputs.runner-needs-update }}" == "true" ]]; then
             echo "::notice::GitHub Actions Runner update available: ${{ steps.check-updates.outputs.latest-runner }}"
           fi
+
+      - name: Manage version update issues
+        if: always()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const assignee = 'GrammaTonic';
+            const labelName = 'version-update';
+
+            // Current and latest versions from prior steps
+            const currentRunner = '${{ steps.extract-versions.outputs.runner-version }}';
+            const latestRunner = '${{ steps.check-updates.outputs.latest-runner }}';
+            const currentNode = '${{ steps.extract-versions.outputs.node-version }}';
+            const latestNode = '${{ steps.check-updates.outputs.latest-node-major }}';
+            const needsUpdate = '${{ steps.check-updates.outputs.runner-needs-update }}' === 'true';
+
+            // Ensure the label exists
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: labelName });
+            } catch {
+              await github.rest.issues.createLabel({
+                owner, repo, name: labelName,
+                color: '1d76db',
+                description: 'Automated version update tracking'
+              });
+              console.log(`Created label "${labelName}"`);
+            }
+
+            // Fetch all open issues with our label
+            const { data: existingIssues } = await github.rest.issues.listForRepo({
+              owner, repo,
+              labels: labelName,
+              state: 'open',
+              per_page: 100
+            });
+
+            // --- Runner version ---
+            const runnerTitle = `Update GitHub Actions Runner to ${latestRunner}`;
+
+            if (needsUpdate && latestRunner !== 'unknown') {
+              // Check for duplicate
+              const duplicate = existingIssues.find(i => i.title === runnerTitle);
+              if (duplicate) {
+                console.log(`Issue already exists: #${duplicate.number} — ${runnerTitle}`);
+              } else {
+                const { data: issue } = await github.rest.issues.create({
+                  owner, repo,
+                  title: runnerTitle,
+                  body: [
+                    '## GitHub Actions Runner Update Available',
+                    '',
+                    `| | Version |`,
+                    `|---|---|`,
+                    `| **Current** | ${currentRunner} |`,
+                    `| **Latest** | ${latestRunner} |`,
+                    '',
+                    '### Steps',
+                    '1. Update `ARG RUNNER_VERSION` in `docker/Dockerfile`',
+                    '2. Rebuild and test all runner variants',
+                    '3. Update `docs/VERSION_OVERVIEW.md`',
+                    '',
+                    '*Auto-created by maintenance workflow*'
+                  ].join('\n'),
+                  labels: [labelName],
+                  assignees: [assignee]
+                });
+                console.log(`Created issue #${issue.number}: ${runnerTitle}`);
+              }
+            }
+
+            // --- Close issues for versions already applied ---
+            for (const issue of existingIssues) {
+              const title = issue.title;
+
+              // Runner: close if current version matches the version in the issue title
+              if (title.startsWith('Update GitHub Actions Runner to ')) {
+                const targetVersion = title.replace('Update GitHub Actions Runner to ', '');
+                if (targetVersion === currentRunner) {
+                  await github.rest.issues.update({
+                    owner, repo,
+                    issue_number: issue.number,
+                    state: 'closed',
+                    state_reason: 'completed'
+                  });
+                  console.log(`Closed issue #${issue.number} — runner already at ${currentRunner}`);
+                }
+              }
+
+              // Node: close if current major matches
+              if (title.startsWith('Update Node.js to ')) {
+                const targetMajor = title.replace('Update Node.js to ', '').replace('.x', '');
+                const currentMajor = currentNode.replace('.x', '');
+                if (targetMajor === currentMajor) {
+                  await github.rest.issues.update({
+                    owner, repo,
+                    issue_number: issue.number,
+                    state: 'closed',
+                    state_reason: 'completed'
+                  });
+                  console.log(`Closed issue #${issue.number} — Node.js already at ${currentNode}`);
+                }
+              }
+            }
 
   update-docker-base-images:
     name: Audit Docker Base Images
