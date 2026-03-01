@@ -240,19 +240,19 @@ jobs:
           for result_file in trivy-results/*.json; do
             if [[ -f "$result_file" ]]; then
               target=$(basename "$result_file" .json)
-              
+
               critical=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' "$result_file" 2>/dev/null || echo "0")
               high=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' "$result_file" 2>/dev/null || echo "0")
               medium=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM")] | length' "$result_file" 2>/dev/null || echo "0")
               low=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "LOW")] | length' "$result_file" 2>/dev/null || echo "0")
-              
+
               target_total=$((critical + high + medium + low))
-              
+
               total_critical=$((total_critical + critical))
               total_high=$((total_high + high))
               total_medium=$((total_medium + medium))
               total_low=$((total_low + low))
-              
+
               echo "| $target | $critical | $high | $medium | $low | $target_total |" >> $GITHUB_STEP_SUMMARY
             fi
           done
@@ -302,9 +302,9 @@ jobs:
           cat > security-report.md << 'EOF'
           # 🔒 GitHub Runner Security Report
 
-          **Generated**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')  
-          **Repository**: ${{ github.repository }}  
-          **Branch**: ${{ github.ref_name }}  
+          **Generated**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          **Repository**: ${{ github.repository }}
+          **Branch**: ${{ github.ref_name }}
           **Workflow Run**: [${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
           ## 📊 Scan Configuration
@@ -371,7 +371,7 @@ jobs:
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
             const oldSecurityArtifacts = artifacts.artifacts.filter(artifact => {
-              const isSecurityArtifact = artifact.name.includes('security-scan-reports') || 
+              const isSecurityArtifact = artifact.name.includes('security-scan-reports') ||
                                        artifact.name.includes('security-summary');
               const isOld = new Date(artifact.created_at) < thirtyDaysAgo;
               return isSecurityArtifact && isOld;
