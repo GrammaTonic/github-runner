@@ -239,6 +239,10 @@ jobs:
       matrix:
         scan: [standard, chrome, chrome-go]
     steps:
+      - name: Install Trivy
+        run: |
+          wget -qO /tmp/trivy.tar.gz https://github.com/aquasecurity/trivy/releases/download/v0.69.1/trivy_0.69.1_Linux-64bit.tar.gz
+          tar xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
       - name: Run Trivy vulnerability scanner (standard)
         if: matrix.scan == 'standard'
         uses: aquasecurity/trivy-action@0.34.1
@@ -246,6 +250,7 @@ jobs:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-standard-artifacts.outputs.image-digest }}
           format: "sarif"
           output: "release-security-scan.sarif"
+          skip-setup-trivy: true
       - name: Run Trivy vulnerability scanner (chrome)
         if: matrix.scan == 'chrome'
         uses: aquasecurity/trivy-action@0.34.1
@@ -253,6 +258,7 @@ jobs:
           image-ref: ${{ env.REGISTRY }}/github-runner-chrome@${{ needs.build-chrome-artifacts.outputs.image-digest }}
           format: "sarif"
           output: "release-chrome-security-scan.sarif"
+          skip-setup-trivy: true
       - name: Run Trivy vulnerability scanner (chrome-go)
         if: matrix.scan == 'chrome-go'
         uses: aquasecurity/trivy-action@0.34.1
@@ -260,6 +266,7 @@ jobs:
           image-ref: ${{ env.REGISTRY }}/github-runner-chrome-go@${{ needs.build-chrome-go-artifacts.outputs.image-digest }}
           format: "sarif"
           output: "release-chrome-go-security-scan.sarif"
+          skip-setup-trivy: true
       - name: Upload security scan results (standard)
         if: matrix.scan == 'standard'
         uses: github/codeql-action/upload-sarif@v4

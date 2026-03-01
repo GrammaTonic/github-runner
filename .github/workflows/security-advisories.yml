@@ -59,6 +59,11 @@ jobs:
       - name: Create results directory
         run: mkdir -p trivy-results
 
+      - name: Install Trivy
+        run: |
+          wget -qO /tmp/trivy.tar.gz https://github.com/aquasecurity/trivy/releases/download/v0.69.1/trivy_0.69.1_Linux-64bit.tar.gz
+          tar xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
+
       # Filesystem vulnerability scan
       - name: Run Trivy filesystem scan
         if: contains(steps.params.outputs.scan_targets, 'filesystem')
@@ -69,6 +74,7 @@ jobs:
           format: "sarif"
           output: "trivy-results/filesystem.sarif"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          skip-setup-trivy: true
 
       - name: Upload filesystem scan to Security tab
         if: contains(steps.params.outputs.scan_targets, 'filesystem')
@@ -87,6 +93,7 @@ jobs:
           format: "json"
           output: "trivy-results/filesystem.json"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          skip-setup-trivy: true
 
       # Container vulnerability scan
       - name: Set up Docker Buildx
@@ -124,6 +131,7 @@ jobs:
           format: "sarif"
           output: "trivy-results/container.sarif"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          skip-setup-trivy: true
         continue-on-error: false
 
       - name: Upload container scan to Security tab
@@ -142,6 +150,7 @@ jobs:
           format: "json"
           output: "trivy-results/container.json"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          skip-setup-trivy: true
 
       - name: Cleanup standard runner image
         if: contains(steps.params.outputs.scan_targets, 'container')
@@ -184,6 +193,7 @@ jobs:
           format: "sarif"
           output: "trivy-results/chrome.sarif"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          skip-setup-trivy: true
         continue-on-error: false
 
       - name: Upload Chrome scan to Security tab
@@ -202,6 +212,7 @@ jobs:
           format: "json"
           output: "trivy-results/chrome.json"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          skip-setup-trivy: true
 
       # Generate comprehensive security summary
       - name: Install jq for JSON processing

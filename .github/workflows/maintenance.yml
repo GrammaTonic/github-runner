@@ -220,6 +220,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Install Trivy
+        run: |
+          wget -qO /tmp/trivy.tar.gz https://github.com/aquasecurity/trivy/releases/download/v0.69.1/trivy_0.69.1_Linux-64bit.tar.gz
+          tar xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
+
       - name: Run comprehensive security scan
         uses: aquasecurity/trivy-action@0.34.1
         with:
@@ -227,6 +232,7 @@ jobs:
           scan-ref: "."
           format: "sarif"
           output: "dependency-security-scan.sarif"
+          skip-setup-trivy: true
 
       - name: Upload security scan results
         uses: github/codeql-action/upload-sarif@v4
