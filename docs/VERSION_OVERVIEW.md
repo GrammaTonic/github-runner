@@ -24,9 +24,9 @@ This document provides a comprehensive overview of all software versions, depend
 
 ### GitHub Actions Runner
 
-- **Version**: `2.331.0`
+- **Version**: `2.332.0`
 - **Source**: GitHub official releases
-- **Download URL**: `https://github.com/actions/runner/releases/download/v2.331.0/`
+- **Download URL**: `https://github.com/actions/runner/releases/download/v2.332.0/`
 - **Security Status**: ✅ Latest stable version
 
 ### Operating System
