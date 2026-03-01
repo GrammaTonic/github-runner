@@ -452,8 +452,12 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - name: Install Trivy
+        run: |
+          wget -qO /tmp/trivy.tar.gz https://github.com/aquasecurity/trivy/releases/download/v0.69.1/trivy_0.69.1_Linux-64bit.tar.gz
+          tar xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
       - name: Run Trivy vulnerability scanner on filesystem
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -461,9 +465,11 @@ jobs:
           output: "trivy-results.sarif"
           timeout: "10m"
           skip-dirs: "test-results,logs,.git"
+          skip-setup-trivy: true
       - name: Upload Trivy scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
         if: always()
+        continue-on-error: true
         with:
           sarif_file: "trivy-results.sarif"
           category: "security-scan"
@@ -1126,17 +1132,23 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+      - name: Install Trivy
+        run: |
+          wget -qO /tmp/trivy.tar.gz https://github.com/aquasecurity/trivy/releases/download/v0.69.1/trivy_0.69.1_Linux-64bit.tar.gz
+          tar xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
       - name: Run Trivy vulnerability scanner on container
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           image-ref: ${{ needs.build.outputs.normal-image-primary }}
           format: "sarif"
           output: "trivy-container-results.sarif"
           timeout: "15m"
           severity: "CRITICAL,HIGH"
+          skip-setup-trivy: true
       - name: Upload container scan results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
+        continue-on-error: true
         with:
           sarif_file: "trivy-container-results.sarif"
           category: "container-scan"
@@ -1152,17 +1164,23 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+      - name: Install Trivy
+        run: |
+          wget -qO /tmp/trivy.tar.gz https://github.com/aquasecurity/trivy/releases/download/v0.69.1/trivy_0.69.1_Linux-64bit.tar.gz
+          tar xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
       - name: Run Trivy vulnerability scanner on Chrome container
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           image-ref: ${{ needs.build-chrome.outputs.chrome-image-primary }}
           format: "sarif"
           output: "trivy-chrome-results.sarif"
           timeout: "15m"
           severity: "CRITICAL,HIGH"
+          skip-setup-trivy: true
       - name: Upload Chrome container scan results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
+        continue-on-error: true
         with:
           sarif_file: "trivy-chrome-results.sarif"
           category: "chrome-container-scan"
@@ -1178,17 +1196,23 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+      - name: Install Trivy
+        run: |
+          wget -qO /tmp/trivy.tar.gz https://github.com/aquasecurity/trivy/releases/download/v0.69.1/trivy_0.69.1_Linux-64bit.tar.gz
+          tar xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
       - name: Run Trivy vulnerability scanner on Chrome-Go container
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
           format: "sarif"
           output: "trivy-chrome-go-results.sarif"
           timeout: "15m"
           severity: "CRITICAL,HIGH"
+          skip-setup-trivy: true
       - name: Upload Chrome-Go container scan results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
+        continue-on-error: true
         with:
           sarif_file: "trivy-chrome-go-results.sarif"
           category: "chrome-go-container-scan"

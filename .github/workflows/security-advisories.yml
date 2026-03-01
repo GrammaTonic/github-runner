@@ -59,16 +59,22 @@ jobs:
       - name: Create results directory
         run: mkdir -p trivy-results
 
+      - name: Install Trivy
+        run: |
+          wget -qO /tmp/trivy.tar.gz https://github.com/aquasecurity/trivy/releases/download/v0.69.1/trivy_0.69.1_Linux-64bit.tar.gz
+          tar xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
+
       # Filesystem vulnerability scan
       - name: Run Trivy filesystem scan
         if: contains(steps.params.outputs.scan_targets, 'filesystem')
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           scan-type: "fs"
           scan-ref: "."
           format: "sarif"
           output: "trivy-results/filesystem.sarif"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          skip-setup-trivy: true
 
       - name: Upload filesystem scan to Security tab
         if: contains(steps.params.outputs.scan_targets, 'filesystem')
@@ -80,13 +86,14 @@ jobs:
 
       - name: Generate filesystem JSON report
         if: contains(steps.params.outputs.scan_targets, 'filesystem')
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           scan-type: "fs"
           scan-ref: "."
           format: "json"
           output: "trivy-results/filesystem.json"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          skip-setup-trivy: true
 
       # Container vulnerability scan
       - name: Set up Docker Buildx
@@ -118,12 +125,13 @@ jobs:
 
       - name: Run Trivy container scan
         if: contains(steps.params.outputs.scan_targets, 'container')
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           image-ref: "github-runner:scan"
           format: "sarif"
           output: "trivy-results/container.sarif"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          skip-setup-trivy: true
         continue-on-error: false
 
       - name: Upload container scan to Security tab
@@ -136,12 +144,13 @@ jobs:
 
       - name: Generate container JSON report
         if: contains(steps.params.outputs.scan_targets, 'container')
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           image-ref: "github-runner:scan"
           format: "json"
           output: "trivy-results/container.json"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          skip-setup-trivy: true
 
       - name: Cleanup standard runner image
         if: contains(steps.params.outputs.scan_targets, 'container')
@@ -178,12 +187,13 @@ jobs:
 
       - name: Run Trivy Chrome container scan
         if: contains(steps.params.outputs.scan_targets, 'chrome')
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           image-ref: "github-runner-chrome:scan"
           format: "sarif"
           output: "trivy-results/chrome.sarif"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          skip-setup-trivy: true
         continue-on-error: false
 
       - name: Upload Chrome scan to Security tab
@@ -196,12 +206,13 @@ jobs:
 
       - name: Generate Chrome JSON report
         if: contains(steps.params.outputs.scan_targets, 'chrome')
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           image-ref: "github-runner-chrome:scan"
           format: "json"
           output: "trivy-results/chrome.json"
           severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          skip-setup-trivy: true
 
       # Generate comprehensive security summary
       - name: Install jq for JSON processing
