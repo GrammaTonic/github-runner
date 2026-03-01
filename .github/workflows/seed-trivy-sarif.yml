@@ -12,8 +12,8 @@
 #
 # Triggers:
 # - Manual: workflow_dispatch with scan type selection
-# - Automatic: Push to main branch (production deployments)
-# - Scheduled: Weekly on Monday 2 AM UTC
+# - Automatic: After CI/CD Pipeline completes on main (workflow_run)
+# - Scheduled: Weekly on Monday 4 AM UTC
 #
 # Fixes Applied:
 # - PR #1048: Removed multi-platform build incompatibility with docker exporter
@@ -38,8 +38,10 @@ on:
           - all
           - filesystem
           - container
-  push:
-    branches: [main]  # Only on production deployments
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]  # Run after CI/CD completes on main — avoids duplicate Trivy scans
+    types: [completed]
+    branches: [main]
   schedule:
     - cron: '0 4 * * 1'  # Weekly deep scan on Monday 4 AM UTC (staggered from maintenance at 2AM, advisories at 3AM)
 
@@ -48,11 +50,20 @@ permissions:
   security-events: write
   packages: write
 
+concurrency:
+  group: trivy-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   seed-filesystem-baseline:
     name: Seed Trivy filesystem SARIF baseline
     runs-on: ubuntu-latest
-    if: github.event.inputs.scan_type == 'filesystem' || github.event.inputs.scan_type == 'all' || github.event_name == 'push' || github.event_name == 'schedule'
+    # Run on: dispatch (filesystem/all), schedule, or successful CI/CD completion on main
+    if: |
+      github.event.inputs.scan_type == 'filesystem' ||
+      github.event.inputs.scan_type == 'all' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -91,7 +102,12 @@ jobs:
   seed-container-baseline:
     name: Seed Trivy container SARIF baseline
     runs-on: ubuntu-latest
-    if: github.event.inputs.scan_type == 'container' || github.event.inputs.scan_type == 'all' || github.event_name == 'push' || github.event_name == 'schedule'
+    # Run on: dispatch (container/all), schedule, or successful CI/CD completion on main
+    if: |
+      github.event.inputs.scan_type == 'container' ||
+      github.event.inputs.scan_type == 'all' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     strategy:
       matrix:
         variant: [standard, chrome, chrome-go]
@@ -177,8 +193,8 @@ jobs:
           echo "- \`container-scan-chrome-go\` - Chrome-Go runner container vulnerabilities" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Schedule:" >> $GITHUB_STEP_SUMMARY
-          echo "- 📅 Weekly automated scan: Monday 2 AM UTC" >> $GITHUB_STEP_SUMMARY
-          echo "- 🚀 Automatic on production deployments (main branch)" >> $GITHUB_STEP_SUMMARY
+          echo "- 📅 Weekly automated scan: Monday 4 AM UTC" >> $GITHUB_STEP_SUMMARY
+          echo "- 🚀 Automatic after CI/CD Pipeline succeeds on main (workflow_run)" >> $GITHUB_STEP_SUMMARY
           echo "- 🔧 Manual trigger available via workflow_dispatch" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "View results in the [Security tab](https://github.com/${{ github.repository }}/security/code-scanning)" >> $GITHUB_STEP_SUMMARY
