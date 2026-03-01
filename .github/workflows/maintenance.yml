@@ -131,7 +131,7 @@ jobs:
           if [[ -f "docs/VERSION_OVERVIEW.md" ]]; then
             # Update last updated date
             sed -i "s/\*\*Last Updated\*\*:.*/\*\*Last Updated\*\*: $(date '+%B %d, %Y')/" docs/VERSION_OVERVIEW.md
-            
+
             # Update GitHub Actions Runner version if changed
             if [[ "${{ steps.check-updates.outputs.runner-needs-update }}" == "true" ]]; then
               echo "GitHub Actions Runner update available: ${{ steps.check-updates.outputs.latest-runner }}"
@@ -175,7 +175,7 @@ jobs:
               echo "Checking $dockerfile for security updates..."
               base_image=$(grep -E '^FROM' "$dockerfile" | head -1 | cut -d' ' -f2)
               echo "Base image: $base_image"
-              
+
               # In practice, you'd pull and scan the image
               echo "Security scan would be performed here"
             fi
@@ -256,7 +256,7 @@ jobs:
           for patch in "${security_patches[@]}"; do
             IFS=':' read -r package cve description <<< "$patch"
             echo "Checking patch: $package ($cve - $description)"
-            
+
             # Check if patch is present in Dockerfiles
             if grep -q "$package" docker/Dockerfile* 2>/dev/null; then
               echo "✅ $package patch is applied"
@@ -281,7 +281,7 @@ jobs:
 
           ## Applied Security Patches
           - ✅ VDB-216777/CVE-2020-36632: flat@5.0.2 (Prototype pollution)
-          - ✅ CVE-2025-9288: sha.js@2.4.12 (Cypress SHA.js vulnerability) 
+          - ✅ CVE-2025-9288: sha.js@2.4.12 (Cypress SHA.js vulnerability)
           - ✅ CVE-2024-37890: ws@8.17.1 (WebSocket DoS vulnerability)
 
           ## Security Scanning
@@ -309,7 +309,7 @@ jobs:
           for patch in "${security_patches[@]}"; do
             IFS=':' read -r package cve description <<< "$patch"
             echo "Checking patch: $package ($cve - $description)"
-            
+
             # Check if patch is present in Dockerfiles
             if grep -q "$package" docker/Dockerfile* 2>/dev/null; then
               echo "✅ $package patch is applied"
@@ -334,7 +334,7 @@ jobs:
 
           ## Applied Security Patches
           - ✅ VDB-216777/CVE-2020-36632: flat@5.0.2 (Prototype pollution)
-          - ✅ CVE-2025-9288: sha.js@2.4.12 (Cypress SHA.js vulnerability) 
+          - ✅ CVE-2025-9288: sha.js@2.4.12 (Cypress SHA.js vulnerability)
           - ✅ CVE-2024-37890: ws@8.17.1 (WebSocket DoS vulnerability)
 
           ## Security Scanning
@@ -356,16 +356,16 @@ jobs:
             # Parse SARIF for severity levels
             critical_count=$(jq '[.runs[].results[] | select(.level == "error")] | length' dependency-security-scan.sarif 2>/dev/null || echo "0")
             high_count=$(jq '[.runs[].results[] | select(.level == "warning")] | length' dependency-security-scan.sarif 2>/dev/null || echo "0")
-            
+
             echo "Critical vulnerabilities: $critical_count"
             echo "High/Warning vulnerabilities: $high_count"
-            
+
             if [[ $critical_count -gt 0 ]]; then
               echo "::error::Critical vulnerabilities found! Immediate action required."
               # Create issue for critical vulnerabilities
               echo "Critical security issues detected - manual review required"
             fi
-            
+
             if [[ $high_count -gt 10 ]]; then
               echo "::warning::Multiple security issues found - review recommended."
             fi
@@ -406,17 +406,17 @@ jobs:
           # Check for broken internal links in markdown files
           find docs/ wiki-content/ -name "*.md" -type f | while read -r file; do
             echo "Checking links in $file"
-            
+
             # Extract markdown links
             grep -oE '\[.*\]\([^)]+\)' "$file" | while read -r link; do
               url=$(echo "$link" | sed 's/.*(\([^)]*\)).*/\1/')
-              
+
               # Check internal file links (relative paths)
               if [[ ! "$url" =~ ^https?:// ]] && [[ ! "$url" =~ ^# ]]; then
                 # Resolve relative path
                 dir=$(dirname "$file")
                 target_file="$dir/$url"
-                
+
                 if [[ ! -f "$target_file" ]] && [[ ! -d "$target_file" ]]; then
                   echo "::warning::Broken link in $file: $url"
                 fi
@@ -459,7 +459,7 @@ jobs:
             for file in wiki-content/*.md; do
               filename=$(basename "$file")
               wiki_file="wiki-repo/$filename"
-              
+
               if [[ -f "$wiki_file" ]]; then
                 if ! diff -q "$file" "$wiki_file" > /dev/null; then
                   echo "::warning::Wiki content out of sync: $filename"
@@ -503,7 +503,7 @@ jobs:
                 status: 'completed',
                 per_page: 100
               });
-              
+
               for (const run of runs.data.workflow_runs) {
                 const runDate = new Date(run.created_at);
                 if (runDate < cutoffDate) {
@@ -586,13 +586,13 @@ jobs:
           script_issues=0
           find scripts/ -name "*.sh" -type f | while read -r script; do
             echo "Checking $script..."
-            
+
             # Check if executable
             if [[ ! -x "$script" ]]; then
               echo "::warning::Script $script is not executable"
               ((script_issues++))
             fi
-            
+
             # Check syntax
             if ! bash -n "$script" 2>/dev/null; then
               echo "::error::Script $script has syntax errors"
