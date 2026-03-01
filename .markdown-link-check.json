@@ -23,6 +23,12 @@
       "pattern": "^https://github\\.com/.*/wiki/"
     },
     {
+      "pattern": "^https://github\\.com/users/.*/projects/"
+    },
+    {
+      "pattern": "^https?://localhost[:/]"
+    },
+    {
       "pattern": "^#"
     }
   ]
