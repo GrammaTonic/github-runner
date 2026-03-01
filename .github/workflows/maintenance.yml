@@ -33,6 +33,18 @@ permissions:
   packages: read
   actions: write
 
+concurrency:
+  group: maintenance-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  ARTIFACT_RETENTION_DAYS: "30"
+  WORKFLOW_RUN_RETENTION_DAYS: "90"
+  # Security patch versions to monitor (single source of truth)
+  SECURITY_PATCH_FLAT: "flat@5.0.2"
+  SECURITY_PATCH_SHAJS: "sha.js@2.4.12"
+  SECURITY_PATCH_WS: "ws@8.17.1"
+
 jobs:
   version-tracking-update:
     name: Update Version Tracking
@@ -109,105 +121,91 @@ jobs:
             printf "%s=%s\n" "$name" "$value" >> "$GITHUB_OUTPUT"
           }
 
-          # Check GitHub Actions Runner releases
-          LATEST_RUNNER=$(curl -s https://api.github.com/repos/actions/runner/releases/latest | jq -r '.tag_name' | sed 's/v//')
+          # Check GitHub Actions Runner releases (with error handling)
+          LATEST_RUNNER=$(curl -sf --max-time 30 https://api.github.com/repos/actions/runner/releases/latest | jq -r '.tag_name' | sed 's/v//' || echo "")
+          if [[ -z "$LATEST_RUNNER" || "$LATEST_RUNNER" == "null" ]]; then
+            echo "::warning::Failed to fetch latest runner version from GitHub API"
+            LATEST_RUNNER="unknown"
+          fi
           write_output "latest-runner" "$LATEST_RUNNER"
 
-          # Check Node.js LTS versions
-          LATEST_NODE=$(curl -s https://nodejs.org/dist/index.json | jq -r '.[0].version' | sed 's/v//' | cut -d'.' -f1)
+          # Check Node.js LTS versions (with error handling)
+          LATEST_NODE=$(curl -sf --max-time 30 https://nodejs.org/dist/index.json | jq -r '.[0].version' | sed 's/v//' | cut -d'.' -f1 || echo "")
+          if [[ -z "$LATEST_NODE" || "$LATEST_NODE" == "null" ]]; then
+            echo "::warning::Failed to fetch latest Node.js version"
+            LATEST_NODE="unknown"
+          fi
           write_output "latest-node-major" "$LATEST_NODE"
 
           # Compare versions and set update flags
-          if [[ "${{ steps.extract-versions.outputs.runner-version }}" != "$LATEST_RUNNER" ]]; then
+          if [[ "$LATEST_RUNNER" != "unknown" ]] && [[ "${{ steps.extract-versions.outputs.runner-version }}" != "$LATEST_RUNNER" ]]; then
             write_output "runner-needs-update" "true"
           fi
 
-      - name: Update VERSION_OVERVIEW.md
+      - name: Report version status
         if: inputs.force_update == true || steps.check-updates.outputs.runner-needs-update == 'true'
         run: |
-          echo "Updating version documentation..."
+          echo "## Version Status Report"
+          echo "Current runner: ${{ steps.extract-versions.outputs.runner-version }}"
+          echo "Latest runner:  ${{ steps.check-updates.outputs.latest-runner }}"
+          echo "Current Node:   ${{ steps.extract-versions.outputs.node-version }}"
+          echo "Latest Node:    ${{ steps.check-updates.outputs.latest-node-major }}"
 
-          # Update the VERSION_OVERVIEW.md with current versions
-          if [[ -f "docs/VERSION_OVERVIEW.md" ]]; then
-            # Update last updated date
-            sed -i "s/\*\*Last Updated\*\*:.*/\*\*Last Updated\*\*: $(date '+%B %d, %Y')/" docs/VERSION_OVERVIEW.md
-
-            # Update GitHub Actions Runner version if changed
-            if [[ "${{ steps.check-updates.outputs.runner-needs-update }}" == "true" ]]; then
-              echo "GitHub Actions Runner update available: ${{ steps.check-updates.outputs.latest-runner }}"
-              # In a real scenario, this would update the version references
-            fi
+          if [[ "${{ steps.check-updates.outputs.runner-needs-update }}" == "true" ]]; then
+            echo "::notice::GitHub Actions Runner update available: ${{ steps.check-updates.outputs.latest-runner }}"
           fi
 
   update-docker-base-images:
-    name: Update Docker Base Images
+    name: Audit Docker Base Images
     runs-on: ubuntu-latest
     if: inputs.update_type == 'all' || inputs.update_type == 'docker-images' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check for Ubuntu base image updates
+      - name: Check Docker base image versions
         run: |
-          echo "Checking for Docker base image updates..."
+          echo "::notice::Docker base image updates are managed by Dependabot (see .github/dependabot.yml)"
+          echo "Current Docker base images:"
 
-          # Check current Ubuntu version in Dockerfiles
-          current_ubuntu=$(grep -E '^FROM ubuntu:' docker/Dockerfile | head -1 | cut -d':' -f2)
-          echo "Current Ubuntu version: $current_ubuntu"
-
-          # Check for newer Ubuntu LTS versions
-          echo "Checking for newer Ubuntu LTS releases..."
-
-          # In practice, you might use Docker Hub API or vulnerability scanning
-          echo "Current base image: ubuntu:$current_ubuntu"
-          echo "Base image security status: ✅ Using supported LTS version"
-
-      - name: Check for security updates in base images
-        run: |
-          # Run security scan on base images
-          echo "Scanning base images for security updates..."
-
-          # Check both standard and Chrome Dockerfiles
-          for dockerfile in docker/Dockerfile docker/Dockerfile.chrome; do
+          for dockerfile in docker/Dockerfile docker/Dockerfile.chrome docker/Dockerfile.chrome-go; do
             if [[ -f "$dockerfile" ]]; then
-              echo "Checking $dockerfile for security updates..."
-              base_image=$(grep -E '^FROM' "$dockerfile" | head -1 | cut -d' ' -f2)
-              echo "Base image: $base_image"
+              base_image=$(grep -E '^FROM ' "$dockerfile" | head -1 | cut -d' ' -f2)
+              echo "  $(basename "$dockerfile"): $base_image"
+            fi
+          done
 
-              # In practice, you'd pull and scan the image
-              echo "Security scan would be performed here"
+      - name: Verify security patches in Dockerfiles
+        run: |
+          echo "Verifying security patches are present in Dockerfiles..."
+
+          for patch in "$SECURITY_PATCH_FLAT" "$SECURITY_PATCH_SHAJS" "$SECURITY_PATCH_WS"; do
+            if grep -q "$patch" docker/Dockerfile* 2>/dev/null; then
+              echo "  ✅ $patch applied"
+            else
+              echo "::warning::Security patch may be missing: $patch"
             fi
           done
 
   update-github-actions:
-    name: Update GitHub Actions
+    name: Audit GitHub Actions Versions
     runs-on: ubuntu-latest
     if: inputs.update_type == 'all' || inputs.update_type == 'github-actions' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check for action updates
+      - name: Audit current action versions
         run: |
-          echo "Checking for GitHub Actions updates..."
+          echo "::notice::GitHub Actions version updates are managed by Dependabot (see .github/dependabot.yml)"
+          echo "## Actions currently in use:"
 
-          # Extract current actions and versions
           find .github/workflows -name "*.yml" -o -name "*.yaml" | \
-          xargs grep -h "uses:" | \
-          sort | uniq | \
-          while read -r line; do
-            echo "Found action: $line"
+          xargs grep -hE '^\s+uses:' | \
+          sed 's/.*uses:\s*//' | \
+          sort -u | while read -r action; do
+            echo "  - $action"
           done
-
-      - name: Update actions if needed
-        run: |
-          # This would contain logic to update GitHub Actions to latest versions
-          # For now, just a placeholder
-          echo "No GitHub Actions updates required at this time"
 
   security-vulnerability-monitoring:
     name: Enhanced Security Monitoring
@@ -224,7 +222,9 @@ jobs:
         uses: ./.github/actions/install-trivy
 
       - name: Run comprehensive security scan
+        id: trivy-scan
         uses: aquasecurity/trivy-action@0.34.1
+        continue-on-error: true
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -233,6 +233,7 @@ jobs:
           skip-setup-trivy: true
 
       - name: Upload security scan results
+        if: steps.trivy-scan.outcome == 'success'
         uses: github/codeql-action/upload-sarif@v4
         continue-on-error: true
         with:
@@ -245,9 +246,9 @@ jobs:
 
           # Check if known security fixes are still applied
           security_patches=(
-            "flat@5.0.2:VDB-216777/CVE-2020-36632:Prototype pollution fix"
-            "sha.js@2.4.12:CVE-2025-9288:Cypress dependency fix"
-            "ws@8.17.1:CVE-2024-37890:WebSocket DoS fix"
+            "${SECURITY_PATCH_FLAT}:VDB-216777/CVE-2020-36632:Prototype pollution fix"
+            "${SECURITY_PATCH_SHAJS}:CVE-2025-9288:Cypress dependency fix"
+            "${SECURITY_PATCH_WS}:CVE-2024-37890:WebSocket DoS fix"
           )
 
           for patch in "${security_patches[@]}"; do
@@ -296,6 +297,10 @@ jobs:
         run: |
           echo "Analyzing security scan results..."
 
+          if [[ "${{ steps.trivy-scan.outcome }}" == "failure" ]]; then
+            echo "::warning::Trivy scan failed — SARIF results may be incomplete"
+          fi
+
           if [[ -f "dependency-security-scan.sarif" ]]; then
             # Parse SARIF for severity levels
             critical_count=$(jq '[.runs[].results[] | select(.level == "error")] | length' dependency-security-scan.sarif 2>/dev/null || echo "0")
@@ -320,7 +325,7 @@ jobs:
         with:
           name: security-status-report
           path: security-status.md
-          retention-days: 30
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
   documentation-maintenance:
     name: Documentation Maintenance
@@ -332,15 +337,13 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update documentation timestamps
+      - name: Check documentation timestamps
         run: |
-          echo "Updating documentation timestamps..."
+          echo "Checking documentation timestamps..."
 
-          # Update VERSION_OVERVIEW.md last updated date
           if [[ -f "docs/VERSION_OVERVIEW.md" ]]; then
-            current_date=$(date '+%B %d, %Y')
-            sed -i "s/\*\*Last Updated\*\*:.*/\*\*Last Updated\*\*: $current_date/" docs/VERSION_OVERVIEW.md
-            echo "Updated VERSION_OVERVIEW.md timestamp"
+            last_updated=$(grep -oP '\*\*Last Updated\*\*:\s*\K.*' docs/VERSION_OVERVIEW.md || echo "unknown")
+            echo "VERSION_OVERVIEW.md last updated: $last_updated"
           fi
 
       - name: Validate documentation links
@@ -393,23 +396,16 @@ jobs:
             fi
           done
 
-      - name: Update wiki content synchronization
+      - name: Check wiki content status
         run: |
-          echo "Synchronizing wiki content..."
+          echo "Checking wiki content..."
 
-          # Check if wiki-content and wiki-repo are in sync
-          if [[ -d "wiki-content" ]] && [[ -d "wiki-repo" ]]; then
-            # Compare key files
-            for file in wiki-content/*.md; do
-              filename=$(basename "$file")
-              wiki_file="wiki-repo/$filename"
-
-              if [[ -f "$wiki_file" ]]; then
-                if ! diff -q "$file" "$wiki_file" > /dev/null; then
-                  echo "::warning::Wiki content out of sync: $filename"
-                fi
-              fi
-            done
+          if [[ -d "wiki-content" ]]; then
+            wiki_count=$(find wiki-content -name "*.md" -type f | wc -l)
+            echo "Wiki content files: $wiki_count"
+            echo "::notice::Wiki sync is handled by the auto-sync-docs workflow"
+          else
+            echo "::warning::wiki-content directory not found"
           fi
 
   cleanup-old-artifacts:
@@ -429,9 +425,9 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - 90);
+            cutoffDate.setDate(cutoffDate.getDate() - parseInt('${{ env.WORKFLOW_RUN_RETENTION_DAYS }}'));
 
-            console.log(`Cleaning up workflow runs older than ${cutoffDate.toISOString()}`);
+            console.log(`Cleaning up workflow runs older than ${cutoffDate.toISOString()} (${{ env.WORKFLOW_RUN_RETENTION_DAYS }} days)`);
 
             const workflows = await github.rest.actions.listRepoWorkflows({
               owner,
@@ -470,16 +466,13 @@ jobs:
 
       - name: Cleanup old container images
         run: |
-          echo "Cleaning up old container images..."
-
-          # This would clean up old images from GitHub Container Registry
-          # For now, just log what would be cleaned
-          echo "Would clean up container images older than 30 days"
-          echo "Keeping latest 10 versions of each image"
+          echo "::notice::Container image cleanup is a placeholder — manual review recommended"
+          echo "Retention policy: keep images from last $WORKFLOW_RUN_RETENTION_DAYS days"
 
   comprehensive-health-check:
     name: Comprehensive Repository Health Check
     runs-on: ubuntu-latest
+    if: inputs.update_type == 'all' || inputs.update_type == 'version-tracking' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -537,8 +530,8 @@ jobs:
               ((script_issues++))
             fi
 
-            # Check syntax
-            if ! bash -n "$script" 2>/dev/null; then
+            # Check syntax (show errors for debugging)
+            if ! bash -n "$script"; then
               echo "::error::Script $script has syntax errors"
               ((script_issues++))
             fi
@@ -615,9 +608,9 @@ jobs:
 
           # Check for known security patches in Dockerfiles
           security_patches=(
-            "flat@5.0.2"
-            "sha.js@2.4.12"
-            "ws@8.17.1"
+            "$SECURITY_PATCH_FLAT"
+            "$SECURITY_PATCH_SHAJS"
+            "$SECURITY_PATCH_WS"
           )
 
           for patch in "${security_patches[@]}"; do
@@ -688,7 +681,7 @@ jobs:
         with:
           name: comprehensive-health-report
           path: comprehensive-health-report.md
-          retention-days: 30
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
   maintenance-summary:
     name: Maintenance Summary
@@ -723,6 +716,7 @@ jobs:
 
           success_count=0
           failed_count=0
+          skipped_count=0
 
           echo "# Maintenance Workflow Summary" > maintenance-summary.md
           echo "" >> maintenance-summary.md
@@ -735,19 +729,26 @@ jobs:
 
           set +e
           for status in "${jobs_status[@]}"; do
-            echo "- $status" >> maintenance-summary.md
             if [[ "$status" == *"success"* ]]; then
+              echo "- ✅ $status" >> maintenance-summary.md
               ((success_count++))
             elif [[ "$status" == *"failure"* ]]; then
+              echo "- ❌ $status" >> maintenance-summary.md
               ((failed_count++))
+            elif [[ "$status" == *"skipped"* ]]; then
+              echo "- ⏭️ $status" >> maintenance-summary.md
+              ((skipped_count++))
+            else
+              echo "- ⚠️ $status" >> maintenance-summary.md
             fi
           done
           set -e
 
           echo "" >> maintenance-summary.md
           echo "## Summary" >> maintenance-summary.md
-          echo "- ✅ Successful jobs: $success_count" >> maintenance-summary.md
-          echo "- ❌ Failed jobs: $failed_count" >> maintenance-summary.md
+          echo "- ✅ Successful: $success_count" >> maintenance-summary.md
+          echo "- ❌ Failed: $failed_count" >> maintenance-summary.md
+          echo "- ⏭️ Skipped: $skipped_count" >> maintenance-summary.md
           echo "" >> maintenance-summary.md
           echo "## Actions Taken" >> maintenance-summary.md
           echo "- Security vulnerability scanning completed" >> maintenance-summary.md
@@ -769,4 +770,4 @@ jobs:
         with:
           name: maintenance-summary
           path: maintenance-summary.md
-          retention-days: 30
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
