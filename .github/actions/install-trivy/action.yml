@@ -15,7 +15,13 @@ runs:
       shell: bash
       run: |
         TRIVY_VERSION="${{ inputs.trivy-version }}"
-        echo "Installing Trivy (${TRIVY_VERSION})"
-        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-          | sudo sh -s -- -b /usr/local/bin "${TRIVY_VERSION}"
+        if [[ "${TRIVY_VERSION}" == "latest" ]]; then
+          echo "Installing Trivy (latest)"
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sudo sh -s -- -b /usr/local/bin
+        else
+          echo "Installing Trivy ${TRIVY_VERSION}"
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sudo sh -s -- -b /usr/local/bin "${TRIVY_VERSION}"
+        fi
         trivy --version
