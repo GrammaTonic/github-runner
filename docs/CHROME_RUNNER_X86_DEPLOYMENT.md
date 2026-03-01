@@ -31,6 +31,7 @@ This guide helps you deploy the GitHub Actions Chrome runner on x86_64 architect
 ## Quick Start
 
 ### 1. Configure Environment
+
 ```bash
 # Copy and edit configuration
 cp config/chrome-runner.env.example config/chrome-runner.env
@@ -40,18 +41,21 @@ nano config/chrome-runner.env  # or your preferred editor
 ```
 
 **Required configuration:**
+
 ```bash
 GITHUB_TOKEN=ghp_your_actual_token_here
 GITHUB_REPOSITORY=your-username/your-repo-name
 ```
 
 ### 2. Deploy Chrome Runner
+
 ```bash
 # Run the deployment script
 ./scripts/deploy-chrome-x86.sh
 ```
 
 ### 3. Verify Deployment
+
 ```bash
 # Check status
 ./scripts/deploy-chrome-x86.sh status
@@ -75,10 +79,12 @@ docker compose -f docker/docker-compose.chrome.yml --env-file config/chrome-runn
 ## Troubleshooting
 
 ### Architecture Issues
+
 - Ensure you're running on x86_64 architecture
 - Check with: `uname -m` (should return `x86_64`)
 
 ### Permission Issues
+
 - The deployment script handles permission fixes automatically
 - If manual deployment, ensure config.sh has execute permissions
 
