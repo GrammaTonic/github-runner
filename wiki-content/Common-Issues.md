@@ -48,7 +48,7 @@ services:
     shm_size: 4g # Increase from default 64MB
 ```
 
-2. **Add Chrome stability flags:**
+1. **Add Chrome stability flags:**
 
 ```bash
 --memory-pressure-off
@@ -127,7 +127,7 @@ curl -H "Authorization: token YOUR_TOKEN" https://api.github.com/user
 # - workflow (update workflows)
 ```
 
-2. **Verify repository format:**
+1. **Verify repository format:**
 
 ```bash
 # Correct format
@@ -138,7 +138,7 @@ GITHUB_REPOSITORY=https://github.com/owner/repo  # ❌
 GITHUB_REPOSITORY=owner/repo.git                # ❌
 ```
 
-3. **Check token expiration:**
+1. **Check token expiration:**
 
 ```bash
 # Check token expiration
@@ -167,7 +167,7 @@ RUNNER_NAME=runner-$(hostname)-$(date +%s)
 RUNNER_NAME=runner-$(cat /proc/self/cgroup | head -1 | cut -d/ -f3 | cut -c1-12)
 ```
 
-2. **Remove existing runners:**
+1. **Remove existing runners:**
 
 ```bash
 # List current runners
@@ -202,7 +202,7 @@ newgrp docker
 docker ps
 ```
 
-2. **Check Docker daemon status:**
+1. **Check Docker daemon status:**
 
 ```bash
 # Start Docker service
@@ -213,7 +213,7 @@ sudo systemctl enable docker
 docker version
 ```
 
-3. **Mount Docker socket correctly:**
+1. **Mount Docker socket correctly:**
 
 ```yaml
 volumes:
@@ -246,7 +246,7 @@ docker volume prune -f
 docker system prune -a --volumes -f
 ```
 
-2. **Monitor disk usage:**
+1. **Monitor disk usage:**
 
 ```bash
 # Check Docker disk usage
@@ -259,7 +259,7 @@ docker ps -s
 docker volume ls
 ```
 
-3. **Configure log rotation:**
+1. **Configure log rotation:**
 
 ```yaml
 services:
@@ -293,14 +293,14 @@ steps:
       token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-2. **Configure Git credentials:**
+1. **Configure Git credentials:**
 
 ```bash
 # In runner entrypoint
 git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 ```
 
-3. **Check token scope:**
+1. **Check token scope:**
 
 ```bash
 # Token needs 'repo' scope for private repositories
@@ -332,7 +332,7 @@ deploy:
       cpus: "0.5"
 ```
 
-2. **Optimize Docker builds:**
+1. **Optimize Docker builds:**
 
 ```dockerfile
 # Use multi-stage builds
@@ -344,7 +344,7 @@ FROM node:16-alpine as runtime
 COPY --from=builder /app/node_modules ./node_modules
 ```
 
-3. **Enable build caching:**
+1. **Enable build caching:**
 
 ```yaml
 volumes:
@@ -375,7 +375,7 @@ free -h
 watch -n 5 'docker stats --no-stream'
 ```
 
-2. **Set memory limits:**
+1. **Set memory limits:**
 
 ```yaml
 deploy:
@@ -384,7 +384,7 @@ deploy:
       memory: 2g
 ```
 
-3. **Enable automatic restarts:**
+1. **Enable automatic restarts:**
 
 ```yaml
 restart: unless-stopped
@@ -420,7 +420,7 @@ curl -v https://api.github.com
 curl -x proxy.company.com:8080 https://api.github.com
 ```
 
-2. **Configure proxy settings:**
+1. **Configure proxy settings:**
 
 ```bash
 # Environment variables
@@ -431,7 +431,7 @@ export NO_PROXY=localhost,127.0.0.1,10.0.0.0/8
 # Docker proxy configuration
 ```
 
-3. **Check firewall rules:**
+1. **Check firewall rules:**
 
 ```bash
 # Required ports
@@ -462,7 +462,7 @@ RUNNER_LABELS=self-hosted,linux,x64,docker
 # Settings → Actions → Runners
 ```
 
-2. **Configure proper scaling:**
+1. **Configure proper scaling:**
 
 ```bash
 # Scale up
@@ -472,7 +472,7 @@ docker compose up -d --scale runner=5
 docker ps --filter "name=runner"
 ```
 
-3. **Monitor job queue:**
+1. **Monitor job queue:**
 
 ```bash
 # Check queued jobs
@@ -553,7 +553,7 @@ docker version
 docker compose version
 ```
 
-2. **Configuration:**
+1. **Configuration:**
 
 ```bash
 # Environment variables (redact secrets)
@@ -563,7 +563,7 @@ env | grep -E "GITHUB|RUNNER|DOCKER" | sed 's/TOKEN=.*/TOKEN=***/'
 docker compose config
 ```
 
-3. **Logs:**
+1. **Logs:**
 
 ```bash
 # Container logs

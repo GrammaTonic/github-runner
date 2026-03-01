@@ -14,7 +14,7 @@ Steps (run locally):
 
 Example commands:
 
-# Example documenting architecture enforcement:
+# Example documenting architecture enforcement
 
 #
 

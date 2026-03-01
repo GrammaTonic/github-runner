@@ -117,6 +117,7 @@ docker-compose -f docker/docker-compose.chrome.yml up -d
    - Update any custom build scripts
 
 3. **Deploy New Version:**
+
    ```bash
    docker-compose down
    docker-compose pull

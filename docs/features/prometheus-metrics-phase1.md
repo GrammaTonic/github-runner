@@ -26,6 +26,7 @@ Phase 1 of the Prometheus monitoring implementation adds a custom metrics endpoi
 The following metrics are exposed on `http://localhost:9091/metrics`:
 
 #### 1. Runner Status (`github_runner_status`)
+
 - **Type**: Gauge
 - **Description**: Runner online/offline status (1=online, 0=offline)
 - **Usage**: Monitor runner availability
@@ -37,6 +38,7 @@ github_runner_status 1
 ```
 
 #### 2. Runner Information (`github_runner_info`)
+
 - **Type**: Gauge
 - **Description**: Runner metadata with labels for name, type, and version
 - **Labels**: `runner_name`, `runner_type`, `version`
@@ -49,6 +51,7 @@ github_runner_info{runner_name="docker-runner",runner_type="standard",version="2
 ```
 
 #### 3. Runner Uptime (`github_runner_uptime_seconds`)
+
 - **Type**: Counter
 - **Description**: Runner uptime in seconds since container start
 - **Usage**: Track runner stability and identify restarts
@@ -60,6 +63,7 @@ github_runner_uptime_seconds 150
 ```
 
 #### 4. Job Counts (`github_runner_jobs_total`)
+
 - **Type**: Counter
 - **Description**: Total number of jobs processed by status
 - **Labels**: `status` (total, success, failed)
@@ -74,6 +78,7 @@ github_runner_jobs_total{status="failed"} 2
 ```
 
 #### 5. Last Update Timestamp (`github_runner_last_update_timestamp`)
+
 - **Type**: Gauge
 - **Description**: Unix timestamp of last metrics update
 - **Usage**: Verify metrics collection is active
@@ -263,6 +268,7 @@ docker exec github-runner-main ps aux | grep metrics
 **Cause**: Metrics file not generated or collector not running
 
 **Solution**:
+
 ```bash
 # Check collector status
 docker exec github-runner-main ps aux | grep metrics-collector
@@ -276,6 +282,7 @@ docker-compose -f docker/docker-compose.production.yml restart
 **Cause**: Collector script crashed or update interval misconfigured
 
 **Solution**:
+
 ```bash
 # Check collector logs
 docker exec github-runner-main tail -50 /tmp/metrics-collector.log
@@ -289,6 +296,7 @@ docker exec github-runner-main env | grep METRICS_UPDATE_INTERVAL
 **Cause**: Port not exposed or firewall blocking
 
 **Solution**:
+
 ```bash
 # Verify port is exposed in container
 docker port github-runner-main

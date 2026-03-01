@@ -1,6 +1,7 @@
 # Code Scanning Security Fixes
 
 ## Overview
+
 This document summarizes the code scanning security issues that were identified and fixed in this repository.
 
 ## Issues Fixed
@@ -11,11 +12,13 @@ This document summarizes the code scanning security issues that were identified 
 **Location**: Line 404
 **Severity**: Medium
 **Original Code**:
+
 ```bash
 for container in $containers; do
 ```
 
 **Fixed Code**:
+
 ```bash
 while IFS= read -r container; do
     [[ -z "$container" ]] && continue
@@ -31,6 +34,7 @@ done <<< "$containers"
 **Location**: Lines 156, 161, 162, 164
 **Severity**: Info
 **Changes Made**:
+
 - Line 156: `case ${TARGETARCH} in` → `case "${TARGETARCH}" in`
 - Line 161: Quoted file path in test condition
 - Line 162: Quoted curl output path
@@ -41,6 +45,7 @@ done <<< "$containers"
 ## Validation
 
 All fixes have been validated using:
+
 - ShellCheck for shell scripts
 - Hadolint for Dockerfiles
 - Bash syntax verification
@@ -55,6 +60,7 @@ All fixes have been validated using:
 ## Additional Notes
 
 The repository already has good security practices in place:
+
 - Input validation in entrypoint scripts
 - Secure temporary file handling with `mktemp`
 - Regular Trivy security scans

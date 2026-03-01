@@ -128,7 +128,7 @@ docker run -d --shm-size=2g \
 jobs:
         run: npx playwright test
 ```
- 
+
 - ✅ **Chrome Dockerfile validation** - Docker build syntax checks
 - ✅ **Docker Compose validation** - Configuration file validation
 - ✅ **Build script testing** - Shell script syntax validation

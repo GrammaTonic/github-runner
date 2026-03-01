@@ -33,6 +33,7 @@ The performance optimizations have **exceeded expectations** across all metrics:
 | **Chrome-Go Runner** | 6-9 min | 2.5-3.5 min expected | **4m 34s** | **48-59% faster** ✅ |
 
 **Analysis:**
+
 - Standard and Chrome runners achieved **near-instant builds** due to 100% cache hits
 - Chrome-Go runner required partial rebuild (ubuntu:resolute base image change)
 - All runners significantly exceeded performance targets
@@ -51,6 +52,7 @@ The performance optimizations have **exceeded expectations** across all metrics:
 | **Total Saved** | **~685MB** | **Per rebuild** |
 
 **Cross-Branch Cache Evidence:**
+
 - Standard runner: All 23 layers marked `CACHED`
 - Chrome runner: All 26 layers marked `CACHED`
 - Chrome-Go runner: Partial cache (base image changed from ubuntu:24.04 to ubuntu:resolute)
@@ -70,12 +72,14 @@ The performance optimizations have **exceeded expectations** across all metrics:
 **Job:** Build Docker Images  
 **Duration:** 19 seconds  
 **Cache Performance:**
+
 - Layers #11-23: All marked `CACHED`
 - No downloads required
 - No package installations
 - Multi-stage build fully cached
 
 **Log Evidence:**
+
 ```
 2025-11-15T22:50:43.3158393Z #11 CACHED
 2025-11-15T22:50:43.3159967Z #12 CACHED
@@ -89,6 +93,7 @@ The performance optimizations have **exceeded expectations** across all metrics:
 **Job:** Build Chrome Runner Image  
 **Duration:** 24 seconds  
 **Cache Performance:**
+
 - Layers #11-26: All marked `CACHED`
 - Chrome binary: Cached (150MB saved)
 - ChromeDriver: Cached (5MB saved)
@@ -96,6 +101,7 @@ The performance optimizations have **exceeded expectations** across all metrics:
 - Playwright chromium: Cached (~140MB saved)
 
 **Log Evidence:**
+
 ```
 2025-11-15T22:50:47.2105233Z #11 CACHED
 2025-11-15T22:50:47.2118869Z #12 CACHED
@@ -108,18 +114,21 @@ The performance optimizations have **exceeded expectations** across all metrics:
 **Job:** Build Chrome-Go Runner Image  
 **Duration:** 4 minutes 34 seconds (274 seconds)  
 **Cache Performance:**
+
 - Partial rebuild required due to base image change (ubuntu:24.04 → ubuntu:resolute)
 - Layer #13-14: Building dependency tree (APT operations)
 - Downloads still cached where applicable
 - Go toolchain cached (130MB saved)
 
 **Why Longer?**
+
 - Base image change from ubuntu:24.04 to ubuntu:resolute invalidated early layers
 - APT package installations rebuilt for new base image
 - Still ~50% faster than baseline estimate (6-9 min vs 4.6 min)
 - Future builds with stable base will achieve similar cache performance to other runners
 
 **Log Evidence:**
+
 ```
 2025-11-15T22:50:52.5432726Z #13 2.867 Building dependency tree...
 2025-11-15T22:50:58.4549048Z #13 8.762 Building dependency tree...
@@ -151,6 +160,7 @@ The performance optimizations have **exceeded expectations** across all metrics:
 ### Cross-Branch Cache Sharing - VALIDATED ✅
 
 **Evidence:**
+
 - Feature branch builds populated `buildcache` scope
 - Develop branch builds successfully read from `buildcache`
 - No redundant downloads or package installations
@@ -188,6 +198,7 @@ The performance optimizations have **exceeded expectations** across all metrics:
 | **Total per rebuild** | **~985MB** | Downloaded | Cached | **~985MB** |
 
 **Annual Savings (estimated):**
+
 - Builds per day: ~10
 - Builds per year: ~3,650
 - Bandwidth saved: **~3.6 TB/year**
@@ -198,6 +209,7 @@ The performance optimizations have **exceeded expectations** across all metrics:
 ## 🔧 What Made This Possible
 
 ### 1. BuildKit Cache Mounts ⭐⭐⭐⭐⭐
+
 **Impact: Critical**
 
 ```dockerfile
@@ -221,6 +233,7 @@ RUN --mount=type=cache,target=/home/runner/.npm-cache \
 **Result:** 100% cache hit rate on all unchanged dependencies
 
 ### 2. Cross-Branch Cache Sharing ⭐⭐⭐⭐⭐
+
 **Impact: Critical**
 
 ```yaml
@@ -238,6 +251,7 @@ CACHE_TO: |
 **Result:** Feature branch builds benefit develop/main, eliminate redundant rebuilds
 
 ### 3. Multi-Stage Build (Standard Runner) ⭐⭐⭐⭐
+
 **Impact: High**
 
 ```dockerfile
@@ -253,9 +267,11 @@ COPY --from=builder /actions-runner /actions-runner
 **Result:** 370MB smaller images (2.18GB → 1.81GB)
 
 ### 4. Version Pinning ⭐⭐⭐⭐
+
 **Impact: High**
 
 All external dependencies pinned to specific versions:
+
 - Ubuntu: `24.04` / `resolute`
 - Runner: `2.331.0`
 - Chrome: `142.0.7444.162`
@@ -274,6 +290,7 @@ All external dependencies pinned to specific versions:
 From `PERFORMANCE_OPTIMIZATIONS.md`:
 
 > **Expected improvements:**
+>
 > - 🚀 **50-70% faster rebuilds** with cache hits
 > - 💾 **~985MB less download traffic** per rebuild
 > - ⚡ **Near-instant dependency installation** on rebuilds
@@ -303,14 +320,15 @@ From `PERFORMANCE_OPTIMIZATIONS.md`:
 ### What Needs Attention
 
 1. **Chrome-Go runner ubuntu:resolute** - Base image instability causes cache invalidation
-  - **Solution:** Consider pinning to specific ubuntu:resolute snapshot
-   - **Or:** Switch to ubuntu:24.04 with manual Go/Chrome updates
-   
-2. **Cache size monitoring** - GitHub Actions 10GB cache limit
+
+- **Solution:** Consider pinning to specific ubuntu:resolute snapshot
+- **Or:** Switch to ubuntu:24.04 with manual Go/Chrome updates
+
+1. **Cache size monitoring** - GitHub Actions 10GB cache limit
    - **Current usage:** Unknown (need to monitor)
    - **Action:** Add cache size reporting to workflow
-   
-3. **Cache eviction** - 7-day limit may affect infrequent builds
+
+2. **Cache eviction** - 7-day limit may affect infrequent builds
    - **Mitigation:** Regular scheduled builds to keep cache warm
 
 ### Surprises
