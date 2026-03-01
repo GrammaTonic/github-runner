@@ -222,7 +222,7 @@ This implementation plan provides a fully executable roadmap for adding Promethe
 | TASK-073 | Create PR from `feature/prometheus-improvements` to `develop` with comprehensive description using `.github/pull_request_template.md` | | |
 | TASK-074 | Address PR review comments and ensure CI/CD pipeline passes | | |
 | TASK-075 | Merge PR to `develop` using squash merge strategy | | |
-| TASK-076 | Perform back-sync from `main` to `develop` after merge (if merging to main) | | |
+| TASK-076 | Create promotion PR from `develop` → `main` using regular merge (no back-sync needed) | | |
 | TASK-077 | Tag release: `git tag -a v2.3.0 -m "Release v2.3.0: Prometheus Metrics & Grafana Dashboards"` | | |
 | TASK-078 | Push tag: `git push origin v2.3.0` | | |
 | TASK-079 | Create GitHub release with release notes and dashboard JSON attachments | | |

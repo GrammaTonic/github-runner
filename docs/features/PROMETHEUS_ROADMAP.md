@@ -274,8 +274,8 @@ gantt
 │ Sun-Mon (Dec 20-21): PR & Release                          │
 │   □ TASK-073: Create PR to develop branch                  │
 │   □ TASK-074: Address PR review comments                   │
-│   □ TASK-075: Merge PR with squash merge                   │
-│   □ TASK-076: Perform back-sync (develop ← main)           │
+│   □ TASK-075: Merge PR with squash merge (to develop)        │
+│   □ TASK-076: Regular merge develop → main (no back-sync)     │
 │   □ TASK-077: Tag release v2.3.0                           │
 │   □ TASK-078: Push tag to origin                           │
 │   □ TASK-079: Create GitHub release with dashboards        │

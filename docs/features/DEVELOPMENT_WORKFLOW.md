@@ -82,8 +82,38 @@ git push origin feature/your-feature-name
 ### 4. Release Process
 
 ```bash
-# When ready for release, create PR: develop → main (maintainers) or tag a release from main
-# This triggers production deployment after approval
+# When ready for release, create PR: develop → main (maintainers)
+# IMPORTANT: Use regular merge (NOT squash) for develop → main
+# This preserves commit ancestry and eliminates the need for back-sync
+gh pr merge <PR_NUMBER> --merge --body "Promote develop to main"
+```
+
+## 🔀 Merge Strategy
+
+**This repository uses a DUAL merge strategy:**
+
+| Direction | Strategy | Reason |
+|-----------|----------|--------|
+| Feature branch → `develop` | **Squash merge** | One clean commit per feature/fix on `develop` |
+| `develop` → `main` | **Regular merge** | Preserves shared commit history, no back-sync needed |
+| Dependabot PRs → `develop` | **Squash merge** | Auto-merged with squash (targets `develop` only) |
+
+**Key benefits:**
+- **No back-sync required** — regular merging `develop` → `main` preserves commit ancestry
+- **Clean integration branch** — each feature is a single squashed commit on `develop`
+- **Simplified workflow** — no post-merge back-sync step eliminates an entire class of errors
+
+**How to merge:**
+```bash
+# Feature branch → develop (SQUASH merge):
+gh pr merge <PR_NUMBER> --squash --delete-branch --body "<brief summary>"
+
+# develop → main (REGULAR merge — do NOT squash):
+gh pr merge <PR_NUMBER> --merge --body "Promote develop to main"
+
+# Via GitHub Web UI:
+# Feature → develop: Click "Squash and merge"
+# develop → main:    Click "Merge pull request" (NOT squash)
 ```
 
 ## 🛡️ Branch Protection Rules
