@@ -33,7 +33,7 @@ jobs:
 
       - name: Enable auto-merge
         run: |
-          # Enable auto-merge with squash merge strategy
+          # Enable auto-merge with squash strategy (Dependabot PRs target develop)
           gh pr merge "${{ github.event.pull_request.number }}" \
             --auto --squash \
             --subject "chore(deps): ${{ github.event.pull_request.title }}" \
