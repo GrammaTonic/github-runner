@@ -1,6 +1,6 @@
-# Using Ubuntu Questing for Chrome Runner
+# Using Ubuntu Resolute for Chrome Runner
 
-The Chrome runner image is built on `ubuntu:questing` to ensure compatibility with the latest browser and UI testing dependencies. This approach may result in more reported CVEs due to pre-release packages.
+The Chrome runner image is built on `ubuntu:resolute` to ensure compatibility with the latest browser and UI testing dependencies. This approach may result in more reported CVEs due to pre-release packages.
 
 #### CVE Handling
 

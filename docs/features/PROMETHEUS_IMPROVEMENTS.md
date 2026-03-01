@@ -131,7 +131,7 @@ github_runner_cache_hit_rate{runner_name="runner-1", cache_type="apt"} 0.95
 github_runner_cache_hit_rate{runner_name="runner-1", cache_type="npm"} 0.78
 
 # Runner info
-github_runner_info{runner_name="runner-1", runner_type="standard", version="2.329.0"} 1
+github_runner_info{runner_name="runner-1", runner_type="standard", version="2.331.0"} 1
 ```
 
 ### DORA Metrics (Derived from Runner Metrics)
@@ -299,7 +299,7 @@ github_runner_uptime_seconds{runner_name="$RUNNER_NAME",runner_type="$RUNNER_TYP
 
 # HELP github_runner_info Runner information
 # TYPE github_runner_info gauge
-github_runner_info{runner_name="$RUNNER_NAME",runner_type="$RUNNER_TYPE",version="2.329.0"} 1
+github_runner_info{runner_name="$RUNNER_NAME",runner_type="$RUNNER_TYPE",version="2.331.0"} 1
 METRICS
 
   sleep 30

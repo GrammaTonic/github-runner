@@ -1,6 +1,6 @@
-# Base Image: Ubuntu Questing (25.10 Pre-release)
+# Base Image: Ubuntu Resolute (25.10 Pre-release)
 
-This project uses `ubuntu:questing` for the Chrome runner to ensure compatibility with the latest browser dependencies. CVE mitigation is performed via npm overrides, local installs, and automated Trivy scans. See README and DEPLOYMENT for details.
+This project uses `ubuntu:resolute` for the Chrome runner to ensure compatibility with the latest browser dependencies. CVE mitigation is performed via npm overrides, local installs, and automated Trivy scans. See README and DEPLOYMENT for details.
 # GitHub Actions Self-Hosted Runner Wiki
 
 Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Runner project!
@@ -10,7 +10,7 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 ### � **Release v2.2.0 Available** (November 14, 2025)
 
 - **Image Versions**: Standard Runner v2.2.0, Chrome Runner v2.2.0 with npm `tar@7.5.2` override
-- **Browser Stack**: Chrome 142.0.7444.162, Playwright 1.55.1, Cypress 13.15.0, Node.js 24.11.1
+- **Browser Stack**: Chrome 142.0.7444.162, Playwright 1.58.2, Cypress 15.11.0, Node.js 24.14.0
 - **Documentation Sync**: README, changelog, wiki, and release notes fully updated — see [Release Notes v2.2.0](../docs/releases/RELEASE_NOTES_v2.2.0.md)
 - **Quality Gates**: Docker validation, security scans, and runner self-tests passing ✅
 
@@ -25,7 +25,7 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 
 - **Status**: ✅ Production Ready - All 10/10 CI/CD checks passing
 - **Performance**: 60% faster web UI tests with resource isolation
-- **Latest Versions**: Playwright 1.55.1, Cypress 13.15.0 with security patches
+- **Latest Versions**: Playwright 1.58.2, Cypress 15.11.0 with security patches
 - **Documentation**: [Chrome Runner Guide](Chrome-Runner.md)
 
 ## 📊 **Current Versions**
@@ -33,10 +33,10 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 | Component                 | Standard Runner | Chrome Runner | Security Status         |
 | ------------------------- | --------------- | ------------- | ----------------------- |
 | **Image Version**         | v2.2.0          | v2.2.0        | ✅ Latest               |
-| **GitHub Actions Runner** | v2.329.0        | v2.329.0      | ✅ Latest               |
-| **Node.js**               | -               | 24.11.1       | ✅ Chrome Runner Only   |
-| **Playwright**            | -               | 1.55.1        | ✅ Latest               |
-| **Cypress**               | -               | 13.15.0       | ✅ Security Patched |
+| **GitHub Actions Runner** | v2.331.0        | v2.331.0      | ✅ Latest               |
+| **Node.js**               | -               | 24.14.0       | ✅ Chrome Runner Only   |
+| **Playwright**            | -               | 1.58.2        | ✅ Latest               |
+| **Cypress**               | -               | 15.11.0       | ✅ Latest               |
 
 > 📋 **Full Version Details**: [Version Overview](../docs/VERSION_OVERVIEW.md)
 
@@ -106,7 +106,7 @@ docker-compose up -d
 
 - Release v2.2.0 documentation refreshed across README, changelog, wiki, and release notes
 - npm `tar@7.5.2` override documented for reproducible package installs and security posture
-- Chrome runner guidance updated for Playwright 1.55.1, Cypress 13.15.0, and Chrome 142.0.7444.162
+- Chrome runner guidance updated for Playwright 1.58.2, Cypress 15.11.0, and Chrome 142.0.7444.162
 - Validation scripts and runner self-tests rerun to confirm Docker image health for release
 - Troubleshooting, quick start, and version tables synced with latest component inventory
 

@@ -1,6 +1,6 @@
-# Base Image: Ubuntu Questing (25.10 Pre-release)
+# Base Image: Ubuntu Resolute (25.10 Pre-release)
 
-This repository uses `ubuntu:questing` as the base image for Chrome runner containers. This is a pre-release version of Ubuntu (25.10) chosen for access to the latest system libraries and browser dependencies.
+This repository uses `ubuntu:resolute` as the base image for Chrome runner containers. This is a pre-release version of Ubuntu (25.10) chosen for access to the latest system libraries and browser dependencies.
 
 **CVE Mitigation Strategy:**
 - Many CVEs in Node.js, npm, and transitive dependencies cannot be patched directly due to upstream packaging.
@@ -29,13 +29,13 @@ Note: Documentation workflows and repo prompts were recently improved — see
 | Component                 | Standard Runner  | Chrome Runner    | Chrome-Go Runner | Status            |
 | ------------------------- | ---------------- | ---------------- | ---------------- | ----------------- |
 | **Image Version**         | v2.2.1           | v2.2.1           | v2.2.1           | ✅ Latest         |
-| **GitHub Actions Runner** | v2.329.0         | v2.329.0         | v2.329.0         | ✅ Latest         |
-| **Base OS**               | Ubuntu 25.10 Questing | Ubuntu 25.10 Questing | Ubuntu 25.10 Questing | ✅ Pre-release |
-| **Node.js**               | -                | 24.11.1          | 24.11.1          | ✅ Latest         |
-| **Go**                    | -                | -                | 1.25.4           | ✅ Latest         |
+| **GitHub Actions Runner** | v2.331.0         | v2.331.0         | v2.331.0         | ✅ Latest         |
+| **Base OS**               | Ubuntu 25.10 Resolute | Ubuntu 25.10 Resolute | Ubuntu 25.10 Resolute | ✅ Pre-release |
+| **Node.js**               | -                | 24.14.0          | 24.14.0          | ✅ Latest         |
+| **Go**                    | -                | -                | 1.26.0           | ✅ Latest         |
 | **Python**                | 3.10+            | 3.10+            | 3.10+            | ✅ Latest         |
-| **Playwright**            | -                | v1.55.1          | v1.55.1          | ✅ Latest         |
-| **Cypress**               | -                | v13.15.0         | v13.15.0         | ✅ Security Fixed |
+| **Playwright**            | -                | v1.58.2          | v1.58.2          | ✅ Latest         |
+| **Cypress**               | -                | v15.11.0         | v15.11.0         | ✅ Latest         |
 | **Chrome**                | -                | 142.0.7444.162   | 142.0.7444.162   | ✅ Latest         |
 
 > 📋 For detailed version information, see [Version Overview](docs/VERSION_OVERVIEW.md)
@@ -70,11 +70,11 @@ Note: Documentation workflows and repo prompts were recently improved — see
 - ✅ **Dependabot Automation**: Zero-touch dependency updates with auto-merge and hourly auto-rebase workflows
 - ✅ **Performance Optimizations**: BuildKit cache mounts reduce build times by 50-70% (19s standard, 24s Chrome, 4m34s Chrome-Go)
 - ✅ **Multi-Stage Builds**: Standard runner image reduced by 370MB (17% smaller) with improved security
-- ✅ **Chrome-Go Runner**: New variant combining Go 1.25.4 toolchain with browser testing capabilities
+- ✅ **Chrome-Go Runner**: New variant combining Go 1.26.0 toolchain with browser testing capabilities
 - ✅ **Cross-Branch Caching**: Feature branches leverage develop/main cache, eliminating redundant rebuilds
 - ✅ **Image Size Optimizations**: Standard ~1.8GB, Chrome ~4.1GB, Chrome-Go ~4.5GB (all optimized)
 - ✅ **CI/CD Enhancements**: Conditional Dependabot provisioning, artifact status files, clean logs
-- ✅ Chrome runners updated to Chrome `142.0.7444.162`, Playwright `1.55.1`, and Cypress `13.15.0`
+- ✅ Chrome runners updated to Chrome `142.0.7444.162`, Playwright `1.58.2`, and Cypress `15.11.0`
 - ✅ npm override to force `tar@7.5.4` inside all embedded npm distributions, closing CVE-2026-23950 (upgraded from 7.5.2)
 
 ## 📦 Installation

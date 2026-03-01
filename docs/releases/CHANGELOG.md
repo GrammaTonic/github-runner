@@ -1,13 +1,18 @@
 # Changelog
 
 ## [Unreleased]
-- Pending items
+- Update Node.js to **24.14.0** (LTS Krypton) in Chrome and Chrome-Go runners.
+- Update npm to **11.11.0** in Chrome and Chrome-Go runners.
+- Update Go to **1.26.0** in Chrome-Go runner.
+- Update Playwright to **1.58.2** and `@playwright/test` to **1.58.2** in Chrome and Chrome-Go runners.
+- Update Cypress to **15.11.0** in Chrome and Chrome-Go runners.
+- Update security package overrides: `tar@7.5.9`, `brace-expansion@5.0.4`, `@isaacs/brace-expansion@5.0.1`, `glob@13.0.6`, `minimatch@10.2.4`, `diff@8.0.3`.
 
 ## [v2.2.0] - 2025-11-14
 - Promote standard, Chrome, and Chrome-Go runner images to **v2.2.0**.
 - Force `tar@7.5.2`, `cross-spawn@7.0.6`, and `brace-expansion@2.0.2` into every npm distribution (system, global, embedded) to mitigate CVE-2024-47554 and related advisories.
 - Update Chrome runner stacks to Chrome **142.0.7444.162**, Playwright **1.55.1**, Cypress **13.15.0**, and Node.js **24.11.1**.
-- Refresh documentation, version overview, and wiki pages for Questing base image guidance and release automation workflow parity.
+- Refresh documentation, version overview, and wiki pages for Resolute base image guidance and release automation workflow parity.
 
 ## v1.1.1 - 2025-01-15
 

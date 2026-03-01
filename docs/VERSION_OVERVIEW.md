@@ -9,14 +9,14 @@ This document provides a comprehensive overview of all software versions, depend
 ### 1. Standard Runner (`docker/Dockerfile`)
 
 **Image Version**: v2.2.0
-**Base Image**: `ubuntu:questing` (25.10 Pre-release)
+**Base Image**: `ubuntu:resolute` (25.10 Pre-release)
 **Purpose**: General-purpose GitHub Actions runner with development tools
 **Target Architectures**: `linux/amd64` only
 
 ### 2. Chrome Runner (`docker/Dockerfile.chrome`)
 
 **Image Version**: v2.2.0
-**Base Image**: `ubuntu:questing` (25.10 Pre-release)
+**Base Image**: `ubuntu:resolute` (25.10 Pre-release)
 **Purpose**: Chrome-optimized runner for web UI testing and browser automation
 **Target Architectures**: `linux/amd64` only (ARM builds are blocked for Chrome runner)
 
@@ -24,14 +24,14 @@ This document provides a comprehensive overview of all software versions, depend
 
 ### GitHub Actions Runner
 
-- **Version**: `2.330.0`
+- **Version**: `2.331.0`
 - **Source**: GitHub official releases
-- **Download URL**: `https://github.com/actions/runner/releases/download/v2.330.0/`
+- **Download URL**: `https://github.com/actions/runner/releases/download/v2.331.0/`
 - **Security Status**: ✅ Latest stable version
 
 ### Operating System
 
-**Base OS**: Ubuntu 25.1sss0 Questing (Pre-release)
+**Base OS**: Ubuntu 25.10 Resolute (Pre-release)
 **Architecture Support**: amd64 only for Chrome Runner; Standard Runner is amd64
 **Kernel Version**: Linux kernel 6.10+
 - **Security Updates**: Applied via `apt-get update` during build
@@ -42,7 +42,7 @@ This document provides a comprehensive overview of all software versions, depend
 
 | Package           | Version                            | Purpose                |
 | ----------------- | ---------------------------------- | ---------------------- |
-| `nodejs`          | 24.11.1 (Chrome Runner only)       | JavaScript runtime     |
+| `nodejs`          | 24.14.0 (Chrome Runner only)       | JavaScript runtime     |
 | `npm`             | Latest available                   | Package manager        |
 | `python3`         | 3.10+ (Ubuntu 25.10 default)       | Python runtime         |
 | `python3-pip`     | Latest available                   | Python package manager |
@@ -70,13 +70,13 @@ This document provides a comprehensive overview of all software versions, depend
 
 | Package            | Version    | Security Status                                  |
 | ------------------ | ---------- | ------------------------------------------------ |
-| `playwright`       | **1.55.1** | ✅ Latest stable                                 |
-| `cypress`          | **13.15.0** | ✅ **Security Fix** (CVE-2025-9288)              |
-| `@playwright/test` | **1.55.1** | ✅ Test framework                                |
+| `playwright`       | **1.58.2** | ✅ Latest stable                                 |
+| `cypress`          | **15.11.0** | ✅ Latest stable                                |
+| `@playwright/test` | **1.58.2** | ✅ Test framework                                |
 | `flat`             | **5.0.2**  | ✅ **Security Fix** (VDB-216777, CVE-2020-36632) |
 | `sha.js`           | **2.4.12** | ✅ **Security Fix** (CVE-2025-9288)              |
 | `ws`               | **8.17.1** | ✅ **Security Fix** (CVE-2024-37890)             |
-| `nodejs`           | **24.11.1** | ✅ Latest LTS for Chrome Runner                  |
+| `nodejs`           | **24.14.0** | ✅ Latest LTS for Chrome Runner                  |
 
 ### Python Ecosystem
 
@@ -267,8 +267,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 ### Recent Changes
 
-- **2025-11-14**: Release v2.2.0 with npm `tar@7.5.2` override, Chrome 142.0.7444.162, Playwright 1.55.1, Cypress 13.15.0, and refreshed Questing-based documentation.
-- **2025-09-14**: Updated to Ubuntu 25.10 Questing, image version v2.0.9, Chrome 142.0.7444.162, Playwright 1.55.0, Cypress 15.1.0, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
+- **2025-11-14**: Release v2.2.0 with npm `tar@7.5.2` override, Chrome 142.0.7444.162, Playwright 1.55.1, Cypress 13.15.0, and refreshed Resolute-based documentation.
+- **2025-09-14**: Updated to Ubuntu 25.10 Resolute, image version v2.0.9, Chrome 142.0.7444.162, Playwright 1.55.0, Cypress 15.1.0, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
 - **2025-09-10**: Extensive documentation update for Ubuntu 24.04 LTS, image version v2.0.2, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
 - **2025-01-15**: Applied VDB-216777/CVE-2020-36632 flat package security fix
 - **2025-01-15**: Added comprehensive security patches for Chrome Runner

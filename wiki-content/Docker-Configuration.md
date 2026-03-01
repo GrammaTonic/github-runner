@@ -1,6 +1,6 @@
-# Questing Base Image and CVE Mitigation
+# Resolute Base Image and CVE Mitigation
 
-The Chrome runner uses `ubuntu:questing` for latest browser support. CVEs are mitigated via npm overrides, local installs, and Trivy scan automation. For production, use a stable Ubuntu LTS base.
+The Chrome runner uses `ubuntu:resolute` for latest browser support. CVEs are mitigated via npm overrides, local installs, and Trivy scan automation. For production, use a stable Ubuntu LTS base.
 # Docker Configuration
 
 Complete guide to configuring Docker and Docker Compose for GitHub Actions self-hosted runners.
@@ -168,7 +168,7 @@ RUN apt-get update && apt-get install -y \
 # GitHub Actions Runner stage
 FROM base as runner
 
-ARG RUNNER_VERSION=2.329.0
+ARG RUNNER_VERSION=2.331.0
 ARG TARGETPLATFORM
 
 # Create runner user
@@ -211,7 +211,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Download runner
-ARG RUNNER_VERSION=2.329.0
+ARG RUNNER_VERSION=2.331.0
 WORKDIR /tmp
 RUN curl -o actions-runner.tar.gz \
     -L https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz

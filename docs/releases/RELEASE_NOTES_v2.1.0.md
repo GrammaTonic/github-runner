@@ -1,10 +1,10 @@
 # Release Notes v2.1.0
 
 ## Highlights
-- Chrome runner now uses `ubuntu:questing` (25.10 pre-release) for latest browser and system dependencies. Standard runner also updated to questing base image.
+- Chrome runner now uses `ubuntu:resolute` (25.10 pre-release) for latest browser and system dependencies. Standard runner also updated to resolute base image.
 - CVE mitigation strategy documented: npm overrides, local installs, Trivy scan automation, and audit workflow.
 - All images are scanned with Trivy; results saved to `test-results/docker/` for compliance and review.
-- Documentation and wiki updated to reflect questing usage and security practices.
+- Documentation and wiki updated to reflect resolute usage and security practices.
 - Migration notes for switching to stable Ubuntu LTS for production included in README and DEPLOYMENT docs.
 
 ## Security & Compliance

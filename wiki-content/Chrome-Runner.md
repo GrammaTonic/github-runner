@@ -95,10 +95,10 @@ jobs:
 
 #### **Testing Frameworks**
 
-- ✅ **Playwright 1.55.1** - Microsoft's modern browser automation (latest stable)
-- ✅ **Cypress 13.15.0** - JavaScript end-to-end testing (security patched)
+- ✅ **Playwright 1.58.2** - Microsoft's modern browser automation (latest stable)
+- ✅ **Cypress 15.11.0** - JavaScript end-to-end testing (latest stable)
 - ✅ **Selenium** - Industry standard web automation with webdriver-manager
-- ✅ **Node.js 24.11.1** - For npm-based testing tools (Chrome Runner only)
+- ✅ **Node.js 24.14.0** - For npm-based testing tools (Chrome Runner only)
 - ✅ **Python 3** - For Python-based testing frameworks
 
 #### **Security Patches Applied** 🔒
@@ -110,7 +110,7 @@ jobs:
 
 #### **GitHub Actions Runner**
 
-- ✅ **Version**: 2.329.0 (Latest stable)
+- ✅ **Version**: 2.331.0 (Latest stable)
 - ✅ **Image Version**: v2.2.0 (Chrome Runner)
 - ✅ **Architecture**: AMD64 only
 - ✅ **Auto-registration**: Automatic GitHub registration and cleanup
