@@ -47,6 +47,7 @@ ENV DISPLAY=:99
 ENV PATH="/home/runner/.npm/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/sbin:/bin:/opt/chrome-linux64:/actions-runner:/usr/local/go/bin"
 ENV NODE_PATH="/home/runner/.npm/lib/node_modules"
 ENV PLAYWRIGHT_BROWSERS_PATH="/home/runner/.cache/ms-playwright"
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome
 ENV NPM_VERSION=${NPM_VERSION}
 ENV PLAYWRIGHT_VERSION=${PLAYWRIGHT_VERSION}
 ENV PLAYWRIGHT_TEST_VERSION=${PLAYWRIGHT_TEST_VERSION}
