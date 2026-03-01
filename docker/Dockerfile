@@ -17,6 +17,10 @@ ARG ISAACS_BRACE_EXPANSION_VERSION="5.0.1"
 ARG GLOB_VERSION="13.0.6"
 ARG MINIMATCH_VERSION="10.2.4"
 ARG DIFF_VERSION="8.0.3"
+# Versions for nested node-gyp and @tufjs/models sub-modules
+# Fixes: CVE-2025-64756 (glob), CVE-2026-26996, CVE-2026-27903, CVE-2026-27904 (minimatch)
+ARG NODE_GYP_GLOB_VERSION="10.5.0"
+ARG NESTED_MINIMATCH_VERSION="9.0.7"
 
 # --- ENVIRONMENT VARIABLES ---
 ENV DEBIAN_FRONTEND=noninteractive
@@ -76,6 +80,8 @@ RUN --mount=type=cache,target=/tmp/npm-cache,uid=1001,gid=1001 \
     validate_semver "${GLOB_VERSION}" || { echo "Invalid GLOB_VERSION: ${GLOB_VERSION}"; exit 1; }; \
     validate_semver "${MINIMATCH_VERSION}" || { echo "Invalid MINIMATCH_VERSION: ${MINIMATCH_VERSION}"; exit 1; }; \
     validate_semver "${DIFF_VERSION}" || { echo "Invalid DIFF_VERSION: ${DIFF_VERSION}"; exit 1; }; \
+    validate_semver "${NODE_GYP_GLOB_VERSION}" || { echo "Invalid NODE_GYP_GLOB_VERSION: ${NODE_GYP_GLOB_VERSION}"; exit 1; }; \
+    validate_semver "${NESTED_MINIMATCH_VERSION}" || { echo "Invalid NESTED_MINIMATCH_VERSION: ${NESTED_MINIMATCH_VERSION}"; exit 1; }; \
     for NODE_ROOT in /actions-runner/externals/node*/ ; do \
         if [ -x "${NODE_ROOT}bin/node" ] && [ -d "${NODE_ROOT}lib/node_modules/npm" ]; then \
             NPM_DIR="${NODE_ROOT}lib/node_modules/npm"; \
@@ -85,6 +91,15 @@ RUN --mount=type=cache,target=/tmp/npm-cache,uid=1001,gid=1001 \
             rm -rf "${NPM_DIR}/node_modules/cross-spawn" "${NPM_DIR}/node_modules/tar" "${NPM_DIR}/node_modules/brace-expansion" "${NPM_DIR}/node_modules/@isaacs/brace-expansion" "${NPM_DIR}/node_modules/glob" "${NPM_DIR}/node_modules/minimatch" "${NPM_DIR}/node_modules/diff"; \
             cp -a "${PATCH_DIR}/node_modules/." "${NPM_DIR}/node_modules/"; \
             rm -rf "${PATCH_DIR}" "${NPM_DIR}/node_modules/.npm"; \
+            NESTED_PATCH_DIR="$(mktemp -d)"; \
+            printf '{\n  "name": "runner-nested-patch",\n  "private": true,\n  "version": "1.0.0",\n  "dependencies": {\n    "glob": "%s",\n    "minimatch": "%s"\n  }\n}\n' "${NODE_GYP_GLOB_VERSION}" "${NESTED_MINIMATCH_VERSION}" > "${NESTED_PATCH_DIR}/package.json"; \
+            "${NODE_ROOT}bin/node" "${NPM_DIR}/bin/npm-cli.js" install --prefix="${NESTED_PATCH_DIR}" --omit=dev --cache /tmp/npm-cache; \
+            NODEGYP_NESTED="${NPM_DIR}/node_modules/node-gyp/node_modules"; \
+            if [ -d "${NODEGYP_NESTED}/glob" ]; then rm -rf "${NODEGYP_NESTED}/glob" && cp -a "${NESTED_PATCH_DIR}/node_modules/glob" "${NODEGYP_NESTED}/glob"; fi; \
+            if [ -d "${NODEGYP_NESTED}/minimatch" ]; then rm -rf "${NODEGYP_NESTED}/minimatch" && cp -a "${NESTED_PATCH_DIR}/node_modules/minimatch" "${NODEGYP_NESTED}/minimatch"; fi; \
+            TUFJS_NESTED="${NPM_DIR}/node_modules/@tufjs/models/node_modules"; \
+            if [ -d "${TUFJS_NESTED}/minimatch" ]; then rm -rf "${TUFJS_NESTED}/minimatch" && cp -a "${NESTED_PATCH_DIR}/node_modules/minimatch" "${TUFJS_NESTED}/minimatch"; fi; \
+            rm -rf "${NESTED_PATCH_DIR}"; \
         fi; \
     done
 
