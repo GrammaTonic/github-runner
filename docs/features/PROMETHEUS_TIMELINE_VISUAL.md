@@ -195,6 +195,6 @@ Legend:
 
 **Quick Navigation:**
 - 📋 [Full Roadmap](./PROMETHEUS_ROADMAP.md)
-- 📖 [Implementation Plan](/plan/feature-prometheus-monitoring-1.md)
+- 📖 [Implementation Plan](../../plan/feature-prometheus-monitoring-1.md)
 - 📄 [Feature Specification](./PROMETHEUS_IMPROVEMENTS.md)
 - 🔗 [GitHub Project #5](https://github.com/users/GrammaTonic/projects/5)

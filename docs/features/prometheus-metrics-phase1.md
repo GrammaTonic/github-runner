@@ -422,7 +422,7 @@ Extend metrics support to Chrome and Chrome-Go runner variants:
 
 For issues or questions:
 
-1. Check [SUPPORT.md](../community/SUPPORT.md)
+1. Check [CONTRIBUTING.md](../community/CONTRIBUTING.md)
 2. Search existing [GitHub Issues](https://github.com/GrammaTonic/github-runner/issues)
 3. Create a new issue with the `metrics` label
 

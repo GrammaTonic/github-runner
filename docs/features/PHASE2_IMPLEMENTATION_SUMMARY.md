@@ -239,8 +239,8 @@ sum(github_runner_jobs_total) by (runner_type, status)
 
 ## 📚 Documentation
 
-- **Testing Guide**: [tests/integration/PHASE2_TESTING_GUIDE.md](./tests/integration/PHASE2_TESTING_GUIDE.md)
-- **Integration Test**: [tests/integration/test-phase2-metrics.sh](./tests/integration/test-phase2-metrics.sh)
+- **Testing Guide**: [tests/integration/PHASE2_TESTING_GUIDE.md](../../tests/integration/PHASE2_TESTING_GUIDE.md)
+- **Integration Test**: [tests/integration/test-phase2-metrics.sh](../../tests/integration/test-phase2-metrics.sh)
 - **Issue #1060**: [Phase 2 Requirements](https://github.com/GrammaTonic/github-runner/issues/1060)
 - **Phase 1 PR**: [#1066](https://github.com/GrammaTonic/github-runner/pull/1066)
 
