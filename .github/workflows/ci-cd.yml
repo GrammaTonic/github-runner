@@ -11,6 +11,13 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [main, develop]
+    paths:
+      - "docker/**"
+      - "scripts/**"
+      - "config/**"
+      - "monitoring/**"
+      - ".github/workflows/**"
+      - "tests/**"
   pull_request:
     branches: [main, develop]
     paths:
@@ -60,8 +67,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
@@ -168,8 +173,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
@@ -274,8 +277,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
@@ -303,18 +304,18 @@ jobs:
           echo "Setting up Chrome-Go runner configuration..."
           # Copy the example config file
           cp config/chrome-go-runner.env.example config/chrome-go-runner.env
-          
+
           # Update the config file with actual values
           sed -i.bak "s|GITHUB_TOKEN=ghp_your_personal_access_token_here|GITHUB_TOKEN=$GITHUB_TOKEN|" config/chrome-go-runner.env
           sed -i.bak "s|GITHUB_REPOSITORY=your-username/your-repo-name|GITHUB_REPOSITORY=$GITHUB_REPOSITORY|" config/chrome-go-runner.env
-          
+
           echo "Provisioning Chrome-Go runner container in staging..."
           echo "Using configuration from config/chrome-go-runner.env"
           echo "Injecting GITHUB_TOKEN from secrets.REG_TOKEN"
-          
+
           # Use --env-file to load configuration
           docker compose --env-file config/chrome-go-runner.env -f docker/docker-compose.chrome-go.yml up -d
-          
+
           echo "Checking if Chrome-Go runner container is running..."
           RUNNING=$(docker ps --filter "name=github-runner-chrome-go" --filter "status=running" -q)
           if [ -z "$RUNNING" ]; then
@@ -410,7 +411,7 @@ jobs:
           recursive: true
           failure-threshold: warning
       - name: Lint Shell Scripts with ShellCheck
-        uses: ludeeus/action-shellcheck@master
+        uses: ludeeus/action-shellcheck@00b27aa7cb85167568cb48a3838b75f4265f2bca # master 2024-06-20
         with:
           scandir: './scripts'
           severity: warning
@@ -452,11 +453,8 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Install Trivy via apt
-        run: |
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -qq && sudo apt-get install -y trivy
+      - name: Install Trivy
+        uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner on filesystem
         uses: aquasecurity/trivy-action@0.34.1
         with:
@@ -473,9 +471,9 @@ jobs:
         continue-on-error: true
         with:
           sarif_file: "trivy-results.sarif"
-          category: "security-scan"
+          category: "cicd-filesystem-scan"
       - name: Check for secrets in repository
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@v3.88.1
         with:
           path: ./
           base: ${{ github.event.before }}
@@ -502,10 +500,21 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Compute build platforms
+        id: platforms
+        run: |
+          # Build multi-arch (arm64) only on main; develop/feature branches use amd64-only for speed
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "platforms=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
+          else
+            echo "platforms=linux/amd64" >> $GITHUB_OUTPUT
+          fi
       - name: Set up QEMU for multi-platform builds
         uses: docker/setup-qemu-action@v3
+        if: steps.platforms.outputs.platforms != 'linux/amd64'
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ steps.platforms.outputs.platforms }}
+          image: tonistiigi/binfmt:qemu-v10.2.1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Extract normal runner metadata
@@ -539,7 +548,7 @@ jobs:
             # Provide the default cache sources (multi-line) via GITHUB_ENV
             # Use cross-branch cache to leverage builds from feature branches and other branches
             printf "CACHE_FROM=type=gha\\ntype=gha,scope=normal-runner\\ntype=gha,scope=buildcache\\n" >> $GITHUB_ENV
-            printf "CACHE_TO=type=gha,mode=max,scope=normal-runner\\ntype=gha,mode=max,scope=buildcache\\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=normal-runner\\n" >> $GITHUB_ENV
             # Also emit as step outputs so other action inputs can reference them (multi-line)
             echo "cache_from<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha" >> $GITHUB_OUTPUT
@@ -548,7 +557,6 @@ jobs:
             echo "EOF" >> $GITHUB_OUTPUT
             echo "cache_to<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha,mode=max,scope=normal-runner" >> $GITHUB_OUTPUT
-            echo "type=gha,mode=max,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           fi
       - name: Build and push normal runner Docker image
@@ -556,7 +564,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./docker
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ steps.platforms.outputs.platforms }}
           file: ./docker/Dockerfile
           push: true
           load: false
@@ -576,17 +584,13 @@ jobs:
           echo "Normal runner image pushed to registry: $PRIMARY_TAG"
           echo "$PRIMARY_TAG" > build-normal-image-tag.txt
           echo "${{ steps.build.outputs.digest }}" > build-normal-image-digest.txt
-      - name: Upload normal runner build image tag as artifact
+      - name: Upload normal runner build artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: build-normal-image-tag
-          path: build-normal-image-tag.txt
-          retention-days: 30
-      - name: Upload normal runner build image digest as artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: build-normal-image-digest
-          path: build-normal-image-digest.txt
+          name: build-normal-image-artifacts
+          path: |
+            build-normal-image-tag.txt
+            build-normal-image-digest.txt
           retention-days: 30
   build-chrome:
     name: Build Chrome Runner Image
@@ -609,10 +613,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up QEMU for multi-platform builds
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: linux/amd64,linux/arm64
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Extract Chrome runner metadata
@@ -646,7 +646,7 @@ jobs:
             # Provide the default cache sources (multi-line) via GITHUB_ENV
             # Use cross-branch cache to leverage builds from feature branches and other branches
             printf "CACHE_FROM=type=gha\\ntype=gha,scope=chrome-runner\\ntype=gha,scope=buildcache\\n" >> $GITHUB_ENV
-            printf "CACHE_TO=type=gha,mode=max,scope=chrome-runner\\ntype=gha,mode=max,scope=buildcache\\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=chrome-runner\\n" >> $GITHUB_ENV
             # Also emit as step outputs so other action inputs can reference them (multi-line)
             echo "cache_from<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha" >> $GITHUB_OUTPUT
@@ -655,7 +655,6 @@ jobs:
             echo "EOF" >> $GITHUB_OUTPUT
             echo "cache_to<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha,mode=max,scope=chrome-runner" >> $GITHUB_OUTPUT
-            echo "type=gha,mode=max,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           fi
       - name: Build and push Chrome runner image
@@ -683,17 +682,13 @@ jobs:
           echo "Chrome runner image pushed to registry: $PRIMARY_TAG"
           echo "$PRIMARY_TAG" > build-chrome-image-tag.txt
           echo "${{ steps.build-chrome.outputs.digest }}" > build-chrome-image-digest.txt
-      - name: Upload Chrome build image tag as artifact
+      - name: Upload Chrome build artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: build-chrome-image-tag
-          path: build-chrome-image-tag.txt
-          retention-days: 30
-      - name: Upload Chrome build image digest as artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: build-chrome-image-digest
-          path: build-chrome-image-digest.txt
+          name: build-chrome-image-artifacts
+          path: |
+            build-chrome-image-tag.txt
+            build-chrome-image-digest.txt
           retention-days: 30
   build-chrome-go:
     name: Build Chrome-Go Runner Image
@@ -716,10 +711,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up QEMU for multi-platform builds
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: linux/amd64,linux/arm64
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Extract Chrome-Go runner metadata
@@ -753,7 +744,7 @@ jobs:
             # Provide the default cache sources (multi-line) via GITHUB_ENV
             # Use cross-branch cache to leverage builds from feature branches and other branches
             printf "CACHE_FROM=type=gha\\ntype=gha,scope=chrome-go-runner\\ntype=gha,scope=buildcache\\n" >> $GITHUB_ENV
-            printf "CACHE_TO=type=gha,mode=max,scope=chrome-go-runner\\ntype=gha,mode=max,scope=buildcache\\n" >> $GITHUB_ENV
+            printf "CACHE_TO=type=gha,mode=max,scope=chrome-go-runner\\n" >> $GITHUB_ENV
             # Also emit as step outputs so other action inputs can reference them (multi-line)
             echo "cache_from<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha" >> $GITHUB_OUTPUT
@@ -762,7 +753,6 @@ jobs:
             echo "EOF" >> $GITHUB_OUTPUT
             echo "cache_to<<EOF" >> $GITHUB_OUTPUT
             echo "type=gha,mode=max,scope=chrome-go-runner" >> $GITHUB_OUTPUT
-            echo "type=gha,mode=max,scope=buildcache" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           fi
       - name: Build and push Chrome-Go runner image
@@ -790,17 +780,13 @@ jobs:
           echo "Chrome-Go runner image pushed to registry: $PRIMARY_TAG"
           echo "$PRIMARY_TAG" > build-chrome-go-image-tag.txt
           echo "${{ steps.build-chrome-go.outputs.digest }}" > build-chrome-go-image-digest.txt
-      - name: Upload Chrome-Go build image tag as artifact
+      - name: Upload Chrome-Go build artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: build-chrome-go-image-tag
-          path: build-chrome-go-image-tag.txt
-          retention-days: 30
-      - name: Upload Chrome-Go build image digest as artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: build-chrome-go-image-digest
-          path: build-chrome-go-image-digest.txt
+          name: build-chrome-go-image-artifacts
+          path: |
+            build-chrome-go-image-tag.txt
+            build-chrome-go-image-digest.txt
           retention-days: 30
   # Comprehensive Testing Suite
   test-package-validation:
@@ -889,7 +875,7 @@ jobs:
                 echo "✅ Docker Compose validation passed for $compose_file"
               else
                 echo "❌ Docker Compose validation failed for $compose_file"
-                echo "Error details:" 
+                echo "Error details:"
                 cat "test-results/integration/compose-$compose_name.log" | head -20
                 integration_errors=$((integration_errors + 1))
               fi
@@ -1133,11 +1119,8 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Install Trivy via apt
-        run: |
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -qq && sudo apt-get install -y trivy
+      - name: Install Trivy
+        uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner on container
         uses: aquasecurity/trivy-action@0.34.1
         with:
@@ -1153,7 +1136,7 @@ jobs:
         continue-on-error: true
         with:
           sarif_file: "trivy-container-results.sarif"
-          category: "container-scan"
+          category: "cicd-container-scan"
   security-chrome-scan:
     name: Chrome Container Security Scan
     runs-on: ubuntu-latest
@@ -1166,11 +1149,8 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Install Trivy via apt
-        run: |
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -qq && sudo apt-get install -y trivy
+      - name: Install Trivy
+        uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner on Chrome container
         uses: aquasecurity/trivy-action@0.34.1
         with:
@@ -1186,7 +1166,7 @@ jobs:
         continue-on-error: true
         with:
           sarif_file: "trivy-chrome-results.sarif"
-          category: "chrome-container-scan"
+          category: "cicd-chrome-container-scan"
   security-chrome-go-scan:
     name: Chrome-Go Container Security Scan
     runs-on: ubuntu-latest
@@ -1199,11 +1179,8 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Install Trivy via apt
-        run: |
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -qq && sudo apt-get install -y trivy
+      - name: Install Trivy
+        uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner on Chrome-Go container
         uses: aquasecurity/trivy-action@0.34.1
         with:
@@ -1219,7 +1196,7 @@ jobs:
         continue-on-error: true
         with:
           sarif_file: "trivy-chrome-go-results.sarif"
-          category: "chrome-go-container-scan"
+          category: "cicd-chrome-go-container-scan"
   cleanup:
     name: Cleanup Resources
     runs-on: ubuntu-latest

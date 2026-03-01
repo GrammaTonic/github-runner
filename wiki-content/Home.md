@@ -7,14 +7,19 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 
 ## 🎯 **Latest Updates**
 
-### � **Release v2.2.0 Available** (November 14, 2025)
+### 🚀 **Release v2.4.0 Available** (March 1, 2026)
 
-- **Image Versions**: Standard Runner v2.2.0, Chrome Runner v2.2.0 with npm `tar@7.5.2` override
-- **Browser Stack**: Chrome 142.0.7444.162, Playwright 1.58.2, Cypress 15.11.0, Node.js 24.14.0
-- **Documentation Sync**: README, changelog, wiki, and release notes fully updated — see [Release Notes v2.2.0](../docs/releases/RELEASE_NOTES_v2.2.0.md)
+- **Image Versions**: Standard Runner v2.4.0, Chrome Runner v2.4.0, Chrome-Go Runner v2.4.0
+- **Base Image**: Switched to `ubuntu:resolute` (25.10) across all Dockerfiles for latest browser dependencies
+- **Browser Stack**: Chrome for Testing **146.0.7680.31**, Playwright **1.58.2**, Cypress **15.11.0**, Node.js **24.14.0** (LTS Krypton), npm **11.11.0**
+- **Go Toolchain**: Go **1.26.0** in Chrome-Go runner
+- **GitHub Actions Runner**: Bumped to **v2.331.0**
+- **Security Overrides**: `tar@7.5.9`, `brace-expansion@5.0.4`, `@isaacs/brace-expansion@5.0.1`, `glob@13.0.6`, `minimatch@10.2.4`, `diff@8.0.3`
+- **CI/CD Fix**: Trivy scanner now installs via apt repository (fixes broken wget download); `trivy-action` pinned to `0.34.1`
+- **Playwright**: Configured to use system Chrome binary via `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`
 - **Quality Gates**: Docker validation, security scans, and runner self-tests passing ✅
 
-### �🔒 **Critical Security Improvements** (January 15, 2025)
+### 🔒 **Critical Security Improvements** (January 15, 2025)
 
 - **Security Patches**: ✅ VDB-216777/CVE-2020-36632, CVE-2025-9288, CVE-2024-37890 resolved
 - **Performance**: Optimized Docker images with comprehensive cache cleaning
@@ -30,13 +35,17 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 
 ## 📊 **Current Versions**
 
-| Component                 | Standard Runner | Chrome Runner | Security Status         |
-| ------------------------- | --------------- | ------------- | ----------------------- |
-| **Image Version**         | v2.2.0          | v2.2.0        | ✅ Latest               |
-| **GitHub Actions Runner** | v2.331.0        | v2.331.0      | ✅ Latest               |
-| **Node.js**               | -               | 24.14.0       | ✅ Chrome Runner Only   |
-| **Playwright**            | -               | 1.58.2        | ✅ Latest               |
-| **Cypress**               | -               | 15.11.0       | ✅ Latest               |
+| Component                 | Standard Runner | Chrome Runner      | Chrome-Go Runner   | Security Status         |
+| ------------------------- | --------------- | ------------------ | ------------------ | ----------------------- |
+| **Image Version**         | v2.4.0          | v2.4.0             | v2.4.0             | ✅ Latest               |
+| **Base Image**            | ubuntu:resolute | ubuntu:resolute    | ubuntu:resolute    | ✅ Latest               |
+| **GitHub Actions Runner** | v2.331.0        | v2.331.0           | v2.331.0           | ✅ Latest               |
+| **Node.js**               | -               | 24.14.0 (Krypton)  | 24.14.0 (Krypton)  | ✅ Chrome Runner Only   |
+| **npm**                   | -               | 11.11.0            | 11.11.0            | ✅ Latest               |
+| **Chrome for Testing**    | -               | 146.0.7680.31      | 146.0.7680.31      | ✅ Latest               |
+| **Playwright**            | -               | 1.58.2             | 1.58.2             | ✅ Latest               |
+| **Cypress**               | -               | 15.11.0            | 15.11.0            | ✅ Latest               |
+| **Go**                    | -               | -                  | 1.26.0             | ✅ Chrome-Go Only       |
 
 > 📋 **Full Version Details**: [Version Overview](../docs/VERSION_OVERVIEW.md)
 
