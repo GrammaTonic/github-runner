@@ -1,27 +1,18 @@
 name: 'Install Trivy'
-description: 'Install a pinned version of Trivy using the official install script. Replaces the duplicated inline install block used across multiple workflows.'
+description: 'Install Trivy via the official apt repository. Replaces the duplicated inline install block used across multiple workflows.'
 author: 'GrammaTonic'
-
-inputs:
-  trivy-version:
-    description: 'Trivy version to install (e.g. v0.62.0). Defaults to latest.'
-    required: false
-    default: 'latest'
 
 runs:
   using: 'composite'
   steps:
-    - name: Install Trivy
+    - name: Install Trivy via apt
       shell: bash
       run: |
-        TRIVY_VERSION="${{ inputs.trivy-version }}"
-        if [[ "${TRIVY_VERSION}" == "latest" ]]; then
-          echo "Installing Trivy (latest)"
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-            | sudo sh -s -- -b /usr/local/bin
-        else
-          echo "Installing Trivy ${TRIVY_VERSION}"
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-            | sudo sh -s -- -b /usr/local/bin "${TRIVY_VERSION}"
-        fi
+        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key \
+          | gpg --dearmor \
+          | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" \
+          | sudo tee /etc/apt/sources.list.d/trivy.list
+        sudo apt-get update -qq
+        sudo apt-get install -y trivy
         trivy --version
