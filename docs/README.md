@@ -60,6 +60,17 @@ docs/
 - [Runner Self-Test](features/RUNNER_SELF_TEST.md) - Automated runner validation
 
 
+### Prometheus Monitoring
+
+- [Quick Start](features/PROMETHEUS_QUICKSTART.md) - 5-minute monitoring setup
+- [Setup Guide](features/PROMETHEUS_SETUP.md) - Full Prometheus and Grafana configuration
+- [Usage Guide](features/PROMETHEUS_USAGE.md) - PromQL queries, alerts, and dashboard customization
+- [Metrics Reference](features/PROMETHEUS_METRICS_REFERENCE.md) - Complete metric definitions
+- [Architecture](features/PROMETHEUS_ARCHITECTURE.md) - System design and data flow
+- [Troubleshooting](features/PROMETHEUS_TROUBLESHOOTING.md) - Common issues and fixes
+- [Grafana Dashboard Metrics](features/GRAFANA_DASHBOARD_METRICS.md) - Dashboard feature specification
+
+
 ### Releases
 
 - [Changelog](releases/CHANGELOG.md) - Full release history
