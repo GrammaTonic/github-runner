@@ -92,7 +92,7 @@ jobs:
           category: "baseline-filesystem-scan"
 
       - name: Upload SARIF as artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: trivy-filesystem-sarif
@@ -163,7 +163,7 @@ jobs:
           category: "baseline-container-scan-${{ matrix.variant }}"
 
       - name: Upload SARIF as artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: trivy-container-${{ matrix.variant }}-sarif

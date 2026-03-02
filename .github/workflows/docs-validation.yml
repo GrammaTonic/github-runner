@@ -107,7 +107,7 @@ jobs:
 
       - name: Upload Patch Artifact
         if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: docs-full-patch
           path: docs-full-patch.diff
