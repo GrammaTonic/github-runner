@@ -63,6 +63,13 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 - **[Chrome Runner](Chrome-Runner.md) 🆕** - Web UI testing and browser automation
 - [Docker Configuration](Docker-Configuration.md) - General Docker setup
 
+### Monitoring & Observability
+
+- **[Monitoring Setup](Monitoring-Setup.md) 🆕** - Prometheus metrics quick start and configuration
+- [Metrics Reference](Metrics-Reference.md) - All 8 runner metrics with PromQL examples
+- [Grafana Dashboards](Grafana-Dashboards.md) - 4 pre-built dashboards (54 panels)
+- [Monitoring Troubleshooting](Monitoring-Troubleshooting.md) - Fix common monitoring issues
+
 ### Configuration
 
 - [Production Deployment](Production-Deployment.md) - Production-ready deployment
@@ -94,9 +101,7 @@ docker-compose up -d
 | **Standard Runner**   | ✅ Stable           | [Installation Guide](Installation-Guide.md)       |
 | **CI/CD Pipeline**    | ✅ Passing          | [Production Deployment](Production-Deployment.md) |
 | **Security Scanning** | ✅ Clean            | [Common Issues](Common-Issues.md)                 |
-
-
-<!-- Links to missing docs removed for CI/CD compliance. -->
+| **Monitoring**        | ✅ Production Ready | [Monitoring Setup](Monitoring-Setup.md)            |
 
 ## 🚀 Quick Links
 

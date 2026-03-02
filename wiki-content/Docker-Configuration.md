@@ -16,13 +16,15 @@ Complete guide to configuring Docker and Docker Compose for GitHub Actions self-
 ├─────────────────────────────────────────┤
 │  Runner 1   │  Runner 2   │  Runner 3  │
 ├─────────────────────────────────────────┤
-│          Monitoring Stack              │
+│      Monitoring Stack (User-Provided)  │
 │  Prometheus │  Grafana   │  AlertMgr   │
 ├─────────────────────────────────────────┤
 │           Shared Volumes               │
 │   Cache    │  Workspace  │   Logs     │
 └─────────────────────────────────────────┘
 ```
+
+> 📖 **Monitoring Stack setup:** See [Monitoring Setup](Monitoring-Setup.md) for configuring Prometheus scraping and Grafana dashboards with your runners. Each runner exposes metrics on port 9091 (standard), 9092 (chrome), or 9093 (chrome-go).
 
 ## 📁 Docker Compose Configuration
 

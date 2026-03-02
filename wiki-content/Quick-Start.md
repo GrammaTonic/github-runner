@@ -109,8 +109,7 @@ docker system prune -a -f
 ## 🎯 What's Next?
 
 - **[Production Setup](Production-Deployment.md)** - Scale for production use
-
-<!-- Monitoring and Security docs not available. Links removed for CI/CD compliance. -->
+- **[Monitoring Setup](Monitoring-Setup.md)** - Prometheus metrics and Grafana dashboards
 - **[Troubleshooting](Common-Issues.md)** - Fix common problems
 
 ## 💡 Quick Tips
