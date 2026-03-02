@@ -153,16 +153,16 @@ This implementation plan provides a fully executable roadmap for adding Promethe
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-037 | Replaced `monitoring/grafana/dashboards/github-runner.json` with comprehensive DORA overview dashboard (24 panels across 4 rows: Runner Overview, DORA Metrics, Job Analysis, Performance) | ✅ | 2025-07-25 |
-| TASK-038 | Configure dashboard variables: `runner_name` (multi-select from `github_runner_info`), `runner_type` (multi-select: standard, chrome, chrome-go) | ✅ | 2025-07-25 |
+| TASK-037 | Create `monitoring/grafana/dashboards/runner-overview.json` — standalone Runner Overview dashboard (3 rows: Runner Status stats, Runner Health timeseries, Quick Links navigation). Replaced combined `github-runner.json` mega-dashboard. | ✅ | 2026-03-02 |
+| TASK-038 | Configure dashboard variables: `runner_name` (multi-select from `github_runner_info`), `runner_type` (multi-select: standard, chrome, chrome-go) — applied to all 4 dashboards | ✅ | 2025-07-25 |
 | TASK-039 | Create `monitoring/grafana/dashboards/dora-metrics.json` with panels: Deployment Frequency, Lead Time, Change Failure Rate, MTTR, trend charts, and DORA classification reference table | ✅ | 2025-07-25 |
-| TASK-040 | Performance trends panels integrated into github-runner.json Performance row (cache hit rate, CPU, memory) | ✅ | 2025-07-25 |
+| TASK-040 | Create standalone `monitoring/grafana/dashboards/performance-trends.json` — 4 rows: Performance Summary stats, Cache Performance timeseries, Resource Usage (CPU/Memory), Build Performance (duration percentiles, queue time, runner type comparison) | ✅ | 2026-03-02 |
 | TASK-041 | Create `monitoring/grafana/dashboards/job-analysis.json` with panels: Job Duration Histogram, Jobs by Status, Percentile Trends, Queue Time, Runner Comparison | ✅ | 2025-07-25 |
-| TASK-042 | Add dashboard metadata: title, description, tags, version, refresh interval (15s), time range (last 24h) | ✅ | 2025-07-25 |
-| TASK-043 | Dashboard JSON validated with python3 json.tool | ✅ | 2025-07-25 |
-| TASK-044 | Capture screenshots of each dashboard for documentation | | |
-| TASK-045 | Export final dashboard JSON files with templating variables configured | ✅ | 2025-07-25 |
-| TASK-046 | PromQL queries validated in dashboard definitions | ✅ | 2025-07-25 |
+| TASK-042 | Add dashboard metadata: title, description, tags, version, refresh interval (15s), time range (last 24h). All 4 dashboards have consistent metadata, `__inputs`, `__requires`, and inter-dashboard navigation links. | ✅ | 2026-03-02 |
+| TASK-043 | Dashboard JSON validated with python3 json.tool — all 4 files pass | ✅ | 2026-03-02 |
+| TASK-044 | Capture screenshots of each dashboard for documentation | ⏳ | |
+| TASK-045 | Export final dashboard JSON files with templating variables configured. Added Grafana provisioning config at `monitoring/grafana/provisioning/dashboards/dashboards.yml` for auto-loading. | ✅ | 2026-03-02 |
+| TASK-046 | PromQL queries validated in dashboard definitions — all queries reference metrics from `metrics-collector.sh` or cAdvisor | ✅ | 2026-03-02 |
 
 ### Implementation Phase 5: Documentation & User Guide
 
