@@ -427,7 +427,7 @@ jobs:
           fi
 
       - name: Upload security report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: security-status-report
           path: security-status.md
@@ -894,7 +894,7 @@ jobs:
           EOF
 
       - name: Upload comprehensive health report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: comprehensive-health-report
           path: comprehensive-health-report.md
@@ -983,7 +983,7 @@ jobs:
           exit 0
 
       - name: Upload maintenance summary
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: maintenance-summary
           path: maintenance-summary.md

@@ -424,7 +424,7 @@ jobs:
             console.log(`✅ Created critical vulnerability issue with ${critical} CRITICAL findings.`);
 
       - name: Upload Security Reports
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: security-scan-reports-${{ steps.params.outputs.timestamp }}
           path: |
@@ -477,7 +477,7 @@ jobs:
           EOF
 
       - name: Upload Security Summary
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: security-summary-${{ steps.params.outputs.timestamp }}
           path: security-report.md
