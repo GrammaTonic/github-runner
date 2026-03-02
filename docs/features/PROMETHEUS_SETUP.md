@@ -219,9 +219,11 @@ Grafana will automatically load all dashboards on startup.
 
 1. **Prometheus Targets**: Go to Prometheus → Status → Targets. Confirm runner targets show `UP`.
 2. **Test Query**: Run in Prometheus:
+
    ```promql
    github_runner_status
    ```
+
    Should return `1` for each runner.
 3. **Grafana Dashboards**: Open the Runner Overview dashboard. Panels should show live data.
 
