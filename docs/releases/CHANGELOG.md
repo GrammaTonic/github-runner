@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [v2.6.0] - 2026-03-02
+
+### Prometheus Monitoring (Phases 2–6)
+
+- **Phase 2**: Fix Chrome and Chrome-Go metrics gaps — ensure all three runner variants expose identical Prometheus metric families (#1135).
+- **Phase 3**: Add DORA metrics and job lifecycle tracking — `job-started.sh`, `job-completed.sh` hooks, job duration histograms, queue-time gauges (#1136).
+- **Phase 4**: Split mega-dashboard into 4 standalone Grafana dashboards — Runner Overview, Job Performance, Cache Efficiency, DORA Metrics (#1137).
+- **Phase 5**: Add Prometheus monitoring user documentation and wiki pages (#1139).
+- **Phase 6**: Comprehensive test suite — 6 integration test scripts (149 assertions) covering endpoint format, performance, persistence, scaling, security, and docs validation. CI/CD pipeline integration and shellcheck compliance (#1140).
+
+### Security
+
+- Improve `security-advisories.yml` workflow logic and coverage (#1134).
+
 ## [v2.5.0] - 2026-03-01
 
 - Bump GitHub Actions runner to **2.332.0**.
