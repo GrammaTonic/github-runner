@@ -356,6 +356,17 @@ curl http://localhost:8080/health
 
 ## 📈 **Monitoring & Metrics**
 
+### **Prometheus Metrics**
+
+The Chrome runner exposes Prometheus metrics on host port **9092** (mapped from container port 9091):
+
+```bash
+# Verify Chrome runner metrics
+curl http://localhost:9092/metrics
+```
+
+See [Monitoring Setup](Monitoring-Setup.md) for full setup instructions and [Metrics Reference](Metrics-Reference.md) for all 8 available metrics.
+
 ### **Container Metrics**
 
 ```bash

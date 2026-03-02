@@ -849,6 +849,15 @@ jobs:
           echo "🧪 Running unit tests..."
           # Run unit tests for package validation
           TEST_RESULTS_DIR="test-results/unit" tests/unit/package-validation.sh
+      - name: Run Metrics Unit Tests
+        if: matrix.test-suite == 'unit'
+        run: |
+          echo "🧪 Running metrics unit tests..."
+          if [[ -f tests/unit/test-metrics-phase1.sh ]]; then
+            bash tests/unit/test-metrics-phase1.sh
+          else
+            echo "⚠️ test-metrics-phase1.sh not found, skipping"
+          fi
       - name: Run Integration Tests
         if: matrix.test-suite == 'integration'
         run: |
@@ -918,6 +927,41 @@ jobs:
           else
             echo "✅ Integration tests passed"
             echo "PASSED" > test-results/integration/status.txt
+          fi
+      - name: Run Prometheus Metrics Tests
+        if: matrix.test-suite == 'integration'
+        run: |
+          echo "🧪 Running Prometheus metrics integration tests..."
+          mkdir -p test-results/integration/metrics
+          metrics_errors=0
+          # Phase 6 static analysis tests (no containers needed)
+          METRICS_TESTS=(
+            "tests/integration/test-metrics-endpoint.sh"
+            "tests/integration/test-metrics-performance.sh"
+            "tests/integration/test-metrics-persistence.sh"
+            "tests/integration/test-metrics-scaling.sh"
+            "tests/integration/test-metrics-security.sh"
+            "tests/integration/test-docs-validation.sh"
+          )
+          for test_script in "${METRICS_TESTS[@]}"; do
+            test_name="$(basename "$test_script" .sh)"
+            echo "Running $test_name..."
+            if bash "$test_script" > "test-results/integration/metrics/$test_name.log" 2>&1; then
+              echo "✅ $test_name passed"
+            else
+              echo "❌ $test_name failed"
+              echo "--- Output ---"
+              tail -20 "test-results/integration/metrics/$test_name.log"
+              echo "--- End ---"
+              metrics_errors=$((metrics_errors + 1))
+            fi
+          done
+          echo "Prometheus metrics tests completed. Errors: $metrics_errors"
+          if [[ $metrics_errors -gt 0 ]]; then
+            echo "❌ Prometheus metrics tests failed ($metrics_errors errors)"
+            exit 1
+          else
+            echo "✅ All Prometheus metrics tests passed"
           fi
       - name: Run Docker Package Validation
         if: matrix.test-suite == 'docker-validation'

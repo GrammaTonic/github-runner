@@ -28,21 +28,11 @@ validate_hostname() {
 	return 0
 }
 
-# Check for required environment variables
-: "${GITHUB_TOKEN:?Error: GITHUB_TOKEN environment variable not set.}"
-: "${GITHUB_REPOSITORY:?Error: GITHUB_REPOSITORY environment variable not set.}"
-
-# Validate inputs before using them
-validate_repository "$GITHUB_REPOSITORY" || exit 1
-
-# Optional variables with default values
+# Optional variables with default values (set before metrics for RUNNER_NAME usage)
 RUNNER_NAME="${RUNNER_NAME:-chrome-runner-$(hostname)}"
 RUNNER_LABELS="${RUNNER_LABELS:-chrome,ui-tests,playwright,cypress}"
 RUNNER_WORK_DIR="${RUNNER_WORK_DIR:-/home/runner/workspace}"
 GITHUB_HOST="${GITHUB_HOST:-github.com}" # For GitHub Enterprise
-
-# Validate GitHub host
-validate_hostname "$GITHUB_HOST" || exit 1
 
 # --- METRICS SETUP (Phase 2: Prometheus Monitoring) ---
 # Start metrics services BEFORE token validation to enable standalone testing
@@ -106,6 +96,17 @@ else
 	echo "Warning: metrics-server.sh not found, metrics endpoint disabled"
 fi
 
+# --- GITHUB RUNNER SETUP ---
+# Check for required environment variables (after metrics so endpoint works standalone)
+: "${GITHUB_TOKEN:?Error: GITHUB_TOKEN environment variable not set.}"
+: "${GITHUB_REPOSITORY:?Error: GITHUB_REPOSITORY environment variable not set.}"
+
+# Validate inputs before using them
+validate_repository "$GITHUB_REPOSITORY" || exit 1
+
+# Validate GitHub host
+validate_hostname "$GITHUB_HOST" || exit 1
+
 # Change to the runner's directory
 cd /actions-runner
 
@@ -135,6 +136,18 @@ if [ -z "$RUNNER_TOKEN" ] || [ "$RUNNER_TOKEN" == "null" ]; then
 	echo "  3. Token has permissions for ${GITHUB_REPOSITORY}"
 	exit 1
 fi
+
+# --- JOB LIFECYCLE HOOKS (Phase 3: DORA Metrics) ---
+# TASK-028: Set runner hook env vars for job tracking
+# The runner (v2.300.0+) will call these scripts before/after each job
+export ACTIONS_RUNNER_HOOK_JOB_STARTED=/usr/local/bin/job-started.sh
+export ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/local/bin/job-completed.sh
+echo "Job lifecycle hooks configured:"
+echo "  - Job started hook: ${ACTIONS_RUNNER_HOOK_JOB_STARTED}"
+echo "  - Job completed hook: ${ACTIONS_RUNNER_HOOK_JOB_COMPLETED}"
+
+# Create job state directory for duration tracking
+mkdir -p /tmp/job_state
 
 # Configure the runner
 echo "Configuring runner..."

@@ -16,10 +16,14 @@ on:
           - "MEDIUM"
           - "LOW"
       scan_targets:
-        description: "Scan targets (comma-separated: filesystem,container,chrome)"
+        description: "Scan targets (comma-separated: filesystem,container,chrome,chrome-go)"
         required: false
-        default: "filesystem,container,chrome"
+        default: "filesystem,container,chrome,chrome-go"
         type: string
+
+concurrency:
+  group: security-advisories-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   REGISTRY: ghcr.io
@@ -32,7 +36,7 @@ jobs:
     permissions:
       contents: read
       security-events: write
-      repository-projects: write
+      issues: write
       packages: read
 
     steps:
@@ -52,8 +56,19 @@ jobs:
       - name: Set up scan parameters
         id: params
         run: |
-          echo "severity_filter=${{ github.event.inputs.severity_filter || 'HIGH' }}" >> $GITHUB_OUTPUT
-          echo "scan_targets=${{ github.event.inputs.scan_targets || 'filesystem,container,chrome' }}" >> $GITHUB_OUTPUT
+          # Build the correct severity list from the selected minimum level upward
+          # Trivy --severity takes an explicit comma-separated list, not a "minimum" directive
+          SELECTED="${{ github.event.inputs.severity_filter || 'HIGH' }}"
+          case "$SELECTED" in
+            LOW)      SEVERITY_LIST="LOW,MEDIUM,HIGH,CRITICAL" ;;
+            MEDIUM)   SEVERITY_LIST="MEDIUM,HIGH,CRITICAL" ;;
+            HIGH)     SEVERITY_LIST="HIGH,CRITICAL" ;;
+            CRITICAL) SEVERITY_LIST="CRITICAL" ;;
+            *)        SEVERITY_LIST="HIGH,CRITICAL" ;;
+          esac
+          echo "severity_filter=$SELECTED" >> $GITHUB_OUTPUT
+          echo "severity_list=$SEVERITY_LIST" >> $GITHUB_OUTPUT
+          echo "scan_targets=${{ github.event.inputs.scan_targets || 'filesystem,container,chrome,chrome-go' }}" >> $GITHUB_OUTPUT
           echo "timestamp=$(date -u '+%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
 
       - name: Create results directory
@@ -71,7 +86,7 @@ jobs:
           scan-ref: "."
           format: "sarif"
           output: "trivy-results/filesystem.sarif"
-          severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          severity: ${{ steps.params.outputs.severity_list }}
           skip-setup-trivy: true
 
       - name: Upload filesystem scan to Security tab
@@ -90,7 +105,7 @@ jobs:
           scan-ref: "."
           format: "json"
           output: "trivy-results/filesystem.json"
-          severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          severity: ${{ steps.params.outputs.severity_list }}
           skip-setup-trivy: true
 
       # Container vulnerability scan
@@ -128,7 +143,7 @@ jobs:
           image-ref: "github-runner:scan"
           format: "sarif"
           output: "trivy-results/container.sarif"
-          severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          severity: ${{ steps.params.outputs.severity_list }}
           skip-setup-trivy: true
         continue-on-error: false
 
@@ -147,7 +162,7 @@ jobs:
           image-ref: "github-runner:scan"
           format: "json"
           output: "trivy-results/container.json"
-          severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          severity: ${{ steps.params.outputs.severity_list }}
           skip-setup-trivy: true
 
       - name: Cleanup standard runner image
@@ -190,7 +205,7 @@ jobs:
           image-ref: "github-runner-chrome:scan"
           format: "sarif"
           output: "trivy-results/chrome.sarif"
-          severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          severity: ${{ steps.params.outputs.severity_list }}
           skip-setup-trivy: true
         continue-on-error: false
 
@@ -209,7 +224,69 @@ jobs:
           image-ref: "github-runner-chrome:scan"
           format: "json"
           output: "trivy-results/chrome.json"
-          severity: ${{ steps.params.outputs.severity_filter }},CRITICAL
+          severity: ${{ steps.params.outputs.severity_list }}
+          skip-setup-trivy: true
+
+      - name: Cleanup Chrome runner image
+        if: contains(steps.params.outputs.scan_targets, 'chrome')
+        run: |
+          echo "Cleaning up Chrome runner image to free space..."
+          docker rmi github-runner-chrome:scan || true
+          docker system prune -f || true
+          echo "Disk space after cleanup:"
+          df -h
+
+      # Chrome-Go runner container scan
+      - name: Build Chrome-Go runner image for scanning
+        if: contains(steps.params.outputs.scan_targets, 'chrome-go')
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker
+          file: ./docker/Dockerfile.chrome-go
+          push: false
+          tags: github-runner-chrome-go:scan
+          load: true
+          cache-from: type=gha,scope=advisory-chrome-go-runner
+          cache-to: type=gha,mode=max,scope=advisory-chrome-go-runner
+
+      - name: Verify Chrome-Go image exists
+        if: contains(steps.params.outputs.scan_targets, 'chrome-go')
+        run: |
+          echo "Checking if Chrome-Go image exists..."
+          docker images github-runner-chrome-go:scan
+          if ! docker image inspect github-runner-chrome-go:scan >/dev/null 2>&1; then
+            echo "❌ Image github-runner-chrome-go:scan not found"
+            exit 1
+          fi
+          echo "✅ Image github-runner-chrome-go:scan found"
+
+      - name: Run Trivy Chrome-Go container scan
+        if: contains(steps.params.outputs.scan_targets, 'chrome-go')
+        uses: aquasecurity/trivy-action@0.34.1
+        with:
+          image-ref: "github-runner-chrome-go:scan"
+          format: "sarif"
+          output: "trivy-results/chrome-go.sarif"
+          severity: ${{ steps.params.outputs.severity_list }}
+          skip-setup-trivy: true
+        continue-on-error: false
+
+      - name: Upload Chrome-Go scan to Security tab
+        if: contains(steps.params.outputs.scan_targets, 'chrome-go')
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: "trivy-results/chrome-go.sarif"
+          category: "advisory-chrome-go-container-scan"
+        continue-on-error: true
+
+      - name: Generate Chrome-Go JSON report
+        if: contains(steps.params.outputs.scan_targets, 'chrome-go')
+        uses: aquasecurity/trivy-action@0.34.1
+        with:
+          image-ref: "github-runner-chrome-go:scan"
+          format: "json"
+          output: "trivy-results/chrome-go.json"
+          severity: ${{ steps.params.outputs.severity_list }}
           skip-setup-trivy: true
 
       # Generate comprehensive security summary
@@ -217,6 +294,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Generate Security Summary
+        id: summary
         run: |
           echo "## 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
           echo "📅 **Scan Date**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
@@ -285,6 +363,66 @@ jobs:
           echo "high-count=$total_high" >> $GITHUB_OUTPUT
           echo "total-count=$total_all" >> $GITHUB_OUTPUT
 
+      # Create GitHub issue when critical vulnerabilities are found
+      - name: Create issue for critical vulnerabilities
+        if: steps.summary.outputs.critical-count > 0
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const critical = '${{ steps.summary.outputs.critical-count }}';
+            const high = '${{ steps.summary.outputs.high-count }}';
+            const total = '${{ steps.summary.outputs.total-count }}';
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const securityUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/security`;
+            const dateStr = new Date().toISOString().split('T')[0];
+
+            // Check for existing open issue to avoid duplicates
+            const { data: existingIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'security,critical'
+            });
+
+            const duplicateTitle = `🔴 ${critical} CRITICAL vulnerabilities detected`;
+            const alreadyOpen = existingIssues.some(issue =>
+              issue.title.includes('CRITICAL vulnerabilities detected')
+            );
+
+            if (alreadyOpen) {
+              console.log('⚠️ An open critical vulnerability issue already exists — skipping creation.');
+              return;
+            }
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: duplicateTitle,
+              labels: ['security', 'critical'],
+              body: [
+                `## 🚨 Critical Vulnerabilities Detected`,
+                ``,
+                `The weekly security advisory scan found **${critical} CRITICAL** vulnerabilities that require immediate attention.`,
+                ``,
+                `| Severity | Count |`,
+                `|----------|-------|`,
+                `| 🔴 Critical | ${critical} |`,
+                `| 🟠 High | ${high} |`,
+                `| **Total** | **${total}** |`,
+                ``,
+                `### Actions Required`,
+                `1. Review the [Security tab](${securityUrl}) for full details`,
+                `2. Check the [workflow run](${runUrl}) for scan artifacts`,
+                `3. Prioritize and remediate CRITICAL findings immediately`,
+                `4. Close this issue once all CRITICAL vulnerabilities are resolved`,
+                ``,
+                `---`,
+                `*Automatically created by the Security Advisory Management workflow on ${dateStr}.*`
+              ].join('\n')
+            });
+
+            console.log(`✅ Created critical vulnerability issue with ${critical} CRITICAL findings.`);
+
       - name: Upload Security Reports
         uses: actions/upload-artifact@v6
         with:
@@ -306,7 +444,7 @@ jobs:
 
           ## 📊 Scan Configuration
 
-          - **Severity Filter**: ${{ steps.params.outputs.severity_filter }} and above
+          - **Severity Filter**: ${{ steps.params.outputs.severity_filter }} and above (${{ steps.params.outputs.severity_list }})
           - **Scan Targets**: ${{ steps.params.outputs.scan_targets }}
           - **Scanner**: Trivy (Aqua Security)
 
@@ -316,6 +454,7 @@ jobs:
           - Filesystem dependencies and packages
           - Docker container images (standard runner)
           - Docker container images (Chrome runner)
+          - Docker container images (Chrome-Go runner)
 
           Results are uploaded to GitHub's Security tab for detailed analysis and remediation tracking.
 

@@ -14,11 +14,22 @@ tests/
 │   ├── validate-packages.sh           # Docker package validation
 │   └── test-container-startup.sh      # Container startup and health tests
 ├── integration/
-│   └── comprehensive-tests.sh         # Full integration testing
+│   ├── comprehensive-tests.sh         # Full integration testing
+│   ├── test-phase2-metrics.sh         # Phase 2: Chrome/Chrome-Go metrics
+│   ├── test-job-lifecycle.sh          # Phase 3: Job lifecycle hooks
+│   ├── test-metrics-endpoint.sh       # Phase 6: Metrics endpoint validation
+│   ├── test-metrics-performance.sh    # Phase 6: Performance benchmarks
+│   ├── test-metrics-persistence.sh    # Phase 6: Data persistence tests
+│   ├── test-metrics-scaling.sh        # Phase 6: Multi-runner scaling
+│   ├── test-metrics-security.sh       # Phase 6: Security scan
+│   └── test-docs-validation.sh        # Phase 6: Documentation validation
 ├── unit/
-│   └── package-validation.sh          # Unit tests for package validation
-├── run-all-tests.sh                  # Master test runner
-└── README.md                         # This file
+│   ├── package-validation.sh          # Unit tests for package validation
+│   └── test-metrics-phase1.sh         # Phase 1: Metrics static analysis
+├── playwright/                        # Playwright browser tests
+├── user-deployment/                   # User deployment validation
+├── run-all-tests.sh                   # Master test runner
+└── README.md                          # This file
 ```
 
 ## 🧪 Test Suites
@@ -164,7 +175,140 @@ tests/
 ./tests/run-all-tests.sh --dry-run
 ```
 
-## 🚨 Issue Prevention
+## � Prometheus Metrics Tests
+
+The following test suites validate the Prometheus monitoring implementation across all 6 phases.
+
+### 6. Metrics Endpoint Tests (`integration/test-metrics-endpoint.sh`)
+
+**Purpose:** Validates HTTP response, Prometheus format, all 8 metric families, correct labels, and metric updates over time. (TASK-057)
+
+**Features:**
+
+- ✅ All 8 metric families validated (HELP/TYPE comments)
+- ✅ Prometheus text format compliance
+- ✅ Label format and runner_type validation
+- ✅ Histogram bucket structure verification
+- ✅ Runtime endpoint tests when containers are running
+- ✅ Metric update-over-time validation
+
+**Usage:**
+
+```bash
+# Run static analysis (always works)
+./tests/integration/test-metrics-endpoint.sh
+
+# With containers running for full validation
+docker compose -f docker/docker-compose.production.yml up -d
+./tests/integration/test-metrics-endpoint.sh
+```
+
+### 7. Metrics Performance Tests (`integration/test-metrics-performance.sh`)
+
+**Purpose:** Validates response time, update interval accuracy, and resource efficiency. (TASK-058)
+
+**Features:**
+
+- ✅ Update interval configuration (30s default)
+- ✅ Atomic write pattern validation
+- ✅ Netcat lightweight server verification
+- ✅ Signal handling for graceful shutdown
+- ✅ Response time measurement when containers are running
+
+**Usage:**
+
+```bash
+./tests/integration/test-metrics-performance.sh
+```
+
+### 8. Metrics Persistence Tests (`integration/test-metrics-persistence.sh`)
+
+**Purpose:** Validates that jobs.log and metrics data survive container restarts via Docker volumes. (TASK-062)
+
+**Features:**
+
+- ✅ Volume configuration validation
+- ✅ Jobs.log initialization guard clauses
+- ✅ Atomic write pattern
+- ✅ Local persistence simulation
+- ✅ Histogram computation from persisted data
+- ✅ CSV format preservation
+
+**Usage:**
+
+```bash
+./tests/integration/test-metrics-persistence.sh
+```
+
+### 9. Metrics Scaling Tests (`integration/test-metrics-scaling.sh`)
+
+**Purpose:** Validates multi-runner deployment with unique metrics, port mappings, and no conflicts. (TASK-063)
+
+**Features:**
+
+- ✅ Unique port assignments per runner type (9091/9092/9093)
+- ✅ RUNNER_TYPE environment variable validation
+- ✅ Container isolation and service name uniqueness
+- ✅ Config template validation
+- ✅ Runtime multi-runner endpoint verification
+
+**Usage:**
+
+```bash
+./tests/integration/test-metrics-scaling.sh
+```
+
+### 10. Metrics Security Tests (`integration/test-metrics-security.sh`)
+
+**Purpose:** Scans for exposed tokens, credentials, and sensitive data in metrics output. (TASK-067)
+
+**Features:**
+
+- ✅ Hardcoded secret detection in metrics scripts
+- ✅ Token variable leak prevention in generate_metrics
+- ✅ Safe label value validation
+- ✅ Entrypoint token isolation check
+- ✅ HTTP response header security
+- ✅ Live metrics output scanning
+
+**Usage:**
+
+```bash
+./tests/integration/test-metrics-security.sh
+```
+
+### 11. Documentation Validation Tests (`integration/test-docs-validation.sh`)
+
+**Purpose:** Verifies all referenced files exist, scripts are executable, and documentation is consistent. (TASK-068)
+
+**Features:**
+
+- ✅ Core monitoring file existence
+- ✅ Grafana dashboard JSON validation
+- ✅ Entrypoint script references
+- ✅ Shell script executability and syntax
+- ✅ Documentation and wiki page existence
+- ✅ Prometheus scrape config validation
+- ✅ Dockerfile COPY completeness
+
+**Usage:**
+
+```bash
+./tests/integration/test-docs-validation.sh
+```
+
+### Running All Metrics Tests
+
+```bash
+# Run all Phase 6 metrics tests
+for test in tests/integration/test-metrics-*.sh tests/integration/test-docs-validation.sh; do
+  echo "=== Running $(basename "$test") ==="
+  bash "$test"
+  echo ""
+done
+```
+
+## �🚨 Issue Prevention
 
 This test suite specifically prevents:
 

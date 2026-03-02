@@ -178,7 +178,7 @@ LOG_RETENTION_DAYS=30
 # Monitoring
 ENABLE_PROMETHEUS_METRICS=true
 ENABLE_HEALTH_ENDPOINTS=true
-METRICS_PORT=9090
+METRICS_PORT=9091
 ```
 
 ### 3. Production Docker Compose
@@ -358,6 +358,8 @@ docker stack ps github-runner
 
 ## 📊 Production Monitoring
 
+> 📖 **Full monitoring guide:** See [Monitoring Setup](Monitoring-Setup.md) for Prometheus metrics configuration, port mapping for all runner types, and Grafana dashboard import.
+
 ### Health Checks
 
 ```bash
@@ -404,10 +406,10 @@ alerting:
             - alertmanager:9093
 
 scrape_configs:
-  - job_name: "github-runners"
+  - job_name: "github-runner-standard"
     static_configs:
-      - targets: ["runner:8080"]
-    scrape_interval: 30s
+      - targets: ["runner:9091"]
+    scrape_interval: 15s
     metrics_path: /metrics
 
   - job_name: "docker"

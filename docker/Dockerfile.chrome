@@ -88,6 +88,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libicu-dev \
     # Chrome & UI testing dependencies (existing)
     libnss3 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxtst6 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgbm1 libasound2-dev libatspi2.0-0 libgtk-3-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 fonts-liberation fonts-noto-color-emoji fonts-noto-cjk xvfb procps \
+    # Metrics endpoint dependency (required by metrics-server.sh)
+    netcat-openbsd \
     # Python
     python3 python3-pip python3-venv \
     # Playwright/Chromium/Chrome required libraries (Ubuntu 24.04 compatible)
@@ -243,6 +245,12 @@ RUN chmod +x /entrypoint.sh
 COPY --chown=runner:runner metrics-server.sh /usr/local/bin/metrics-server.sh
 COPY --chown=runner:runner metrics-collector.sh /usr/local/bin/metrics-collector.sh
 RUN chmod +x /usr/local/bin/metrics-server.sh /usr/local/bin/metrics-collector.sh
+
+# Copy job lifecycle hook scripts (Phase 3: DORA Metrics)
+# TASK-028: Runner calls these via ACTIONS_RUNNER_HOOK_JOB_STARTED/COMPLETED
+COPY --chown=runner:runner job-started.sh /usr/local/bin/job-started.sh
+COPY --chown=runner:runner job-completed.sh /usr/local/bin/job-completed.sh
+RUN chmod +x /usr/local/bin/job-started.sh /usr/local/bin/job-completed.sh
 
 # TASK-014: Expose Prometheus metrics port
 EXPOSE 9091

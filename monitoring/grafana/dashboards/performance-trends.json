@@ -1,0 +1,681 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "github-runner-performance",
+    "title": "GitHub Actions Runners - Performance Trends",
+    "description": "Performance monitoring for GitHub Actions self-hosted runners: cache hit rates, build times, CPU/memory usage, and queue times",
+    "tags": [
+      "github-actions",
+      "performance",
+      "monitoring",
+      "cache"
+    ],
+    "timezone": "browser",
+    "schemaVersion": 39,
+    "version": 1,
+    "refresh": "15s",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "runner_name",
+          "type": "query",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "query": "label_values(github_runner_info, runner_name)",
+          "multi": true,
+          "includeAll": true,
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          },
+          "refresh": 2
+        },
+        {
+          "name": "runner_type",
+          "type": "query",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "query": "label_values(github_runner_info, runner_type)",
+          "multi": true,
+          "includeAll": true,
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          },
+          "refresh": 2
+        }
+      ]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Performance Summary",
+        "type": "row",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "collapsed": false
+      },
+      {
+        "id": 2,
+        "title": "Avg Cache Hit Rate",
+        "description": "Average cache hit rate across all cache types (0-100%)",
+        "type": "stat",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "targets": [
+          {
+            "expr": "avg(github_runner_cache_hit_rate{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}) * 100",
+            "legendFormat": "Cache Hit %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "orange",
+                  "value": 30
+                },
+                {
+                  "color": "yellow",
+                  "value": 60
+                },
+                {
+                  "color": "green",
+                  "value": 80
+                }
+              ]
+            },
+            "min": 0,
+            "max": 100,
+            "unit": "percent"
+          }
+        },
+        "gridPos": {
+          "h": 5,
+          "w": 6,
+          "x": 0,
+          "y": 1
+        }
+      },
+      {
+        "id": 3,
+        "title": "CPU Usage",
+        "description": "Current average CPU usage across runner containers (requires cAdvisor)",
+        "type": "stat",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "targets": [
+          {
+            "expr": "avg(rate(container_cpu_usage_seconds_total{name=~\"github-runner.*\"}[5m])) * 100",
+            "legendFormat": "CPU %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 60
+                },
+                {
+                  "color": "orange",
+                  "value": 80
+                },
+                {
+                  "color": "red",
+                  "value": 90
+                }
+              ]
+            },
+            "unit": "percent"
+          }
+        },
+        "gridPos": {
+          "h": 5,
+          "w": 6,
+          "x": 6,
+          "y": 1
+        }
+      },
+      {
+        "id": 4,
+        "title": "Memory Usage",
+        "description": "Current average memory usage across runner containers (requires cAdvisor)",
+        "type": "stat",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "targets": [
+          {
+            "expr": "avg(container_memory_usage_bytes{name=~\"github-runner.*\"})",
+            "legendFormat": "Memory"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 2147483648
+                },
+                {
+                  "color": "orange",
+                  "value": 4294967296
+                },
+                {
+                  "color": "red",
+                  "value": 6442450944
+                }
+              ]
+            },
+            "unit": "bytes"
+          }
+        },
+        "gridPos": {
+          "h": 5,
+          "w": 6,
+          "x": 12,
+          "y": 1
+        }
+      },
+      {
+        "id": 5,
+        "title": "Build Time p50",
+        "description": "Median job duration (50th percentile) over the last 5 minutes",
+        "type": "stat",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(github_runner_job_duration_seconds_bucket{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}[5m])) by (le))",
+            "legendFormat": "p50"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 300
+                },
+                {
+                  "color": "orange",
+                  "value": 600
+                },
+                {
+                  "color": "red",
+                  "value": 1800
+                }
+              ]
+            },
+            "unit": "s"
+          }
+        },
+        "gridPos": {
+          "h": 5,
+          "w": 6,
+          "x": 18,
+          "y": 1
+        }
+      },
+      {
+        "id": 10,
+        "title": "Cache Performance",
+        "type": "row",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 6
+        },
+        "collapsed": false
+      },
+      {
+        "id": 11,
+        "title": "Cache Hit Rate by Type",
+        "description": "Cache hit rate over time broken down by cache type (BuildKit, APT, npm)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "targets": [
+          {
+            "expr": "github_runner_cache_hit_rate{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}",
+            "legendFormat": "{{ cache_type }} ({{ runner_name }})"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineWidth": 2,
+              "fillOpacity": 20,
+              "pointSize": 5,
+              "showPoints": "auto"
+            },
+            "min": 0,
+            "max": 1,
+            "unit": "percentunit"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 7
+        }
+      },
+      {
+        "id": 12,
+        "title": "Cache Hit Rate by Runner",
+        "description": "Average cache hit rate per runner over time",
+        "type": "timeseries",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "targets": [
+          {
+            "expr": "avg by (runner_name, runner_type) (github_runner_cache_hit_rate{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"})",
+            "legendFormat": "{{ runner_name }} ({{ runner_type }})"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineWidth": 2,
+              "fillOpacity": 10,
+              "pointSize": 5,
+              "showPoints": "auto"
+            },
+            "min": 0,
+            "max": 1,
+            "unit": "percentunit"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 7
+        }
+      },
+      {
+        "id": 20,
+        "title": "Resource Usage",
+        "type": "row",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 15
+        },
+        "collapsed": false
+      },
+      {
+        "id": 21,
+        "title": "CPU Usage Over Time",
+        "description": "CPU usage percentage per runner container over time (requires cAdvisor)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total{name=~\"github-runner.*\"}[5m]) * 100",
+            "legendFormat": "{{ name }}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineWidth": 2,
+              "fillOpacity": 20,
+              "pointSize": 5,
+              "showPoints": "auto"
+            },
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 60 },
+                { "color": "red", "value": 90 }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        }
+      },
+      {
+        "id": 22,
+        "title": "Memory Usage Over Time",
+        "description": "Memory usage per runner container over time (requires cAdvisor)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "targets": [
+          {
+            "expr": "container_memory_usage_bytes{name=~\"github-runner.*\"}",
+            "legendFormat": "{{ name }}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineWidth": 2,
+              "fillOpacity": 20,
+              "pointSize": 5,
+              "showPoints": "auto"
+            },
+            "unit": "bytes",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 2147483648 },
+                { "color": "red", "value": 6442450944 }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        }
+      },
+      {
+        "id": 30,
+        "title": "Build Performance",
+        "type": "row",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 24
+        },
+        "collapsed": false
+      },
+      {
+        "id": 31,
+        "title": "Job Duration Percentiles",
+        "description": "Job duration percentiles (p50, p90, p95, p99) over time",
+        "type": "timeseries",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(github_runner_job_duration_seconds_bucket{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}[5m])) by (le))",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.90, sum(rate(github_runner_job_duration_seconds_bucket{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}[5m])) by (le))",
+            "legendFormat": "p90"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(github_runner_job_duration_seconds_bucket{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}[5m])) by (le))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(github_runner_job_duration_seconds_bucket{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}[5m])) by (le))",
+            "legendFormat": "p99"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineWidth": 2,
+              "fillOpacity": 10,
+              "pointSize": 5,
+              "showPoints": "auto"
+            },
+            "unit": "s"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 25
+        }
+      },
+      {
+        "id": 32,
+        "title": "Queue Time Trend",
+        "description": "Average queue time per runner over time",
+        "type": "timeseries",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "targets": [
+          {
+            "expr": "github_runner_queue_time_seconds{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}",
+            "legendFormat": "{{ runner_name }} ({{ runner_type }})"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineWidth": 2,
+              "fillOpacity": 20,
+              "pointSize": 5,
+              "showPoints": "auto"
+            },
+            "unit": "s",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 30 },
+                { "color": "red", "value": 300 }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 25
+        }
+      },
+      {
+        "id": 33,
+        "title": "Avg Job Duration by Runner Type",
+        "description": "Average job duration broken down by runner type",
+        "type": "timeseries",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "targets": [
+          {
+            "expr": "sum by (runner_type) (github_runner_job_duration_seconds_sum{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}) / clamp_min(sum by (runner_type) (github_runner_job_duration_seconds_count{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}), 1)",
+            "legendFormat": "{{ runner_type }}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "bars",
+              "lineWidth": 1,
+              "fillOpacity": 50,
+              "pointSize": 5,
+              "showPoints": "never"
+            },
+            "unit": "s"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 33
+        }
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "Annotations & Alerts",
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "type": "dashboard",
+          "builtIn": 1
+        }
+      ]
+    },
+    "links": [
+      {
+        "title": "Runner Overview",
+        "url": "/d/github-runner-runner-overview",
+        "type": "link",
+        "icon": "dashboard",
+        "tooltip": "View Runner Overview dashboard"
+      },
+      {
+        "title": "DORA Metrics",
+        "url": "/d/github-runner-dora",
+        "type": "link",
+        "icon": "dashboard",
+        "tooltip": "View DORA Metrics dashboard"
+      },
+      {
+        "title": "Job Analysis",
+        "url": "/d/github-runner-job-analysis",
+        "type": "link",
+        "icon": "dashboard",
+        "tooltip": "View Job Analysis dashboard"
+      }
+    ]
+  },
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "Prometheus datasource for GitHub Actions runner metrics",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "9.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat"
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series"
+    }
+  ]
+}

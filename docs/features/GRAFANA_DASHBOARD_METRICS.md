@@ -99,12 +99,22 @@ Implement a lightweight custom metrics endpoint on each GitHub Actions runner (p
 - **Location**: Bash scripts started by `entrypoint.sh` and `entrypoint-chrome.sh`
 - **Metrics**: Runner status, job counts, uptime, cache hit rates, job duration
 
-#### 2. Grafana Dashboard JSON - **We Provide**
+#### 2. Grafana Dashboard JSON Files - **We Provide**
 
-- **File**: `monitoring/grafana/dashboards/github-runner-dashboard.json`
-- **Panels**: 12 panels covering all key metrics
-- **Variables**: Filter by runner_name, runner_type
-- **Import**: Users import JSON into their Grafana instance
+**4 standalone dashboards** in `monitoring/grafana/dashboards/`:
+
+| Dashboard | File | Panels | Focus |
+|---|---|---|---|
+| Runner Overview | `runner-overview.json` | 12 | Runner status, health, uptime, queue time, navigation |
+| DORA Metrics | `dora-metrics.json` | 12 | Deployment Frequency, Lead Time, CFR, MTTR, trends, classification |
+| Performance Trends | `performance-trends.json` | 14 | Cache hit rates, CPU/memory, build duration percentiles, queue times |
+| Job Analysis | `job-analysis.json` | 16 | Job summary, duration histograms, status breakdown, runner comparison |
+
+- **Variables**: All dashboards filter by `runner_name` and `runner_type` (multi-select)
+- **Inter-dashboard links**: Navigation links and Quick Links panel for cross-dashboard navigation
+- **Import**: Users import JSON into their Grafana instance, or use provisioning config
+- **Provisioning**: `monitoring/grafana/provisioning/dashboards/dashboards.yml` for auto-loading
+- **Datasource**: All dashboards use `${DS_PROMETHEUS}` input variable for portability
 
 #### 3. Example Prometheus Config - **We Provide Documentation**
 

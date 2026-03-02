@@ -402,18 +402,43 @@ docker compose -f docker/docker-compose.chrome.yml up -d
 
 ## 📊 Monitoring
 
-### Health Checks
+All runner types expose Prometheus-compatible metrics on port **9091** (container port). See the [Monitoring Quick Start](docs/features/PROMETHEUS_QUICKSTART.md) to get started in 5 minutes.
+
+### Metrics Endpoint
 
 ```bash
-# Check runner health
-curl http://localhost:8080/health
+# Standard runner metrics (host port 9091)
+curl http://localhost:9091/metrics
 
-# Prometheus metrics
-curl http://localhost:9090/metrics
+# Chrome runner metrics (host port 9092)
+curl http://localhost:9092/metrics
 
-# Grafana dashboard
-open http://localhost:3000
+# Chrome-Go runner metrics (host port 9093)
+curl http://localhost:9093/metrics
 ```
+
+### Grafana Dashboards
+
+Four pre-built dashboards are provided in `monitoring/grafana/dashboards/`:
+
+| Dashboard | File | Panels |
+|---|---|---|
+| Runner Overview | `runner-overview.json` | 12 |
+| DORA Metrics | `dora-metrics.json` | 12 |
+| Performance Trends | `performance-trends.json` | 14 |
+| Job Analysis | `job-analysis.json` | 16 |
+
+Import them into your Grafana instance or use the provisioning config for auto-loading.
+
+### Documentation
+
+- [Quick Start](docs/features/PROMETHEUS_QUICKSTART.md) — 5-minute setup
+- [Setup Guide](docs/features/PROMETHEUS_SETUP.md) — Full configuration
+- [Usage Guide](docs/features/PROMETHEUS_USAGE.md) — PromQL queries and alerts
+- [Metrics Reference](docs/features/PROMETHEUS_METRICS_REFERENCE.md) — All metric definitions
+- [Architecture](docs/features/PROMETHEUS_ARCHITECTURE.md) — System internals
+- [Troubleshooting](docs/features/PROMETHEUS_TROUBLESHOOTING.md) — Common issues
+- [API Reference](docs/API.md) — Endpoint details
 
 ## 🔧 Maintenance
 

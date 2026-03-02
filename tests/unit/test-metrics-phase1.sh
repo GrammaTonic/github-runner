@@ -26,6 +26,11 @@ test_result() {
 	if [[ "$result" == "PASS" ]]; then
 		echo -e "${GREEN}✅ PASS${NC}: $test_name"
 		TESTS_PASSED=$((TESTS_PASSED + 1))
+	elif [[ "$result" == "SKIP" ]]; then
+		echo -e "${YELLOW}⏭️  SKIP${NC}: $test_name"
+		if [[ -n "$message" ]]; then
+			echo -e "   ${YELLOW}Reason: $message${NC}"
+		fi
 	else
 		echo -e "${RED}❌ FAIL${NC}: $test_name"
 		if [[ -n "$message" ]]; then

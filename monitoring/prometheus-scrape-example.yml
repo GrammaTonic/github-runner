@@ -1,0 +1,70 @@
+# Prometheus Scrape Configuration Example
+# Add these jobs to your prometheus.yml under 'scrape_configs'
+#
+# This file demonstrates how to configure Prometheus to scrape
+# GitHub Actions self-hosted runner metrics endpoints.
+#
+# For full setup instructions, see:
+#   docs/features/PROMETHEUS_SETUP.md
+#   docs/features/PROMETHEUS_QUICKSTART.md
+
+scrape_configs:
+  # Standard runner metrics
+  # Default host port: 9091 (maps to container port 9091)
+  - job_name: "github-runner-standard"
+    static_configs:
+      - targets: ["<runner-host>:9091"]
+        labels:
+          runner_variant: "standard"
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # Chrome runner metrics
+  # Default host port: 9092 (maps to container port 9091)
+  - job_name: "github-runner-chrome"
+    static_configs:
+      - targets: ["<runner-host>:9092"]
+        labels:
+          runner_variant: "chrome"
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # Chrome-Go runner metrics
+  # Default host port: 9093 (maps to container port 9091)
+  - job_name: "github-runner-chrome-go"
+    static_configs:
+      - targets: ["<runner-host>:9093"]
+        labels:
+          runner_variant: "chrome-go"
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+# ──────────────────────────────────────────────────────────
+# Docker Network Configuration (alternative)
+# Use when Prometheus runs on the same Docker network as runners
+# ──────────────────────────────────────────────────────────
+#
+# scrape_configs:
+#   - job_name: "github-runner-standard"
+#     static_configs:
+#       - targets: ["github-runner-main:9091"]
+#     scrape_interval: 15s
+#     metrics_path: /metrics
+#     scrape_timeout: 10s
+#
+#   - job_name: "github-runner-chrome"
+#     static_configs:
+#       - targets: ["github-runner-chrome:9091"]
+#     scrape_interval: 15s
+#     metrics_path: /metrics
+#     scrape_timeout: 10s
+#
+#   - job_name: "github-runner-chrome-go"
+#     static_configs:
+#       - targets: ["github-runner-chrome-go:9091"]
+#     scrape_interval: 15s
+#     metrics_path: /metrics
+#     scrape_timeout: 10s
