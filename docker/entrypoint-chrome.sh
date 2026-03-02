@@ -137,6 +137,18 @@ if [ -z "$RUNNER_TOKEN" ] || [ "$RUNNER_TOKEN" == "null" ]; then
 	exit 1
 fi
 
+# --- JOB LIFECYCLE HOOKS (Phase 3: DORA Metrics) ---
+# TASK-028: Set runner hook env vars for job tracking
+# The runner (v2.300.0+) will call these scripts before/after each job
+export ACTIONS_RUNNER_HOOK_JOB_STARTED=/usr/local/bin/job-started.sh
+export ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/local/bin/job-completed.sh
+echo "Job lifecycle hooks configured:"
+echo "  - Job started hook: ${ACTIONS_RUNNER_HOOK_JOB_STARTED}"
+echo "  - Job completed hook: ${ACTIONS_RUNNER_HOOK_JOB_COMPLETED}"
+
+# Create job state directory for duration tracking
+mkdir -p /tmp/job_state
+
 # Configure the runner
 echo "Configuring runner..."
 ./config.sh \

@@ -1,0 +1,311 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "github-runner-dora",
+    "title": "GitHub Actions Runners - DORA Metrics",
+    "description": "DORA (DevOps Research and Assessment) metrics for GitHub Actions self-hosted runners: Deployment Frequency, Lead Time for Changes, Change Failure Rate, Mean Time to Recovery",
+    "tags": ["github-actions", "dora", "devops", "metrics"],
+    "timezone": "browser",
+    "schemaVersion": 39,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-7d",
+      "to": "now"
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "runner_name",
+          "type": "query",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "query": "label_values(github_runner_info, runner_name)",
+          "multi": true,
+          "includeAll": true,
+          "current": { "text": "All", "value": "$__all" },
+          "refresh": 2
+        },
+        {
+          "name": "runner_type",
+          "type": "query",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "query": "label_values(github_runner_info, runner_type)",
+          "multi": true,
+          "includeAll": true,
+          "current": { "text": "All", "value": "$__all" },
+          "refresh": 2
+        }
+      ]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "DORA Key Metrics",
+        "type": "row",
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+        "collapsed": false
+      },
+      {
+        "id": 2,
+        "title": "Deployment Frequency",
+        "description": "Successful job completions per day. Elite: multiple per day. High: once per day to once per week.",
+        "type": "stat",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "targets": [
+          {
+            "expr": "sum(increase(github_runner_jobs_total{status=\"success\",runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}[24h]))",
+            "legendFormat": "Per Day"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "orange", "value": 1 },
+                { "color": "yellow", "value": 5 },
+                { "color": "green", "value": 10 }
+              ]
+            },
+            "unit": "none",
+            "displayName": "Deployments / Day"
+          }
+        },
+        "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 }
+      },
+      {
+        "id": 3,
+        "title": "Lead Time for Changes",
+        "description": "Average job duration (commit to production proxy). Elite: < 1 hour. High: 1 day to 1 week.",
+        "type": "stat",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "targets": [
+          {
+            "expr": "sum(github_runner_job_duration_seconds_sum{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}) / clamp_min(sum(github_runner_job_duration_seconds_count{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}), 1)",
+            "legendFormat": "Avg Lead Time"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 600 },
+                { "color": "orange", "value": 1800 },
+                { "color": "red", "value": 3600 }
+              ]
+            },
+            "unit": "s"
+          }
+        },
+        "gridPos": { "h": 6, "w": 6, "x": 6, "y": 1 }
+      },
+      {
+        "id": 4,
+        "title": "Change Failure Rate",
+        "description": "Percentage of deployments causing failures. Elite: 0-15%. High: 16-30%.",
+        "type": "gauge",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "targets": [
+          {
+            "expr": "sum(github_runner_jobs_total{status=\"failed\",runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}) / clamp_min(sum(github_runner_jobs_total{status=\"total\",runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}), 1) * 100",
+            "legendFormat": "CFR"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 15 },
+                { "color": "orange", "value": 30 },
+                { "color": "red", "value": 50 }
+              ]
+            },
+            "min": 0,
+            "max": 100,
+            "unit": "percent"
+          }
+        },
+        "gridPos": { "h": 6, "w": 6, "x": 12, "y": 1 }
+      },
+      {
+        "id": 5,
+        "title": "Mean Time to Recovery",
+        "description": "Average queue time as MTTR proxy. Elite: < 1 hour. High: < 1 day.",
+        "type": "stat",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "targets": [
+          {
+            "expr": "avg(github_runner_queue_time_seconds{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"})",
+            "legendFormat": "MTTR"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 60 },
+                { "color": "orange", "value": 300 },
+                { "color": "red", "value": 3600 }
+              ]
+            },
+            "unit": "s"
+          }
+        },
+        "gridPos": { "h": 6, "w": 6, "x": 18, "y": 1 }
+      },
+      {
+        "id": 10,
+        "title": "Trends",
+        "type": "row",
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+        "collapsed": false
+      },
+      {
+        "id": 11,
+        "title": "Deployment Frequency Trend",
+        "type": "timeseries",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "targets": [
+          {
+            "expr": "sum(increase(github_runner_jobs_total{status=\"success\",runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}[1h]))",
+            "legendFormat": "Successful Jobs/hr"
+          },
+          {
+            "expr": "sum(increase(github_runner_jobs_total{status=\"total\",runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}[1h]))",
+            "legendFormat": "Total Jobs/hr"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "palette-classic" },
+            "custom": { "drawStyle": "bars", "fillOpacity": 40, "stacking": { "mode": "none" } },
+            "unit": "none"
+          }
+        },
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+      },
+      {
+        "id": 12,
+        "title": "Lead Time Trend (p50 / p95 / p99)",
+        "type": "timeseries",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(github_runner_job_duration_seconds_bucket{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}[5m])) by (le))",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(github_runner_job_duration_seconds_bucket{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}[5m])) by (le))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(github_runner_job_duration_seconds_bucket{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}[5m])) by (le))",
+            "legendFormat": "p99"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "palette-classic" },
+            "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2 },
+            "unit": "s"
+          }
+        },
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+      },
+      {
+        "id": 13,
+        "title": "Change Failure Rate Trend",
+        "type": "timeseries",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "targets": [
+          {
+            "expr": "sum(increase(github_runner_jobs_total{status=\"failed\",runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}[1h])) / clamp_min(sum(increase(github_runner_jobs_total{status=\"total\",runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}[1h])), 1) * 100",
+            "legendFormat": "Failure Rate %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "fixedColor": "red", "mode": "fixed" },
+            "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2 },
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 15 },
+                { "color": "red", "value": 30 }
+              ]
+            }
+          }
+        },
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 }
+      },
+      {
+        "id": 14,
+        "title": "Queue Time Trend",
+        "type": "timeseries",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "targets": [
+          {
+            "expr": "github_runner_queue_time_seconds{runner_name=~\"$runner_name\",runner_type=~\"$runner_type\"}",
+            "legendFormat": "{{ runner_name }} ({{ runner_type }})"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "palette-classic" },
+            "custom": { "drawStyle": "line", "fillOpacity": 15 },
+            "unit": "s"
+          }
+        },
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 }
+      },
+      {
+        "id": 20,
+        "title": "DORA Classification Reference",
+        "type": "row",
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+        "collapsed": false
+      },
+      {
+        "id": 21,
+        "title": "DORA Performance Levels",
+        "description": "Reference table for DORA metric performance levels based on the State of DevOps Report",
+        "type": "text",
+        "options": {
+          "mode": "markdown",
+          "content": "| Metric | Elite | High | Medium | Low |\n|--------|-------|------|--------|-----|\n| **Deployment Frequency** | Multiple/day | Weekly-Monthly | Monthly-6mo | <6mo |\n| **Lead Time for Changes** | <1 hour | 1 day-1 week | 1-6 months | >6 months |\n| **Change Failure Rate** | 0-15% | 16-30% | 16-30% | 46-60% |\n| **Mean Time to Recovery** | <1 hour | <1 day | 1 day-1 week | >6 months |"
+        },
+        "gridPos": { "h": 5, "w": 24, "x": 0, "y": 25 }
+      }
+    ],
+    "annotations": {
+      "list": []
+    }
+  },
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "Prometheus datasource",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" },
+    { "type": "panel", "id": "stat", "name": "Stat" },
+    { "type": "panel", "id": "gauge", "name": "Gauge" },
+    { "type": "panel", "id": "timeseries", "name": "Time series" },
+    { "type": "panel", "id": "text", "name": "Text" }
+  ]
+}
