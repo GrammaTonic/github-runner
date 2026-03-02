@@ -48,10 +48,26 @@ scrape_configs:
     scrape_interval: 30s
     metrics_path: /metrics
 
-  # GitHub Runner application metrics
-  - job_name: "github-runner"
+  # GitHub Runner application metrics - Standard runner
+  - job_name: "github-runner-standard"
     static_configs:
-      - targets: ["runner:8080"]
+      - targets: ["github-runner-main:9091"]
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # GitHub Runner application metrics - Chrome runner
+  - job_name: "github-runner-chrome"
+    static_configs:
+      - targets: ["github-runner-chrome:9091"]
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # GitHub Runner application metrics - Chrome-Go runner
+  - job_name: "github-runner-chrome-go"
+    static_configs:
+      - targets: ["github-runner-chrome-go:9091"]
     scrape_interval: 15s
     metrics_path: /metrics
     scrape_timeout: 10s
