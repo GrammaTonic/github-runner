@@ -21,8 +21,8 @@ PASS=0
 FAIL=0
 TOTAL=0
 
-log_pass() { ((PASS++)); ((TOTAL++)); echo -e "  ${GREEN}✓${NC} $1"; }
-log_fail() { ((FAIL++)); ((TOTAL++)); echo -e "  ${RED}✗${NC} $1"; }
+log_pass() { PASS=$((PASS + 1)); TOTAL=$((TOTAL + 1)); echo -e "  ${GREEN}✓${NC} $1"; }
+log_fail() { FAIL=$((FAIL + 1)); TOTAL=$((TOTAL + 1)); echo -e "  ${RED}✗${NC} $1"; }
 log_info() { echo -e "${YELLOW}→${NC} $1"; }
 log_section() { echo -e "\n${BLUE}━━━${NC} $1 ${BLUE}━━━${NC}"; }
 
@@ -79,7 +79,7 @@ for script_path in "${METRICS_FILES[@]}"; do
       # Disallow: hardcoded values like GITHUB_TOKEN="ghp_abc123..."
       MATCHES=$(grep -inE "$pattern" "$FULL_PATH" 2>/dev/null | \
         grep -v '^\s*#' | \
-        grep -v '\$\{' | \
+        grep -vF '${' | \
         grep -v '\$(' | \
         grep -v ':-}' | \
         grep -v ':-""' | \

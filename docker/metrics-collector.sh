@@ -92,7 +92,7 @@ calculate_histogram() {
 	# Initialize bucket counts to 0
 	local i
 	for i in "${!HISTOGRAM_BUCKETS[@]}"; do
-		bucket_counts_ref[$i]=0
+		bucket_counts_ref[i]=0
 	done
 	# +Inf bucket
 	bucket_counts_ref[${#HISTOGRAM_BUCKETS[@]}]=0
@@ -120,7 +120,7 @@ calculate_histogram() {
 		# Increment histogram buckets (cumulative)
 		for i in "${!HISTOGRAM_BUCKETS[@]}"; do
 			if [[ "$duration" -le "${HISTOGRAM_BUCKETS[$i]}" ]]; then
-				bucket_counts_ref[$i]=$((bucket_counts_ref[$i] + 1))
+				bucket_counts_ref[i]=$((bucket_counts_ref[i] + 1))
 			fi
 		done
 		# +Inf bucket always increments
@@ -131,7 +131,7 @@ calculate_histogram() {
 	# The above loop already counts per-bucket, but Prometheus requires cumulative
 	# So we need to accumulate: bucket[i] += bucket[i-1]
 	for ((i = 1; i < ${#HISTOGRAM_BUCKETS[@]}; i++)); do
-		bucket_counts_ref[$i]=$((bucket_counts_ref[$i] + bucket_counts_ref[$((i - 1))]))
+		bucket_counts_ref[i]=$((bucket_counts_ref[i] + bucket_counts_ref[i - 1]))
 	done
 	# +Inf = total count
 	bucket_counts_ref[${#HISTOGRAM_BUCKETS[@]}]=$count_ref
@@ -175,6 +175,7 @@ calculate_queue_time() {
 # TODO: BuildKit cache logs are on the Docker host, not inside the runner container.
 # This function currently returns placeholder values (0.0).
 # Future work: parse docker build output, query buildx metadata, or use host-side exporter.
+# shellcheck disable=SC2034  # Variables assigned via nameref to caller's scope
 calculate_cache_metrics() {
 	local -n buildkit_ref=$1
 	local -n apt_ref=$2
