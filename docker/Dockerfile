@@ -169,6 +169,12 @@ COPY --chown=runner:runner metrics-server.sh /usr/local/bin/metrics-server.sh
 COPY --chown=runner:runner metrics-collector.sh /usr/local/bin/metrics-collector.sh
 RUN chmod +x /usr/local/bin/metrics-server.sh /usr/local/bin/metrics-collector.sh
 
+# Copy job lifecycle hook scripts (Phase 3: DORA Metrics)
+# TASK-028: Runner calls these via ACTIONS_RUNNER_HOOK_JOB_STARTED/COMPLETED
+COPY --chown=runner:runner job-started.sh /usr/local/bin/job-started.sh
+COPY --chown=runner:runner job-completed.sh /usr/local/bin/job-completed.sh
+RUN chmod +x /usr/local/bin/job-started.sh /usr/local/bin/job-completed.sh
+
 
 # Final image runs as unprivileged runner user.
 USER runner
