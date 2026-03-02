@@ -473,7 +473,7 @@ jobs:
           sarif_file: "trivy-results.sarif"
           category: "cicd-filesystem-scan"
       - name: Check for secrets in repository
-        uses: trufflesecurity/trufflehog@v3.88.1
+        uses: trufflesecurity/trufflehog@v3.93.6
         with:
           path: ./
           base: ${{ github.event.before }}
