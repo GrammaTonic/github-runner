@@ -37,7 +37,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -f /etc/apt/apt.conf.d/docker-clean \
     && echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache \
     && apt-get update && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends curl ca-certificates
+    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 # --- CREATE RUNNER USER FOR BUILD STAGE ---
 RUN useradd -m -s /bin/bash -u 1001 runner
@@ -144,7 +146,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get update && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
     ca-certificates curl git jq libicu-dev python3 python3-pip python3-venv \
-    docker.io iputils-ping procps netcat-openbsd
+    docker.io iputils-ping procps netcat-openbsd \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 # --- USER AND DIRECTORIES ---
 RUN useradd -m -s /bin/bash -u 1001 runner \
@@ -160,20 +164,18 @@ WORKDIR /actions-runner
 COPY --from=builder --chown=runner:runner /actions-runner /actions-runner
 WORKDIR /home/runner
 
-# Copy the dedicated entrypoint
-COPY --chown=runner:runner entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
-# Copy Prometheus metrics scripts (Phase 1: Prometheus Monitoring)
+# Consolidated COPY for all scripts (build context is ./docker)
+COPY --chown=runner:runner entrypoint.sh /entrypoint.sh
 COPY --chown=runner:runner metrics-server.sh /usr/local/bin/metrics-server.sh
 COPY --chown=runner:runner metrics-collector.sh /usr/local/bin/metrics-collector.sh
-RUN chmod +x /usr/local/bin/metrics-server.sh /usr/local/bin/metrics-collector.sh
-
-# Copy job lifecycle hook scripts (Phase 3: DORA Metrics)
-# TASK-028: Runner calls these via ACTIONS_RUNNER_HOOK_JOB_STARTED/COMPLETED
 COPY --chown=runner:runner job-started.sh /usr/local/bin/job-started.sh
 COPY --chown=runner:runner job-completed.sh /usr/local/bin/job-completed.sh
-RUN chmod +x /usr/local/bin/job-started.sh /usr/local/bin/job-completed.sh
+RUN chmod +x /entrypoint.sh \
+    /usr/local/bin/metrics-server.sh \
+    /usr/local/bin/metrics-collector.sh \
+    /usr/local/bin/job-started.sh \
+    /usr/local/bin/job-completed.sh
 
 
 # Final image runs as unprivileged runner user.
