@@ -152,9 +152,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 # --- USER AND DIRECTORIES ---
 RUN useradd -m -s /bin/bash -u 1001 runner \
-    && usermod -aG sudo runner \
     && usermod -aG docker runner \
-    && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
     && mkdir -p /home/runner/workspace /actions-runner \
     && chown -R runner:runner /home/runner /actions-runner
 
