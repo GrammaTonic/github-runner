@@ -164,20 +164,18 @@ WORKDIR /actions-runner
 COPY --from=builder --chown=runner:runner /actions-runner /actions-runner
 WORKDIR /home/runner
 
-# Copy the dedicated entrypoint
-COPY --chown=runner:runner docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
-# Copy Prometheus metrics scripts (Phase 1: Prometheus Monitoring)
-COPY --chown=runner:runner docker/metrics-server.sh /usr/local/bin/metrics-server.sh
-COPY --chown=runner:runner docker/metrics-collector.sh /usr/local/bin/metrics-collector.sh
-RUN chmod +x /usr/local/bin/metrics-server.sh /usr/local/bin/metrics-collector.sh
-
-# Copy job lifecycle hook scripts (Phase 3: DORA Metrics)
-# TASK-028: Runner calls these via ACTIONS_RUNNER_HOOK_JOB_STARTED/COMPLETED
-COPY --chown=runner:runner docker/job-started.sh /usr/local/bin/job-started.sh
-COPY --chown=runner:runner docker/job-completed.sh /usr/local/bin/job-completed.sh
-RUN chmod +x /usr/local/bin/job-started.sh /usr/local/bin/job-completed.sh
+# Consolidated COPY for all scripts (build context is ./docker)
+COPY --chown=runner:runner entrypoint.sh /entrypoint.sh
+COPY --chown=runner:runner metrics-server.sh /usr/local/bin/metrics-server.sh
+COPY --chown=runner:runner metrics-collector.sh /usr/local/bin/metrics-collector.sh
+COPY --chown=runner:runner job-started.sh /usr/local/bin/job-started.sh
+COPY --chown=runner:runner job-completed.sh /usr/local/bin/job-completed.sh
+RUN chmod +x /entrypoint.sh \
+    /usr/local/bin/metrics-server.sh \
+    /usr/local/bin/metrics-collector.sh \
+    /usr/local/bin/job-started.sh \
+    /usr/local/bin/job-completed.sh
 
 
 # Final image runs as unprivileged runner user.
