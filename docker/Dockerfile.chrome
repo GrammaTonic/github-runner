@@ -65,6 +65,7 @@ ENV DIFF_VERSION=${DIFF_VERSION}
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 
+
 # --- SYSTEM, NODE.JS, PYTHON, CHROME AND DRIVERS INSTALL (COMBINED) ---
 # hadolint ignore=DL3008,DL3015
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -73,6 +74,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker \
     && rm -f /etc/apt/apt.conf.d/docker-clean \
     && echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache \
+    && echo "path-exclude /usr/share/doc/*" > /etc/dpkg/dpkg.cfg.d/01_nodoc \
+    && echo "path-exclude /usr/share/man/*" >> /etc/dpkg/dpkg.cfg.d/01_nodoc \
     && apt-get update && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
         curl ca-certificates gnupg wget unzip xz-utils \
@@ -85,9 +88,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     # All npm and pip packages are version-pinned below for reproducibility
     && apt-get autoremove -y \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && (find /usr/share/doc -type f -delete 2>/dev/null || true) \
-    && (find /usr/share/man -type f -delete 2>/dev/null || true)
+    && rm -rf /var/lib/apt/lists/*
 
 # --- INSTALL CHROME AND CHROMEDRIVER ---
 # Use BuildKit cache for downloads
@@ -248,9 +249,10 @@ RUN chmod +x /usr/local/bin/job-started.sh /usr/local/bin/job-completed.sh
 EXPOSE 9091
 
 
-# Enhanced healthcheck: verify both Runner.Listener and Chrome availability
+
+# Enhanced healthcheck: verify both Runner.Listener and Chrome availability (simplified)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD pgrep -f "Runner.Listener" > /dev/null && command -v google-chrome > /dev/null && google-chrome --version > /dev/null || exit 1
+    CMD pgrep -f "Runner.Listener" > /dev/null && google-chrome --version > /dev/null || exit 1
 
 # Build-time verification: check Playwright and Chrome install
 RUN google-chrome --version && npm exec playwright -- --version
