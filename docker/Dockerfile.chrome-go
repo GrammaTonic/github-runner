@@ -129,8 +129,6 @@ RUN --mount=type=cache,target=/tmp/downloads \
 RUN useradd -m -s /bin/bash runner \
     && mkdir -p /home/runner/workspace /actions-runner \
     && chown -R runner:runner /home/runner /actions-runner
-    && mkdir -p /home/runner/workspace /actions-runner \
-    && chown -R runner:runner /home/runner /actions-runner
 
 # --- INSTALL NODE.JS ---
 # Use BuildKit cache for Node.js download
