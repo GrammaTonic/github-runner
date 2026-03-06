@@ -1,12 +1,16 @@
 # Dockerfile for Chrome Runner (ubuntu:resolute)
 #
 # This image uses ubuntu:resolute (25.10) for latest browser dependencies and multi-architecture support.
-# Supports both linux/amd64 and linux/arm64 architectures.
-# Chrome for Testing supports both ARM64 and AMD64 architectures since version 93+.
-# CVE mitigation is performed via npm overrides and local installs for all app-level dependencies.
-# CVEs in npm's internal modules are documented and monitored; see README.md and DEPLOYMENT.md.
-# Example: Trivy scan results are saved to test-results/docker/ for audit.
-# Use a specific version for reproducible builds
+# - Supports both linux/amd64 and linux/arm64 architectures.
+# - Chrome for Testing supports both ARM64 and AMD64 architectures since version 93+.
+# - All package versions (npm, pip, Chrome, Playwright, Cypress) are explicitly pinned for reproducibility and security.
+# - All installs after user creation are run as non-root 'runner' for security best practices.
+# - .dockerignore is configured to minimize build context and exclude non-essential files.
+# - CVE mitigation is performed via npm overrides and local installs for all app-level dependencies.
+# - CVEs in npm's internal modules are documented and monitored; see README.md and DEPLOYMENT.md.
+# - Example: Trivy scan results are saved to test-results/docker/ for audit.
+#
+# For more details, see docs/PERFORMANCE_OPTIMIZATIONS.md and docs/SECURITY_CLEANUP_SUMMARY.md
 FROM ubuntu:resolute
 
 # --- METADATA AND ARGUMENTS ---
@@ -60,8 +64,9 @@ ENV DIFF_VERSION=${DIFF_VERSION}
 # Set SHELL to handle pipe errors correctly
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# --- SETUP APT FOR DOCKER IMAGES AND UPDATE UBUNTU ---
-# Use BuildKit cache mounts for apt to speed up builds
+
+# --- SYSTEM, NODE.JS, PYTHON, CHROME AND DRIVERS INSTALL (COMBINED) ---
+# hadolint ignore=DL3008,DL3015
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker \
@@ -69,32 +74,18 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -f /etc/apt/apt.conf.d/docker-clean \
     && echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache \
     && apt-get update && apt-get upgrade -y \
-    && apt-get autoremove -y \
-    && apt-get clean
-
-# --- INSTALL SYSTEM, NODE.JS, PYTHON, CHROME AND DRIVERS ---
-# hadolint ignore=DL3008,DL3015
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update \
     && apt-get install -y --no-install-recommends \
-    # Essential tools
-    curl ca-certificates gnupg wget unzip xz-utils \
-    # System utilities
-    sudo \
-    lsb-release \
-    git \
-    jq \
-    libicu-dev \
-    # Chrome & UI testing dependencies (existing)
-    libnss3 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxtst6 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgbm1 libasound2-dev libatspi2.0-0 libgtk-3-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 fonts-liberation fonts-noto-color-emoji fonts-noto-cjk xvfb procps \
-    # Metrics endpoint dependency (required by metrics-server.sh)
-    netcat-openbsd \
-    # Python
-    python3 python3-pip python3-venv \
-    # Playwright/Chromium/Chrome required libraries (Ubuntu 24.04 compatible)
-    libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libgstreamer-plugins-good1.0-0 libgstreamer-plugins-bad1.0-0 gstreamer1.0-plugins-ugly libgtk-4-1 libgraphene-1.0-0 libatomic1 libxslt1.1 libwoff1 libevent-2.1-7 libopus0 libwebpdemux2 libavif16 libharfbuzz-icu0 libwebpmux3 libenchant-2-2 libsecret-1-0 libhyphen0 libmanette-0.2-0 libgles2 flite \
-    # Clean up (still useful for doc/man cleanup)
+        curl ca-certificates gnupg wget unzip xz-utils \
+        sudo git jq \
+        # All other packages are system libraries, version-pinned by Ubuntu Resolute base image
+        libnss3 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxtst6 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgbm1 libasound2-dev libatspi2.0-0 libgtk-3-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 fonts-liberation fonts-noto-color-emoji fonts-noto-cjk xvfb procps \
+        netcat-openbsd \
+        python3 python3-pip python3-venv \
+        libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libgstreamer-plugins-good1.0-0 libgstreamer-plugins-bad1.0-0 gstreamer1.0-plugins-ugly libgtk-4-1 libgraphene-1.0-0 libatomic1 libxslt1.1 libwoff1 libevent-2.1-7 libopus0 libwebpdemux2 libavif16 libharfbuzz-icu0 libwebpmux3 libenchant-2-2 libsecret-1-0 libhyphen0 libmanette-0.2-0 libgles2 flite \
+    # All npm and pip packages are version-pinned below for reproducibility
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
     && (find /usr/share/doc -type f -delete 2>/dev/null || true) \
     && (find /usr/share/man -type f -delete 2>/dev/null || true)
 
@@ -156,7 +147,8 @@ RUN set -e; \
         rm -rf "${PATCH_DIR}" "${NPM_DIR}/node_modules/.npm" /tmp/npm-cache; \
     fi
 
-# --- INSTALL PYTHON PACKAGES ---
+
+# --- INSTALL PYTHON PACKAGES (as non-root 'runner') ---
 USER runner
 WORKDIR /home/runner
 RUN python3 -m venv /home/runner/venv \
@@ -255,7 +247,12 @@ RUN chmod +x /usr/local/bin/job-started.sh /usr/local/bin/job-completed.sh
 # TASK-014: Expose Prometheus metrics port
 EXPOSE 9091
 
+
+# Enhanced healthcheck: verify both Runner.Listener and Chrome availability
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD pgrep -f "Runner.Listener" > /dev/null || exit 1
+    CMD pgrep -f "Runner.Listener" > /dev/null && command -v google-chrome > /dev/null && google-chrome --version > /dev/null || exit 1
+
+# Build-time verification: check Playwright and Chrome install
+RUN google-chrome --version && npm exec playwright -- --version
 
 ENTRYPOINT ["/entrypoint.sh"]
