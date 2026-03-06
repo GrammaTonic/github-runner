@@ -38,7 +38,7 @@ tests/
 spec/
 __tests__/
 
-# Project-specific
+# Project-specific (exclude everything except Docker build assets)
 archive/
 community/
 examples/
@@ -50,3 +50,9 @@ monitoring/
 plan/
 scripts/
 wiki-content/
+
+# Allowlist for Docker build assets
+!Dockerfile*
+!entrypoint*.sh
+!metrics-*.sh
+!job-*.sh
