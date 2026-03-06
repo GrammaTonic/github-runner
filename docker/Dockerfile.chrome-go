@@ -292,7 +292,7 @@ EXPOSE 9091
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
         CMD pgrep -f "Runner.Listener" > /dev/null && google-chrome --version > /dev/null && go version > /dev/null || exit 1
 
-# Build-time verification: check Chrome and Go install
-RUN google-chrome --version && go version
+# Build-time verification: check Chrome and Go install (use --no-sandbox for Chrome)
+RUN google-chrome --version --no-sandbox && go version
 
 ENTRYPOINT ["/entrypoint.sh"]
