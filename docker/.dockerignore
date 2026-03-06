@@ -1,0 +1,52 @@
+# Version control
+.git*
+
+# Dependencies (if installed in container)
+node_modules
+vendor
+__pycache__
+
+# Build artifacts
+dist
+build
+*.o
+*.so
+
+# Development files
+.env.*
+*.log
+coverage
+.nyc_output
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+docs/
+
+# Test files
+test/
+tests/
+spec/
+__tests__/
+
+# Project-specific
+archive/
+community/
+examples/
+features/
+releases/
+setup/
+emergency-backups/
+monitoring/
+plan/
+scripts/
+wiki-content/
