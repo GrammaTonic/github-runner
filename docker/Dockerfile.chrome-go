@@ -127,8 +127,6 @@ RUN --mount=type=cache,target=/tmp/downloads \
 
 # --- CREATE USER AND DIRECTORIES ---
 RUN useradd -m -s /bin/bash runner \
-    && usermod -aG sudo runner \
-    && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
     && mkdir -p /home/runner/workspace /actions-runner \
     && chown -R runner:runner /home/runner /actions-runner
 
