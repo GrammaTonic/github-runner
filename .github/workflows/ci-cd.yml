@@ -18,11 +18,6 @@ on:
       - "monitoring/**"
       - ".github/workflows/**"
       - "tests/**"
-    paths-ignore:
-      - "docs/**"
-      - "README.md"
-      - "VERSION"
-      - "docs-wiki-full-patch.diff"
   pull_request:
     branches: [main, develop]
     paths:
@@ -33,10 +28,6 @@ on:
       - ".github/workflows/**"
       - "tests/**"
       - "docs/**"
-    paths-ignore:
-      - "docs/**"
-      - "README.md"
-      - "VERSION"
   workflow_dispatch:
     inputs:
       skip_tests:
