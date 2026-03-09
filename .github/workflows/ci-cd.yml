@@ -1274,107 +1274,107 @@ jobs:
         with:
           sarif_file: "trivy-chrome-go-results.sarif"
           category: "cicd-chrome-go-container-scan"
-    sbom-vuln-validation:
-      name: SBOM & Vulnerability Validation
-      runs-on: ubuntu-latest
-      needs: [build, build-chrome, build-chrome-go]
-      if: >-
-        startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/tags/')
-      permissions:
-        contents: read
-        packages: read
-        security-events: write
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v6
-          with:
-            fetch-depth: 1
-        - name: Install Trivy
-          uses: ./.github/actions/install-trivy
-        - name: Generate SBOM for normal image
-          uses: aquasecurity/trivy-action@0.35.0
-          with:
-            image-ref: ${{ needs.build.outputs.normal-image-primary }}
-            format: cyclonedx
-            output: sbom-normal.cdx
-            timeout: "10m"
-            skip-setup-trivy: true
-        - name: Generate SBOM for chrome image
-          uses: aquasecurity/trivy-action@0.35.0
-          with:
-            image-ref: ${{ needs.build-chrome.outputs.chrome-image-primary }}
-            format: cyclonedx
-            output: sbom-chrome.cdx
-            timeout: "10m"
-            skip-setup-trivy: true
-        - name: Generate SBOM for chrome-go image
-          uses: aquasecurity/trivy-action@0.35.0
-          with:
-            image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
-            format: cyclonedx
-            output: sbom-chrome-go.cdx
-            timeout: "10m"
-            skip-setup-trivy: true
-        - name: Upload SBOM artifacts
-          uses: actions/upload-artifact@v7
-          with:
-            name: ${{ github.job }}-sbom-artifacts
-            path: |
-              sbom-normal.cdx
-              sbom-chrome.cdx
-              sbom-chrome-go.cdx
-            retention-days: 30
-        - name: Vulnerability scan normal image
-          uses: aquasecurity/trivy-action@0.35.0
-          with:
-            image-ref: ${{ needs.build.outputs.normal-image-primary }}
-            format: sarif
-            output: trivy-normal-results.sarif
-            timeout: "15m"
-            severity: "CRITICAL,HIGH"
-            exit-code: 1
-            skip-setup-trivy: true
-        - name: Upload normal vuln scan SARIF
-          uses: github/codeql-action/upload-sarif@v4
-          if: always()
-          continue-on-error: true
-          with:
-            sarif_file: "trivy-normal-results.sarif"
-            category: "release-image-scan"
-        - name: Vulnerability scan chrome image
-          uses: aquasecurity/trivy-action@0.35.0
-          with:
-            image-ref: ${{ needs.build-chrome.outputs.chrome-image-primary }}
-            format: sarif
-            output: trivy-chrome-results.release.sarif
-            timeout: "15m"
-            severity: "CRITICAL,HIGH"
-            exit-code: 1
-            skip-setup-trivy: true
-        - name: Upload chrome vuln scan SARIF
-          uses: github/codeql-action/upload-sarif@v4
-          if: always()
-          continue-on-error: true
-          with:
-            sarif_file: "trivy-chrome-results.release.sarif"
-            category: "release-chrome-image-scan"
-        - name: Vulnerability scan chrome-go image
-          uses: aquasecurity/trivy-action@0.35.0
-          with:
-            image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
-            format: sarif
-            output: trivy-chrome-go-results.release.sarif
-            timeout: "15m"
-            severity: "CRITICAL,HIGH"
-            exit-code: 1
-            skip-setup-trivy: true
-        - name: Upload chrome-go vuln scan SARIF
-          uses: github/codeql-action/upload-sarif@v4
-          if: always()
-          continue-on-error: true
-          with:
-            sarif_file: "trivy-chrome-go-results.release.sarif"
-            category: "release-chrome-go-image-scan"
+  sbom-vuln-validation:
+    name: SBOM & Vulnerability Validation
+    runs-on: ubuntu-latest
+    needs: [build, build-chrome, build-chrome-go]
+    if: >-
+      startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - name: Install Trivy
+        uses: ./.github/actions/install-trivy
+      - name: Generate SBOM for normal image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ${{ needs.build.outputs.normal-image-primary }}
+          format: cyclonedx
+          output: sbom-normal.cdx
+          timeout: "10m"
+          skip-setup-trivy: true
+      - name: Generate SBOM for chrome image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ${{ needs.build-chrome.outputs.chrome-image-primary }}
+          format: cyclonedx
+          output: sbom-chrome.cdx
+          timeout: "10m"
+          skip-setup-trivy: true
+      - name: Generate SBOM for chrome-go image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
+          format: cyclonedx
+          output: sbom-chrome-go.cdx
+          timeout: "10m"
+          skip-setup-trivy: true
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ github.job }}-sbom-artifacts
+          path: |
+            sbom-normal.cdx
+            sbom-chrome.cdx
+            sbom-chrome-go.cdx
+          retention-days: 30
+      - name: Vulnerability scan normal image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ${{ needs.build.outputs.normal-image-primary }}
+          format: sarif
+          output: trivy-normal-results.sarif
+          timeout: "15m"
+          severity: "CRITICAL,HIGH"
+          exit-code: 1
+          skip-setup-trivy: true
+      - name: Upload normal vuln scan SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        continue-on-error: true
+        with:
+          sarif_file: "trivy-normal-results.sarif"
+          category: "release-image-scan"
+      - name: Vulnerability scan chrome image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ${{ needs.build-chrome.outputs.chrome-image-primary }}
+          format: sarif
+          output: trivy-chrome-results.release.sarif
+          timeout: "15m"
+          severity: "CRITICAL,HIGH"
+          exit-code: 1
+          skip-setup-trivy: true
+      - name: Upload chrome vuln scan SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        continue-on-error: true
+        with:
+          sarif_file: "trivy-chrome-results.release.sarif"
+          category: "release-chrome-image-scan"
+      - name: Vulnerability scan chrome-go image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
+          format: sarif
+          output: trivy-chrome-go-results.release.sarif
+          timeout: "15m"
+          severity: "CRITICAL,HIGH"
+          exit-code: 1
+          skip-setup-trivy: true
+      - name: Upload chrome-go vuln scan SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        continue-on-error: true
+        with:
+          sarif_file: "trivy-chrome-go-results.release.sarif"
+          category: "release-chrome-go-image-scan"
   cleanup:
     name: Cleanup Resources
     runs-on: ubuntu-latest
