@@ -873,11 +873,7 @@ jobs:
           format: table
           exit-code: 1
         continue-on-error: true
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-${{ matrix.test-suite }}-${{ matrix.os }}-${{ matrix.runner }}
-          path: test-results/${{ matrix.test-suite }}
+      # Upload will happen at the end of the job to avoid duplicate artifact names
       - name: Run Integration Tests
         if: matrix.test-suite == 'integration'
         run: |
