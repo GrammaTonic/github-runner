@@ -80,7 +80,7 @@ jobs:
       # Filesystem vulnerability scan
       - name: Run Trivy filesystem scan
         if: contains(steps.params.outputs.scan_targets, 'filesystem')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -99,7 +99,7 @@ jobs:
 
       - name: Generate filesystem JSON report
         if: contains(steps.params.outputs.scan_targets, 'filesystem')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -111,11 +111,11 @@ jobs:
       # Container vulnerability scan
       - name: Set up Docker Buildx
         if: contains(steps.params.outputs.scan_targets, 'container')
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build standard runner image for scanning
         if: contains(steps.params.outputs.scan_targets, 'container')
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker
           file: ./docker/Dockerfile
@@ -138,7 +138,7 @@ jobs:
 
       - name: Run Trivy container scan
         if: contains(steps.params.outputs.scan_targets, 'container')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: "github-runner:scan"
           format: "sarif"
@@ -157,7 +157,7 @@ jobs:
 
       - name: Generate container JSON report
         if: contains(steps.params.outputs.scan_targets, 'container')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: "github-runner:scan"
           format: "json"
@@ -177,7 +177,7 @@ jobs:
       # Chrome runner container scan
       - name: Build Chrome runner image for scanning
         if: contains(steps.params.outputs.scan_targets, 'chrome')
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker
           file: ./docker/Dockerfile.chrome
@@ -200,7 +200,7 @@ jobs:
 
       - name: Run Trivy Chrome container scan
         if: contains(steps.params.outputs.scan_targets, 'chrome')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: "github-runner-chrome:scan"
           format: "sarif"
@@ -219,7 +219,7 @@ jobs:
 
       - name: Generate Chrome JSON report
         if: contains(steps.params.outputs.scan_targets, 'chrome')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: "github-runner-chrome:scan"
           format: "json"
@@ -239,7 +239,7 @@ jobs:
       # Chrome-Go runner container scan
       - name: Build Chrome-Go runner image for scanning
         if: contains(steps.params.outputs.scan_targets, 'chrome-go')
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker
           file: ./docker/Dockerfile.chrome-go
@@ -262,7 +262,7 @@ jobs:
 
       - name: Run Trivy Chrome-Go container scan
         if: contains(steps.params.outputs.scan_targets, 'chrome-go')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: "github-runner-chrome-go:scan"
           format: "sarif"
@@ -281,7 +281,7 @@ jobs:
 
       - name: Generate Chrome-Go JSON report
         if: contains(steps.params.outputs.scan_targets, 'chrome-go')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: "github-runner-chrome-go:scan"
           format: "json"
@@ -424,7 +424,7 @@ jobs:
             console.log(`✅ Created critical vulnerability issue with ${critical} CRITICAL findings.`);
 
       - name: Upload Security Reports
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: security-scan-reports-${{ steps.params.outputs.timestamp }}
           path: |
@@ -477,7 +477,7 @@ jobs:
           EOF
 
       - name: Upload Security Summary
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: security-summary-${{ steps.params.outputs.timestamp }}
           path: security-report.md
