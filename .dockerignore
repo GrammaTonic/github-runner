@@ -52,7 +52,7 @@ scripts/
 wiki-content/
 
 # Allowlist for Docker build assets
-!docker/Dockerfile*
-!docker/entrypoint*.sh
-!docker/metrics-*.sh
-!docker/job-*.sh
+!Dockerfile*
+!entrypoint*.sh
+!metrics-*.sh
+!job-*.sh
