@@ -820,15 +820,16 @@ jobs:
           retention-days: 30
   test-comprehensive:
     name: Comprehensive Integration Tests
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     needs: [build, build-chrome]
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        test-suite:
-          [unit, integration, docker-validation, security, configuration]
+        os: [ubuntu-latest, ubuntu-22.04]
+        runner: [self-hosted, ubuntu-latest]
+        test-suite: [unit, integration, docker-validation, security, configuration]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -836,18 +837,24 @@ jobs:
           fetch-depth: 1
       - name: Set up test environment
         run: |
-          # Install comprehensive test dependencies
           sudo apt-get update
           sudo apt-get install -y jq curl
-          # Create test results directory
           mkdir -p test-results/${{ matrix.test-suite }}
-          # Make all test scripts executable
           find tests/ -name "*.sh" -type f -exec chmod +x {} \;
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/pip
+            ~/.cache/apt
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json', '**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
       - name: Run Unit Tests
         if: matrix.test-suite == 'unit'
         run: |
           echo "🧪 Running unit tests..."
-          # Run unit tests for package validation
           TEST_RESULTS_DIR="test-results/unit" tests/unit/package-validation.sh
       - name: Run Metrics Unit Tests
         if: matrix.test-suite == 'unit'
@@ -858,6 +865,19 @@ jobs:
           else
             echo "⚠️ test-metrics-phase1.sh not found, skipping"
           fi
+      - name: Security Scan (Trivy)
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          exit-code: 1
+        continue-on-error: true
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.test-suite }}-${{ matrix.os }}-${{ matrix.runner }}
+          path: test-results/${{ matrix.test-suite }}
       - name: Run Integration Tests
         if: matrix.test-suite == 'integration'
         run: |
