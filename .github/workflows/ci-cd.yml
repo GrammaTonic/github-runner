@@ -265,7 +265,7 @@ jobs:
       - name: Upload Playwright screenshot artifact
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-google-screenshot
+          name: ${{ github.job }}-playwright-google-screenshot
           path: test-results/playwright/google_screenshot_*.png
           retention-days: 30
   provision-chrome-go-runner:
@@ -389,7 +389,7 @@ jobs:
       - name: Upload Playwright screenshot artifact
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-chrome-go-google-screenshot
+          name: ${{ github.job }}-playwright-chrome-go-google-screenshot
           path: test-results/playwright/google_screenshot_*.png
           retention-days: 30
   lint-and-validate:
@@ -587,7 +587,7 @@ jobs:
       - name: Upload normal runner build artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: build-normal-image-artifacts
+          name: ${{ github.job }}-build-normal-image-artifacts
           path: |
             build-normal-image-tag.txt
             build-normal-image-digest.txt
@@ -685,7 +685,7 @@ jobs:
       - name: Upload Chrome build artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: build-chrome-image-artifacts
+          name: ${{ github.job }}-build-chrome-image-artifacts
           path: |
             build-chrome-image-tag.txt
             build-chrome-image-digest.txt
@@ -783,7 +783,7 @@ jobs:
       - name: Upload Chrome-Go build artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: build-chrome-go-image-artifacts
+          name: ${{ github.job }}-build-chrome-go-image-artifacts
           path: |
             build-chrome-go-image-tag.txt
             build-chrome-go-image-digest.txt
@@ -815,12 +815,12 @@ jobs:
         uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: package-validation-results
+          name: ${{ github.job }}-package-validation-results
           path: test-results/
           retention-days: 30
   test-comprehensive:
     name: Comprehensive Integration Tests
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     needs: [build, build-chrome]
     permissions:
       contents: read
@@ -828,7 +828,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, ubuntu-22.04]
-        runner: [ubuntu-latest]
+        runner: [ubuntu-latest, ubuntu-22.04]
         test-suite: [unit, integration, docker-validation, security, configuration]
     steps:
       - name: Checkout code
@@ -1119,9 +1119,9 @@ jobs:
             echo "PASSED" > test-results/configuration/status.txt
           fi
       - name: Upload comprehensive test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: test-results-${{ matrix.test-suite }}-${{ matrix.os }}-${{ matrix.runner }}
+          name: ${{ github.job }}-test-results-${{ matrix.test-suite }}-${{ matrix.os }}-${{ matrix.runner }}
           path: test-results/${{ matrix.test-suite }}
           retention-days: 30
   test-user-deployment:
@@ -1162,7 +1162,7 @@ jobs:
         uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: user-deployment-test-results
+          name: ${{ github.job }}-user-deployment-test-results
           path: test-results/user-deployment
           retention-days: 30
   # test-container-startup job removed: containers are provisioned by provision-normal-runner and provision-chrome-runner.
@@ -1305,6 +1305,6 @@ jobs:
       - name: Upload deployment report
         uses: actions/upload-artifact@v7
         with:
-          name: deployment-report
+          name: ${{ github.job }}-deployment-report
           path: deployment-report.md
           retention-days: 30
