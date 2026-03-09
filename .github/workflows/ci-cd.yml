@@ -561,7 +561,7 @@ jobs:
           fi
       - name: Build and push normal runner Docker image
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker
           platforms: ${{ steps.platforms.outputs.platforms }}
@@ -659,7 +659,7 @@ jobs:
           fi
       - name: Build and push Chrome runner image
         id: build-chrome
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker
           platforms: linux/amd64
@@ -757,7 +757,7 @@ jobs:
           fi
       - name: Build and push Chrome-Go runner image
         id: build-chrome-go
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker
           platforms: linux/amd64
