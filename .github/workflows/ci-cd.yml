@@ -570,7 +570,7 @@ jobs:
           platforms: ${{ steps.platforms.outputs.platforms }}
           file: ./docker/Dockerfile
           push: true
-          load: false
+          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: ${{ steps.force-rebuild-normal.outputs.cache_from }}
@@ -671,7 +671,7 @@ jobs:
           platforms: linux/amd64
           file: ./docker/Dockerfile.chrome
           push: true
-          load: false
+          load: true
           tags: ${{ steps.meta-chrome.outputs.tags }}
           labels: ${{ steps.meta-chrome.outputs.labels }}
           cache-from: ${{ steps.force-rebuild-chrome.outputs.cache_from }}
@@ -772,7 +772,7 @@ jobs:
           platforms: linux/amd64
           file: ./docker/Dockerfile.chrome-go
           push: true
-          load: false
+          load: true
           tags: ${{ steps.meta-chrome-go.outputs.tags }}
           labels: ${{ steps.meta-chrome-go.outputs.labels }}
           cache-from: ${{ steps.force-rebuild-chrome-go.outputs.cache_from }}
