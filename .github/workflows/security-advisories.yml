@@ -80,7 +80,7 @@ jobs:
       # Filesystem vulnerability scan
       - name: Run Trivy filesystem scan
         if: contains(steps.params.outputs.scan_targets, 'filesystem')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -99,7 +99,7 @@ jobs:
 
       - name: Generate filesystem JSON report
         if: contains(steps.params.outputs.scan_targets, 'filesystem')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -138,7 +138,7 @@ jobs:
 
       - name: Run Trivy container scan
         if: contains(steps.params.outputs.scan_targets, 'container')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: "github-runner:scan"
           format: "sarif"
@@ -157,7 +157,7 @@ jobs:
 
       - name: Generate container JSON report
         if: contains(steps.params.outputs.scan_targets, 'container')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: "github-runner:scan"
           format: "json"
@@ -200,7 +200,7 @@ jobs:
 
       - name: Run Trivy Chrome container scan
         if: contains(steps.params.outputs.scan_targets, 'chrome')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: "github-runner-chrome:scan"
           format: "sarif"
@@ -219,7 +219,7 @@ jobs:
 
       - name: Generate Chrome JSON report
         if: contains(steps.params.outputs.scan_targets, 'chrome')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: "github-runner-chrome:scan"
           format: "json"
@@ -262,7 +262,7 @@ jobs:
 
       - name: Run Trivy Chrome-Go container scan
         if: contains(steps.params.outputs.scan_targets, 'chrome-go')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: "github-runner-chrome-go:scan"
           format: "sarif"
@@ -281,7 +281,7 @@ jobs:
 
       - name: Generate Chrome-Go JSON report
         if: contains(steps.params.outputs.scan_targets, 'chrome-go')
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: "github-runner-chrome-go:scan"
           format: "json"

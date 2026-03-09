@@ -245,7 +245,7 @@ jobs:
         uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner (standard)
         if: matrix.scan == 'standard'
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-standard-artifacts.outputs.image-digest }}
           format: "sarif"
@@ -253,7 +253,7 @@ jobs:
           skip-setup-trivy: true
       - name: Run Trivy vulnerability scanner (chrome)
         if: matrix.scan == 'chrome'
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ env.REGISTRY }}/github-runner-chrome@${{ needs.build-chrome-artifacts.outputs.image-digest }}
           format: "sarif"
@@ -261,7 +261,7 @@ jobs:
           skip-setup-trivy: true
       - name: Run Trivy vulnerability scanner (chrome-go)
         if: matrix.scan == 'chrome-go'
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ env.REGISTRY }}/github-runner-chrome-go@${{ needs.build-chrome-go-artifacts.outputs.image-digest }}
           format: "sarif"
