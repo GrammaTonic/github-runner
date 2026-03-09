@@ -122,7 +122,7 @@ jobs:
       # Multi-platform builds are handled in release.yml for actual deployments
       # Vulnerabilities are detected at package level, not CPU architecture level
       - name: Build Docker image for scanning
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker
           # Explicit filename mapping: standard->Dockerfile, chrome->Dockerfile.chrome, chrome-go->Dockerfile.chrome-go
