@@ -456,7 +456,7 @@ jobs:
       - name: Install Trivy
         uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner on filesystem
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -1166,7 +1166,7 @@ jobs:
       - name: Install Trivy
         uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner on container
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ needs.build.outputs.normal-image-primary }}
           format: "sarif"
@@ -1196,7 +1196,7 @@ jobs:
       - name: Install Trivy
         uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner on Chrome container
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ needs.build-chrome.outputs.chrome-image-primary }}
           format: "sarif"
@@ -1226,7 +1226,7 @@ jobs:
       - name: Install Trivy
         uses: ./.github/actions/install-trivy
       - name: Run Trivy vulnerability scanner on Chrome-Go container
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
           format: "sarif"
