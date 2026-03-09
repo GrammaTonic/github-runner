@@ -827,9 +827,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-          os: [ubuntu-latest, ubuntu-22.04]
-          runner: [ubuntu-latest]
-          test-suite: [unit, integration, docker-validation, security, configuration]
+        os: [ubuntu-latest, ubuntu-22.04]
+        runner: [ubuntu-latest]
+        test-suite: [unit, integration, docker-validation, security, configuration]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
