@@ -81,7 +81,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         curl ca-certificates gnupg wget unzip xz-utils \
         sudo git jq \
         # All other packages are system libraries, version-pinned by Ubuntu Resolute base image
-        libnss3 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxtst6 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgbm1 libasound2-dev libatspi2.0-0 libgtk-3-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 fonts-liberation fonts-noto-color-emoji fonts-noto-cjk xvfb procps \
+        libnss3 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxtst6 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgbm1 libasound2-dev libatspi2.0-0 libgtk-3-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 fonts-liberation fonts-noto-color-emoji fonts-noto-cjk xvfb procps libicu-dev \
         netcat-openbsd \
         python3 python3-pip python3-venv \
         libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libgstreamer-plugins-good1.0-0 libgstreamer-plugins-bad1.0-0 gstreamer1.0-plugins-ugly libgtk-4-1 libgraphene-1.0-0 libatomic1 libxslt1.1 libwoff1 libevent-2.1-7 libopus0 libwebpdemux2 libavif16 libharfbuzz-icu0 libwebpmux3 libenchant-2-2 libsecret-1-0 libhyphen0 libmanette-0.2-0 libgles2 flite \

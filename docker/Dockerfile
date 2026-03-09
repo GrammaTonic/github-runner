@@ -165,15 +165,13 @@ WORKDIR /home/runner
 
 # Consolidated COPY for all scripts (build context is ./docker)
 COPY --chown=runner:runner entrypoint.sh /entrypoint.sh
-COPY --chown=runner:runner metrics-server.sh /usr/local/bin/metrics-server.sh
-COPY --chown=runner:runner metrics-collector.sh /usr/local/bin/metrics-collector.sh
-COPY --chown=runner:runner job-started.sh /usr/local/bin/job-started.sh
-COPY --chown=runner:runner job-completed.sh /usr/local/bin/job-completed.sh
-RUN chmod +x /entrypoint.sh \
-    /usr/local/bin/metrics-server.sh \
-    /usr/local/bin/metrics-collector.sh \
-    /usr/local/bin/job-started.sh \
-    /usr/local/bin/job-completed.sh
+COPY --chown=runner:runner \
+    metrics-server.sh \
+    metrics-collector.sh \
+    job-started.sh \
+    job-completed.sh \
+    /usr/local/bin/
+RUN chmod +x /entrypoint.sh /usr/local/bin/*
 
 
 # Final image runs as unprivileged runner user.
