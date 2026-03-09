@@ -58,7 +58,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
       - name: Set up QEMU for multi-platform builds
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: linux/amd64,linux/arm64
       - name: Set up Docker Buildx
@@ -121,7 +121,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
       - name: Set up QEMU for multi-platform builds
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: linux/amd64
       - name: Set up Docker Buildx
@@ -182,7 +182,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
       - name: Log in to Container Registry

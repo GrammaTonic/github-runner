@@ -510,7 +510,7 @@ jobs:
             echo "platforms=linux/amd64" >> $GITHUB_OUTPUT
           fi
       - name: Set up QEMU for multi-platform builds
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         if: steps.platforms.outputs.platforms != 'linux/amd64'
         with:
           platforms: ${{ steps.platforms.outputs.platforms }}
