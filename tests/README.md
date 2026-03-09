@@ -564,3 +564,69 @@ If tests fail:
 3. Run individual test scripts for targeted debugging
 4. Use `--verbose` mode for detailed output
 5. Use `--dry-run` mode to check syntax without builds
+
+# Integration Test Expansion Plan
+
+## 1. Job Lifecycle Integration
+- Validate job-started.sh and job-completed.sh produce correct jobs.log entries
+- Ensure metrics-collector.sh generates valid Prometheus metrics
+- Add tests for error handling and edge cases
+
+## 2. Metrics Endpoint & Performance
+- Expand test-metrics-endpoint.sh for additional metric families and label validation
+- Add more response time and update interval tests in test-metrics-performance.sh
+
+## 3. Metrics Persistence & Scaling
+- Add tests for volume persistence and multi-runner scaling
+- Validate unique port assignments and container isolation
+
+## 4. Security Integration
+- Expand test-metrics-security.sh for more token/secret patterns
+- Add tests for HTTP header security and live endpoint scanning
+
+## 5. Documentation Validation
+- Expand test-docs-validation.sh for script executability and Dockerfile COPY completeness
+
+## 6. E2E & Playwright
+- Add more Playwright tests for UI and job acceptance
+- Validate Chrome runner and user deployment flows
+
+---
+# CI/CD Workflow Update Plan
+
+## 1. Enforce Test Execution
+- Run ./tests/run-all-tests.sh for every PR and push
+- Fail CI if any test fails
+
+## 2. Coverage Reporting
+- Integrate coverage tools and upload reports
+- Fail CI if coverage drops below threshold
+
+## 3. Performance & Security
+- Run performance and security tests in CI/CD
+
+---
+# Documentation Update Plan
+
+## 1. Update /tests/README.md
+- Add new test suites and coverage
+- Document usage and expected outcomes
+
+## 2. Update /docs/
+- Add test case documentation and manual steps
+
+---
+# Test Data Management & Observability
+
+## 1. Use mock data and fixtures
+## 2. Clean up test artifacts
+## 3. Log test execution details
+## 4. Integrate test results with monitoring dashboards
+
+---
+# Implementation Log
+- Unit test script added: test-entrypoint-syntax.sh
+- Integration test expansion planned
+- CI/CD workflow update planned
+- Documentation update planned
+- E2E and Playwright test expansion planned
