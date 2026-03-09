@@ -1384,11 +1384,13 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Clean up old container images
+      - name: Clean up self-hosted runner containers
         run: |
-          echo "Cleaning up old container images..."
-          # In a real scenario, this would clean up old images from the registry
-          # For example, keeping only the last 10 images
+          echo "Cleaning up self-hosted runner containers..."
+          # Remove all runner containers by name pattern
+          docker ps -a --filter "name=github-runner" --format "{{.ID}}" | xargs -r docker rm -f
+          docker ps -a --filter "name=github-runner-chrome" --format "{{.ID}}" | xargs -r docker rm -f
+          docker ps -a --filter "name=github-runner-chrome-go" --format "{{.ID}}" | xargs -r docker rm -f
           echo "Cleanup completed"
       - name: Generate deployment report
         run: |
