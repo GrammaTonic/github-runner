@@ -570,7 +570,6 @@ jobs:
           platforms: ${{ steps.platforms.outputs.platforms }}
           file: ./docker/Dockerfile
           push: true
-          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: ${{ steps.force-rebuild-normal.outputs.cache_from }}
