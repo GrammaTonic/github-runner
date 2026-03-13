@@ -25,33 +25,32 @@ test_validation() {
         return 1
     fi
 
-    # Source the script but mock exit and external commands to avoid side effects
-    # We only want to test the validation functions that are NOT in utils.sh (e.g., validate_repository)
-    local tmp_funcs=$(mktemp)
-    sed -n '/^validate_repository()/,/^}/p' "$script" >> "$tmp_funcs"
-    sed -n '/^validate_hostname()/,/^}/p' "$script" >> "$tmp_funcs"
-    source "$tmp_funcs"
-
     local failed=false
 
-    # Test validate_numeric
-    if ! validate_numeric "9091" "PORT" > /dev/null; then log_error "validate_numeric failed for valid input"; failed=true; fi
-    if validate_numeric "abc" "PORT" > /dev/null; then log_error "validate_numeric passed for invalid input (abc)"; failed=true; fi
-    if validate_numeric "12.34" "PORT" > /dev/null; then log_error "validate_numeric passed for invalid input (12.34)"; failed=true; fi
-    if validate_numeric "" "PORT" > /dev/null; then log_error "validate_numeric passed for empty input"; failed=true; fi
+    # Test validate_number
+    if ! validate_number "PORT" "9091" > /dev/null; then log_error "validate_number failed for valid input"; failed=true; fi
+    if validate_number "PORT" "abc" > /dev/null; then log_error "validate_number passed for invalid input (abc)"; failed=true; fi
+    if validate_number "PORT" "12.34" > /dev/null; then log_error "validate_number passed for invalid input (12.34)"; failed=true; fi
+    if validate_number "PORT" "" > /dev/null; then log_error "validate_number passed for empty input"; failed=true; fi
 
     # Test validate_path
-    if ! validate_path "/tmp/metrics.prom" ".prom" > /dev/null; then log_error "validate_path failed for valid .prom path"; failed=true; fi
-    if ! validate_path "/tmp/jobs.log" ".log" > /dev/null; then log_error "validate_path failed for valid .log path"; failed=true; fi
-    if validate_path "/etc/passwd" ".prom" > /dev/null; then log_error "validate_path passed for invalid directory (/etc)"; failed=true; fi
-    if validate_path "/tmp/metrics.txt" ".prom" > /dev/null; then log_error "validate_path passed for invalid extension (.txt)"; failed=true; fi
-    if validate_path "/tmp/../etc/passwd" ".prom" > /dev/null; then log_error "validate_path passed for path traversal (..)"; failed=true; fi
+    if ! validate_path "METRICS_FILE" "/tmp/metrics.prom" "prom" > /dev/null; then log_error "validate_path failed for valid .prom path"; failed=true; fi
+    if ! validate_path "JOBS_LOG" "/tmp/jobs.log" "log" > /dev/null; then log_error "validate_path failed for valid .log path"; failed=true; fi
+    if validate_path "FILE" "/etc/passwd" "prom" > /dev/null; then log_error "validate_path passed for invalid directory (/etc)"; failed=true; fi
+    if validate_path "FILE" "/tmp/metrics.txt" "prom" > /dev/null; then log_error "validate_path passed for invalid extension (.txt)"; failed=true; fi
+    if validate_path "FILE" "/tmp/../etc/passwd" "prom" > /dev/null; then log_error "validate_path passed for path traversal (..)"; failed=true; fi
 
-    # Test validate_repository (still in entrypoint scripts)
+    # Test validate_repository
     if ! validate_repository "owner/repo" > /dev/null; then log_error "validate_repository failed for valid repository"; failed=true; fi
     if validate_repository "owner-repo" > /dev/null; then log_error "validate_repository passed for invalid repository"; failed=true; fi
 
-    rm "$tmp_funcs"
+    # Test validate_hostname
+    if ! validate_hostname "github.com" > /dev/null; then log_error "validate_hostname failed for valid hostname"; failed=true; fi
+    if validate_hostname "github.com; rm -rf /" > /dev/null; then log_error "validate_hostname passed for invalid hostname"; failed=true; fi
+
+    # Test validate_runner_name
+    if ! validate_runner_name "RUNNER_NAME" "runner-1.dot" > /dev/null; then log_error "validate_runner_name failed for valid name"; failed=true; fi
+    if validate_runner_name "RUNNER_NAME" "runner; bash" > /dev/null; then log_error "validate_runner_name passed for invalid name"; failed=true; fi
 
     if [ "$failed" = true ]; then
         return 1
