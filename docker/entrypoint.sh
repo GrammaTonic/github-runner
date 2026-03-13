@@ -28,6 +28,35 @@ validate_hostname() {
 	return 0
 }
 
+# Validate numeric input
+validate_numeric() {
+	local val="$1"
+	local name="$2"
+	if ! echo "$val" | grep -qE '^[0-9]+$'; then
+		echo "Error: Invalid $name format. Expected a number." >&2
+		return 1
+	fi
+	return 0
+}
+
+# Validate metrics path to prevent path traversal
+validate_path() {
+	local path="$1"
+	local extension="$2"
+	case "$path" in
+		"/tmp/"*"$extension") ;;
+		*)
+			echo "Error: Path must be under /tmp and end with $extension" >&2
+			return 1
+			;;
+	esac
+	if [[ "$path" == *".."* ]]; then
+		echo "Error: Path traversal is not allowed." >&2
+		return 1
+	fi
+	return 0
+}
+
 # --- VARIABLE SETUP ---
 # Assign optional variables with general-purpose defaults (before token check for metrics)
 RUNNER_NAME="${RUNNER_NAME:-docker-runner-$(hostname)}"
@@ -38,15 +67,24 @@ RUNNER_DIR="/actions-runner"
 
 # --- METRICS SETUP (Phase 1: Prometheus Monitoring) ---
 # Start metrics services BEFORE token validation to enable standalone testing
-# TASK-003: Initialize job log
-JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
-echo "Initializing job log: ${JOBS_LOG}"
-touch "${JOBS_LOG}"
 
 # TASK-004: Start metrics collection services
 METRICS_PORT="${METRICS_PORT:-9091}"
 METRICS_FILE="${METRICS_FILE:-/tmp/runner_metrics.prom}"
+METRICS_UPDATE_INTERVAL="${METRICS_UPDATE_INTERVAL:-30}"
 RUNNER_TYPE="${RUNNER_TYPE:-standard}"
+
+# TASK-003: Initialize job log
+JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
+
+# Validate metrics configurations
+validate_numeric "$METRICS_PORT" "METRICS_PORT" || exit 1
+validate_numeric "$METRICS_UPDATE_INTERVAL" "METRICS_UPDATE_INTERVAL" || exit 1
+validate_path "$METRICS_FILE" ".prom" || exit 1
+validate_path "$JOBS_LOG" ".log" || exit 1
+
+echo "Initializing job log: ${JOBS_LOG}"
+touch "${JOBS_LOG}"
 
 echo "Starting Prometheus metrics services..."
 echo "  - Metrics endpoint: http://localhost:${METRICS_PORT}/metrics"
@@ -58,7 +96,7 @@ if [ -f "/usr/local/bin/metrics-collector.sh" ]; then
 		RUNNER_TYPE="${RUNNER_TYPE}" \
 		METRICS_FILE="${METRICS_FILE}" \
 		JOBS_LOG="${JOBS_LOG}" \
-		UPDATE_INTERVAL="${METRICS_UPDATE_INTERVAL:-30}" \
+		UPDATE_INTERVAL="${METRICS_UPDATE_INTERVAL}" \
 		/usr/local/bin/metrics-collector.sh &
 	COLLECTOR_PID=$!
 	echo "Metrics collector started (PID: ${COLLECTOR_PID})"
