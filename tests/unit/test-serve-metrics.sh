@@ -88,18 +88,9 @@ fi
 # Test 3: Verify Content-Length
 echo "Test 3: Verify Content-Length"
 expected_content="test_metric 42"
-# The cat <<EOF in serve_metrics adds a newline after $metrics_content
-# But metrics_content=$(cat "$METRICS_FILE") strips trailing newlines.
-# Let's check exactly what serve_metrics does.
-# serve_metrics has:
-# cat <<EOF
-# ...
-#
-# $metrics_content
-# EOF
-# This means there is a newline after the headers, then $metrics_content, then a newline.
+# Account for the newline added by heredoc
+content_length=$(( ${#expected_content} + 1 ))
 
-content_length=${#expected_content}
 if echo "$output" | grep -q "Content-Length: $content_length"; then
     test_result "serve_metrics returns correct Content-Length" "PASS"
 else
