@@ -228,8 +228,9 @@ done
 WORKDIR /home/runner
 
 # --- VERIFICATION, HEALTHCHECK AND ENTRYPOINT ---
+COPY --chown=runner:runner utils.sh /usr/local/bin/utils.sh
 COPY --chown=runner:runner entrypoint-chrome.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN chmod +x /usr/local/bin/utils.sh /entrypoint.sh
 
 # Copy Prometheus metrics scripts (Phase 2: Prometheus Monitoring)
 # TASK-014: Add metrics scripts to Chrome runner

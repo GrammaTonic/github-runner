@@ -5,6 +5,17 @@
 set -euo pipefail
 
 # --- INPUT VALIDATION ---
+
+# Source utility functions
+# shellcheck source=docker/utils.sh
+if [ -f "/usr/local/bin/utils.sh" ]; then
+	source "/usr/local/bin/utils.sh"
+elif [ -f "./utils.sh" ]; then
+	source "./utils.sh"
+elif [ -f "docker/utils.sh" ]; then
+	source "docker/utils.sh"
+fi
+
 # Validate repository format (owner/repo) to prevent injection
 validate_repository() {
 	local repo="$1"
@@ -23,35 +34,6 @@ validate_hostname() {
 	# Hostname must be alphanumeric with dots and dashes only
 	if ! echo "$host" | grep -qE '^[a-zA-Z0-9.-]+$'; then
 		echo "Error: Invalid GITHUB_HOST format." >&2
-		return 1
-	fi
-	return 0
-}
-
-# Validate numeric input
-validate_numeric() {
-	local val="$1"
-	local name="$2"
-	if ! echo "$val" | grep -qE '^[0-9]+$'; then
-		echo "Error: Invalid $name format. Expected a number." >&2
-		return 1
-	fi
-	return 0
-}
-
-# Validate metrics path to prevent path traversal
-validate_path() {
-	local path="$1"
-	local extension="$2"
-	case "$path" in
-		"/tmp/"*"$extension") ;;
-		*)
-			echo "Error: Path must be under /tmp and end with $extension" >&2
-			return 1
-			;;
-	esac
-	if [[ "$path" == *".."* ]]; then
-		echo "Error: Path traversal is not allowed." >&2
 		return 1
 	fi
 	return 0

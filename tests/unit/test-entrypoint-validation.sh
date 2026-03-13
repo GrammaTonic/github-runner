@@ -15,18 +15,21 @@ ENTRYPOINTS=("docker/entrypoint.sh" "docker/entrypoint-chrome.sh")
 
 test_validation() {
     local script=$1
-    log_info "Testing validation logic in $script..."
+    log_info "Testing validation logic for $script..."
+
+    # Source the shared utility script
+    if [ -f "docker/utils.sh" ]; then
+        source "docker/utils.sh"
+    else
+        log_error "docker/utils.sh not found"
+        return 1
+    fi
 
     # Source the script but mock exit and external commands to avoid side effects
-    # We only want to test the validation functions
-
-    # Create a temporary file with the functions extracted
+    # We only want to test the validation functions that are NOT in utils.sh (e.g., validate_repository)
     local tmp_funcs=$(mktemp)
     sed -n '/^validate_repository()/,/^}/p' "$script" >> "$tmp_funcs"
     sed -n '/^validate_hostname()/,/^}/p' "$script" >> "$tmp_funcs"
-    sed -n '/^validate_numeric()/,/^}/p' "$script" >> "$tmp_funcs"
-    sed -n '/^validate_path()/,/^}/p' "$script" >> "$tmp_funcs"
-
     source "$tmp_funcs"
 
     local failed=false
@@ -43,6 +46,10 @@ test_validation() {
     if validate_path "/etc/passwd" ".prom" > /dev/null; then log_error "validate_path passed for invalid directory (/etc)"; failed=true; fi
     if validate_path "/tmp/metrics.txt" ".prom" > /dev/null; then log_error "validate_path passed for invalid extension (.txt)"; failed=true; fi
     if validate_path "/tmp/../etc/passwd" ".prom" > /dev/null; then log_error "validate_path passed for path traversal (..)"; failed=true; fi
+
+    # Test validate_repository (still in entrypoint scripts)
+    if ! validate_repository "owner/repo" > /dev/null; then log_error "validate_repository failed for valid repository"; failed=true; fi
+    if validate_repository "owner-repo" > /dev/null; then log_error "validate_repository passed for invalid repository"; failed=true; fi
 
     rm "$tmp_funcs"
 
