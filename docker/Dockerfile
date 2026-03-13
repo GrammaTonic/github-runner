@@ -166,12 +166,13 @@ WORKDIR /home/runner
 # Consolidated COPY for all scripts (build context is ./docker)
 
 # Copy entrypoint and metrics scripts to correct locations
+COPY --chown=runner:runner utils.sh /usr/local/bin/utils.sh
 COPY --chown=runner:runner entrypoint.sh /entrypoint.sh
 COPY --chown=runner:runner metrics-server.sh /usr/local/bin/metrics-server.sh
 COPY --chown=runner:runner metrics-collector.sh /usr/local/bin/metrics-collector.sh
 COPY --chown=runner:runner job-started.sh /usr/local/bin/job-started.sh
 COPY --chown=runner:runner job-completed.sh /usr/local/bin/job-completed.sh
-RUN chmod +x /entrypoint.sh /usr/local/bin/metrics-server.sh /usr/local/bin/metrics-collector.sh /usr/local/bin/job-started.sh /usr/local/bin/job-completed.sh
+RUN chmod +x /usr/local/bin/utils.sh /entrypoint.sh /usr/local/bin/metrics-server.sh /usr/local/bin/metrics-collector.sh /usr/local/bin/job-started.sh /usr/local/bin/job-completed.sh
 
 
 # Final image runs as unprivileged runner user.

@@ -5,6 +5,17 @@
 set -euo pipefail
 
 # --- INPUT VALIDATION ---
+
+# Source utility functions
+# shellcheck source=docker/utils.sh
+if [ -f "/usr/local/bin/utils.sh" ]; then
+	source "/usr/local/bin/utils.sh"
+elif [ -f "./utils.sh" ]; then
+	source "./utils.sh"
+elif [ -f "docker/utils.sh" ]; then
+	source "docker/utils.sh"
+fi
+
 # Validate repository format (owner/repo) to prevent injection
 validate_repository() {
 	local repo="$1"
@@ -36,36 +47,24 @@ GITHUB_HOST="${GITHUB_HOST:-github.com}" # For GitHub Enterprise
 
 # --- METRICS SETUP (Phase 2: Prometheus Monitoring) ---
 # Start metrics services BEFORE token validation to enable standalone testing
-# TASK-013: Initialize job log
-JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
-echo "Initializing job log: ${JOBS_LOG}"
-touch "${JOBS_LOG}"
 
 # TASK-013: Start metrics collection services
 METRICS_PORT="${METRICS_PORT:-9091}"
 METRICS_FILE="${METRICS_FILE:-/tmp/runner_metrics.prom}"
+METRICS_UPDATE_INTERVAL="${METRICS_UPDATE_INTERVAL:-30}"
 RUNNER_TYPE="${RUNNER_TYPE:-chrome}"
 
-case "${METRICS_FILE}" in
-	/tmp/*.prom) ;;
-	*)
-		echo "Error: METRICS_FILE must be under /tmp and end with .prom"
-		exit 1
-		;;
-esac
+# TASK-013: Initialize job log
+JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
 
-case "${JOBS_LOG}" in
-	/tmp/*.log) ;;
-	*)
-		echo "Error: JOBS_LOG must be under /tmp and end with .log"
-		exit 1
-		;;
-esac
+# Validate metrics configurations
+validate_numeric "$METRICS_PORT" "METRICS_PORT" || exit 1
+validate_numeric "$METRICS_UPDATE_INTERVAL" "METRICS_UPDATE_INTERVAL" || exit 1
+validate_path "$METRICS_FILE" ".prom" || exit 1
+validate_path "$JOBS_LOG" ".log" || exit 1
 
-if [[ "${METRICS_FILE}" == *".."* ]] || [[ "${JOBS_LOG}" == *".."* ]]; then
-	echo "Error: Path traversal is not allowed in metrics paths"
-	exit 1
-fi
+echo "Initializing job log: ${JOBS_LOG}"
+touch "${JOBS_LOG}"
 
 echo "Starting Prometheus metrics services..."
 echo "  - Metrics endpoint: http://localhost:${METRICS_PORT}/metrics"
@@ -77,7 +76,7 @@ if [ -f "/usr/local/bin/metrics-collector.sh" ]; then
 		RUNNER_TYPE="${RUNNER_TYPE}" \
 		METRICS_FILE="${METRICS_FILE}" \
 		JOBS_LOG="${JOBS_LOG}" \
-		UPDATE_INTERVAL="${METRICS_UPDATE_INTERVAL:-30}" \
+		UPDATE_INTERVAL="${METRICS_UPDATE_INTERVAL}" \
 		/usr/local/bin/metrics-collector.sh &
 	COLLECTOR_PID=$!
 	echo "Metrics collector started (PID: ${COLLECTOR_PID})"
