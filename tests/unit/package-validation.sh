@@ -119,6 +119,54 @@ get_package_warning() {
 	esac
 }
 
+# Unit test for get_package_warning
+test_get_package_warning() {
+	local test_name="Get Package Warning Function"
+	local failed=false
+
+	log_info "Starting $test_name..."
+
+	# Test known warning cases
+	local test_cases=(
+		"apt-transport-https:Built into apt since Ubuntu 20.04 - may be redundant"
+		"ca-certificates-java:Only needed if installing Java manually"
+		"dbus-x11:Consider if X11 forwarding is actually needed"
+		"libgtk2.0-0:GTK2 deprecated - Use libgtk-3-0 if possible"
+	)
+
+	for test_case in "${test_cases[@]}"; do
+		local package="${test_case%%:*}"
+		local expected_warning="${test_case#*:}"
+		local result
+
+		# Test successful match and output
+		if result=$(get_package_warning "$package"); then
+			if [[ "$result" != "$expected_warning" ]]; then
+				log_error "✗ Expected warning '$expected_warning' for '$package', got '$result'"
+				failed=true
+			fi
+		else
+			log_error "✗ Expected success for '$package' but got failure"
+			failed=true
+		fi
+	done
+
+	# Test unknown package case
+	if get_package_warning "unknown-package-123" >/dev/null 2>&1; then
+		log_error "✗ Expected failure for unknown package 'unknown-package-123' but got success"
+		failed=true
+	fi
+
+	# Results
+	if [[ "$failed" == "true" ]]; then
+		log_error "✗ $test_name FAILED"
+		return 1
+	else
+		log_info "✓ $test_name PASSED"
+		return 0
+	fi
+}
+
 # Test 1: Check for obsolete packages in Dockerfiles
 test_obsolete_packages() {
 	local test_name="Obsolete Package Detection"
@@ -479,6 +527,7 @@ main() {
 	echo "============================================"
 
 	# Run all unit tests
+	test_get_package_warning || exit_code=1
 	test_obsolete_packages || exit_code=1
 	test_duplicate_packages || exit_code=1
 	test_ubuntu_compatibility || exit_code=1
