@@ -16,9 +16,9 @@ log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # Temporary resources to be cleaned up
-TEMP_TEST_SCRIPT=$(mktemp)
-MOCK_CONFIG_DIR=$(mktemp -d)
-TEMP_BASE=$(mktemp -d)
+TEMP_TEST_SCRIPT=$(mktemp -t test_script_XXXXXX)
+MOCK_CONFIG_DIR=$(mktemp -d -t mock_config_XXXXXX)
+TEMP_BASE=$(mktemp -d -t temp_base_XXXXXX)
 
 cleanup_temp() {
 	rm -f "$TEMP_TEST_SCRIPT"
