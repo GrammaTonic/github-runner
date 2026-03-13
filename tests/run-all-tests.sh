@@ -77,40 +77,42 @@ fail_suite() {
 run_unit_tests() {
 	start_suite "Unit Tests"
 
-	local unit_script
-	unit_script="$(dirname "$0")/unit/package-validation.sh"
 	local unit_results="$TEST_RESULTS_DIR/unit"
-
-	if [[ ! -f "$unit_script" ]]; then
-		fail_suite "Unit Tests" "Unit test script not found"
-		return 1
-	fi
+	mkdir -p "$unit_results"
 
 	log_info "Running unit tests..."
 
-	local exit_code=0
-	TEST_RESULTS_DIR="$unit_results" "$unit_script" >"$unit_results/unit-tests.log" 2>&1 || exit_code=$?
+	local overall_exit_code=0
+	local failed_scripts=()
 
-	# Run serve_metrics unit test
-	log_info "Running serve_metrics unit tests..."
-	local serve_metrics_script
-	serve_metrics_script="$(dirname "$0")/unit/test-serve-metrics.sh"
-	local serve_metrics_exit_code=0
-	bash "$serve_metrics_script" >>"$unit_results/unit-tests.log" 2>&1 || serve_metrics_exit_code=$?
+	# Find and run all unit tests
+	for unit_script in "$(dirname "$0")/unit/"test-*.sh "$(dirname "$0")/unit/"package-validation.sh; do
+		if [[ -f "$unit_script" && -x "$unit_script" ]]; then
+			local script_name
+			script_name="$(basename "$unit_script")"
+			log_info "  Running $script_name..."
 
-	# Preserve the first non-zero exit code
-	if [[ $exit_code -eq 0 ]]; then
-		exit_code=$serve_metrics_exit_code
-	fi
+			local exit_code=0
+			TEST_RESULTS_DIR="$unit_results" "$unit_script" >"$unit_results/$script_name.log" 2>&1 || exit_code=$?
 
-	if [[ "$VERBOSE" == "true" ]]; then
-		cat "$unit_results/unit-tests.log"
-	fi
+			if [[ "$VERBOSE" == "true" ]]; then
+				cat "$unit_results/$script_name.log"
+			fi
 
-	if [[ $exit_code -eq 0 ]]; then
+			if [[ $exit_code -ne 0 ]]; then
+				log_error "  $script_name failed (exit code: $exit_code)"
+				failed_scripts+=("$script_name")
+				overall_exit_code=1
+			else
+				log_info "  $script_name passed"
+			fi
+		fi
+	done
+
+	if [[ $overall_exit_code -eq 0 ]]; then
 		pass_suite "Unit Tests"
 	else
-		fail_suite "Unit Tests" "Unit tests failed (exit code: $exit_code)"
+		fail_suite "Unit Tests" "Unit tests failed: ${failed_scripts[*]}"
 		return 1
 	fi
 }

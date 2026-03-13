@@ -87,7 +87,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update \
     && apt-get install -y --no-install-recommends \
         curl ca-certificates gnupg wget unzip xz-utils \
-        sudo git jq \
+        git jq \
         # All other packages are system libraries, version-pinned by Ubuntu Resolute base image
         libnss3 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxtst6 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgbm1 libasound2-dev libatspi2.0-0 libgtk-3-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 fonts-liberation fonts-noto-color-emoji fonts-noto-cjk xvfb procps \
         netcat-openbsd \
@@ -268,8 +268,9 @@ done
 WORKDIR /home/runner
 
 # --- VERIFICATION, HEALTHCHECK AND ENTRYPOINT ---
+COPY --chown=runner:runner utils.sh /usr/local/bin/utils.sh
 COPY --chown=runner:runner entrypoint-chrome.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN chmod +x /usr/local/bin/utils.sh /entrypoint.sh
 
 # Copy Prometheus metrics scripts (Phase 2: Prometheus Monitoring)
 # TASK-015: Add metrics scripts to Chrome-Go runner

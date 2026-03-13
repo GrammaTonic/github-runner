@@ -262,9 +262,12 @@ test_configuration_files() {
 	# Required variables for runner configuration
 	local required_vars=("GITHUB_TOKEN" "GITHUB_REPOSITORY")
 
+	local files_found=0
+
 	# Test environment file templates
 	for config_file in "$config_dir"/*.env*; do
 		if [[ -f "$config_file" ]]; then
+			files_found=$((files_found + 1))
 			local config_name
 			config_name="$(basename "$config_file")"
 
@@ -285,7 +288,10 @@ test_configuration_files() {
 		fi
 	done
 
-	if [[ $config_errors -eq 0 ]]; then
+	if [[ $files_found -eq 0 ]]; then
+		fail_test "Configuration File Validation" "No configuration files found in $config_dir"
+		return 1
+	elif [[ $config_errors -eq 0 ]]; then
 		pass_test "Configuration File Validation"
 	else
 		fail_test "Configuration File Validation" "$config_errors configuration file(s) have errors"
@@ -400,6 +406,9 @@ test_security_baseline() {
 		# Skip test files and logs
 		if grep -r -i "$pattern" "$(dirname "$0")/../../" \
 			--exclude-dir=".git" \
+			--exclude-dir=".cache" \
+			--exclude-dir=".pnpm-store" \
+			--exclude-dir="node_modules" \
 			--exclude-dir="test-results" \
 			--exclude-dir="logs" \
 			--exclude="*.log" \

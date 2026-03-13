@@ -1317,6 +1317,7 @@ jobs:
           retention-days: 30
       - name: Vulnerability scan normal image
         uses: aquasecurity/trivy-action@0.35.0
+        if: always()
         with:
           image-ref: ${{ needs.build.outputs.normal-image-primary }}
           format: sarif
@@ -1334,6 +1335,7 @@ jobs:
           category: "release-image-scan"
       - name: Vulnerability scan chrome image
         uses: aquasecurity/trivy-action@0.35.0
+        if: always()
         with:
           image-ref: ${{ needs.build-chrome.outputs.chrome-image-primary }}
           format: sarif
@@ -1351,6 +1353,7 @@ jobs:
           category: "release-chrome-image-scan"
       - name: Vulnerability scan chrome-go image
         uses: aquasecurity/trivy-action@0.35.0
+        if: always()
         with:
           image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
           format: sarif
