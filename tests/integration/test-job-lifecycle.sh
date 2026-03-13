@@ -17,8 +17,8 @@ PASS=0
 FAIL=0
 TOTAL=0
 
-log_pass() { ((PASS++)); ((TOTAL++)); echo -e "  ${GREEN}✓${NC} $1"; }
-log_fail() { ((FAIL++)); ((TOTAL++)); echo -e "  ${RED}✗${NC} $1"; }
+log_pass() { ((PASS++)) || true; ((TOTAL++)) || true; echo -e "  ${GREEN}✓${NC} $1"; }
+log_fail() { ((FAIL++)) || true; ((TOTAL++)) || true; echo -e "  ${RED}✗${NC} $1"; }
 log_info() { echo -e "${YELLOW}→${NC} $1"; }
 
 # ─── Setup temp environment ───────────────────────────────────────────
@@ -139,10 +139,12 @@ export GITHUB_JOB_STATUS="success"
 RUN_CREATED_EPOCH=$((START_TS - 5))
 if date --version >/dev/null 2>&1; then
   # GNU date
-  export GITHUB_RUN_CREATED_AT=$(date -u -d "@$RUN_CREATED_EPOCH" +"%Y-%m-%dT%H:%M:%SZ")
+  GITHUB_RUN_CREATED_AT_VAL=$(date -u -d "@$RUN_CREATED_EPOCH" +"%Y-%m-%dT%H:%M:%SZ")
+  export GITHUB_RUN_CREATED_AT="$GITHUB_RUN_CREATED_AT_VAL"
 else
   # BSD date (macOS)
-  export GITHUB_RUN_CREATED_AT=$(date -u -r "$RUN_CREATED_EPOCH" +"%Y-%m-%dT%H:%M:%SZ")
+  GITHUB_RUN_CREATED_AT_VAL=$(date -u -r "$RUN_CREATED_EPOCH" +"%Y-%m-%dT%H:%M:%SZ")
+  export GITHUB_RUN_CREATED_AT="$GITHUB_RUN_CREATED_AT_VAL"
 fi
 
 cat > "$TMPDIR_TEST/run-completed.sh" << 'WRAPPER'
@@ -259,10 +261,12 @@ log_info "Test 5: Multiple jobs accumulate correctly"
 
 # Add additional job entries directly
 NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-echo "${NOW},99002_test,success,45,3" >> "$JOBS_LOG"
-echo "${NOW},99003_deploy,failed,120,10" >> "$JOBS_LOG"
-echo "${NOW},99004_lint,success,15,2" >> "$JOBS_LOG"
-echo "${NOW},99005_build,cancelled,90,5" >> "$JOBS_LOG"
+{
+  echo "${NOW},99002_test,success,45,3"
+  echo "${NOW},99003_deploy,failed,120,10"
+  echo "${NOW},99004_lint,success,15,2"
+  echo "${NOW},99005_build,cancelled,90,5"
+} >> "$JOBS_LOG"
 
 TOTAL_ENTRIES=$(wc -l < "$JOBS_LOG" | tr -d ' ')
 if [[ "$TOTAL_ENTRIES" -eq 5 ]]; then
@@ -290,7 +294,7 @@ log_info "Test 6: Grafana dashboard JSON validity"
 
 DASHBOARDS_DIR="$REPO_ROOT/monitoring/grafana/dashboards"
 
-for dashboard in github-runner.json dora-metrics.json job-analysis.json; do
+for dashboard in runner-overview.json dora-metrics.json job-analysis.json performance-trends.json; do
   DASH_FILE="$DASHBOARDS_DIR/$dashboard"
   if [[ -f "$DASH_FILE" ]]; then
     if python3 -m json.tool "$DASH_FILE" > /dev/null 2>&1; then

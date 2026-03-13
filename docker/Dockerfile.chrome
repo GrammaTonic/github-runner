@@ -98,7 +98,7 @@ RUN --mount=type=cache,target=/tmp/downloads \
     set -e; \
     command -v curl >/dev/null 2>&1; \
     command -v unzip >/dev/null 2>&1; \
-    case ${TARGETARCH} in \
+    case "${TARGETARCH}" in \
         "amd64")  CHROME_ARCH="linux64"      ;; \
         "arm64")  CHROME_ARCH="linux-arm64"  ;; \
         *)        echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
@@ -229,7 +229,8 @@ WORKDIR /home/runner
 
 # --- VERIFICATION, HEALTHCHECK AND ENTRYPOINT ---
 COPY --chown=runner:runner entrypoint-chrome.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY --chown=runner:runner utils.sh /usr/local/bin/utils.sh
+RUN chmod +x /entrypoint.sh /usr/local/bin/utils.sh
 
 # Copy Prometheus metrics scripts (Phase 2: Prometheus Monitoring)
 # TASK-014: Add metrics scripts to Chrome runner

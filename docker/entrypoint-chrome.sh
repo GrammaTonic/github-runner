@@ -4,29 +4,15 @@
 # Stop immediately on error and enable strict mode for security
 set -euo pipefail
 
-# --- INPUT VALIDATION ---
-# Validate repository format (owner/repo) to prevent injection
-validate_repository() {
-	local repo="$1"
-	# Repository must match pattern: alphanumeric, dash, underscore, or dot, with exactly one slash
-	if ! echo "$repo" | grep -qE '^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$'; then
-		echo "Error: Invalid GITHUB_REPOSITORY format. Expected: owner/repo" >&2
-		echo "Received: $repo" >&2
-		return 1
-	fi
-	return 0
-}
-
-# Validate hostname to prevent injection
-validate_hostname() {
-	local host="$1"
-	# Hostname must be alphanumeric with dots and dashes only
-	if ! echo "$host" | grep -qE '^[a-zA-Z0-9.-]+$'; then
-		echo "Error: Invalid GITHUB_HOST format." >&2
-		return 1
-	fi
-	return 0
-}
+# --- UTILS AND VALIDATION ---
+# Source shared utility functions
+if [ -f "/usr/local/bin/utils.sh" ]; then
+	# shellcheck source=/dev/null
+	source /usr/local/bin/utils.sh
+elif [ -f "./utils.sh" ]; then
+	# shellcheck source=docker/utils.sh
+	source ./utils.sh
+fi
 
 # Optional variables with default values (set before metrics for RUNNER_NAME usage)
 RUNNER_NAME="${RUNNER_NAME:-chrome-runner-$(hostname)}"
@@ -45,27 +31,6 @@ touch "${JOBS_LOG}"
 METRICS_PORT="${METRICS_PORT:-9091}"
 METRICS_FILE="${METRICS_FILE:-/tmp/runner_metrics.prom}"
 RUNNER_TYPE="${RUNNER_TYPE:-chrome}"
-
-case "${METRICS_FILE}" in
-	/tmp/*.prom) ;;
-	*)
-		echo "Error: METRICS_FILE must be under /tmp and end with .prom"
-		exit 1
-		;;
-esac
-
-case "${JOBS_LOG}" in
-	/tmp/*.log) ;;
-	*)
-		echo "Error: JOBS_LOG must be under /tmp and end with .log"
-		exit 1
-		;;
-esac
-
-if [[ "${METRICS_FILE}" == *".."* ]] || [[ "${JOBS_LOG}" == *".."* ]]; then
-	echo "Error: Path traversal is not allowed in metrics paths"
-	exit 1
-fi
 
 echo "Starting Prometheus metrics services..."
 echo "  - Metrics endpoint: http://localhost:${METRICS_PORT}/metrics"
@@ -101,11 +66,15 @@ fi
 : "${GITHUB_TOKEN:?Error: GITHUB_TOKEN environment variable not set.}"
 : "${GITHUB_REPOSITORY:?Error: GITHUB_REPOSITORY environment variable not set.}"
 
-# Validate inputs before using them
+# Validate critical inputs before using them
 validate_repository "$GITHUB_REPOSITORY" || exit 1
-
-# Validate GitHub host
 validate_hostname "$GITHUB_HOST" || exit 1
+validate_runner_name "RUNNER_NAME" "$RUNNER_NAME" || exit 1
+validate_alphanumeric_dash "RUNNER_TYPE" "$RUNNER_TYPE" || exit 1
+validate_number "METRICS_PORT" "$METRICS_PORT" || exit 1
+validate_path "METRICS_FILE" "$METRICS_FILE" "prom" || exit 1
+validate_path "JOBS_LOG" "$JOBS_LOG" "log" || exit 1
+validate_number "METRICS_UPDATE_INTERVAL" "${METRICS_UPDATE_INTERVAL:-30}" || exit 1
 
 # Change to the runner's directory
 cd /actions-runner

@@ -111,7 +111,6 @@ log_info "Test 5: jobs.log survives simulated restart"
 
 # Simulate the data flow: write entries, read them back
 MOCK_JOBS_LOG="$TMPDIR_TEST/jobs.log"
-MOCK_METRICS_FILE="$TMPDIR_TEST/runner_metrics.prom"
 
 # Write job entries (simulating job-completed.sh)
 NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")

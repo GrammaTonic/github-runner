@@ -26,10 +26,6 @@ log_fail() { FAIL=$((FAIL + 1)); TOTAL=$((TOTAL + 1)); echo -e "  ${RED}✗${NC}
 log_info() { echo -e "${YELLOW}→${NC} $1"; }
 log_section() { echo -e "\n${BLUE}━━━${NC} $1 ${BLUE}━━━${NC}"; }
 
-STANDARD_PORT=9091
-CHROME_PORT=9092
-CHROME_GO_PORT=9093
-
 # Runner configurations as colon-delimited entries: type:compose:port
 RUNNER_CONFIGS=(
   "standard:docker/docker-compose.production.yml:9091"

@@ -19,6 +19,15 @@ JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
 JOB_STATE_DIR="${JOB_STATE_DIR:-/tmp/job_state}"
 HOOK_LOG="${HOOK_LOG:-/tmp/job-hooks.log}"
 
+# Source shared utility functions
+if [ -f "/usr/local/bin/utils.sh" ]; then
+	# shellcheck source=/dev/null
+	source /usr/local/bin/utils.sh
+elif [ -f "$(dirname "$0")/utils.sh" ]; then
+	# shellcheck source=docker/utils.sh
+	source "$(dirname "$0")/utils.sh"
+fi
+
 # Logging function
 log() {
 	echo "[$(date +'%Y-%m-%d %H:%M:%S')] [job-started] $*" | tee -a "$HOOK_LOG"
@@ -28,6 +37,11 @@ log() {
 get_job_id() {
 	local run_id="${GITHUB_RUN_ID:-0}"
 	local job_name="${GITHUB_JOB:-unknown}"
+
+	# Validate inputs to prevent path traversal/injection
+	validate_alphanumeric_dash "GITHUB_RUN_ID" "$run_id" || run_id="invalid"
+	validate_alphanumeric_dash "GITHUB_JOB" "$job_name" || job_name="invalid"
+
 	# Combine run_id and job_name for uniqueness within a workflow
 	echo "${run_id}_${job_name}"
 }

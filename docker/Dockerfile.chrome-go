@@ -107,7 +107,7 @@ RUN --mount=type=cache,target=/tmp/downloads \
     set -e; \
     command -v curl >/dev/null 2>&1; \
     command -v unzip >/dev/null 2>&1; \
-    case ${TARGETARCH} in \
+    case "${TARGETARCH}" in \
         "amd64")  CHROME_ARCH="linux64"      ;; \
         "arm64")  CHROME_ARCH="linux-arm64"  ;; \
         *)        echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
@@ -136,7 +136,7 @@ RUN useradd -m -s /bin/bash runner \
 # Node.js supports both amd64 (x64) and arm64 architectures
 RUN --mount=type=cache,target=/tmp/downloads \
     --mount=type=cache,target=/root/.npm \
-    case ${TARGETARCH} in \
+    case "${TARGETARCH}" in \
         "amd64")  NODE_ARCH="x64"    ;; \
         "arm64")  NODE_ARCH="arm64"  ;; \
         *)        echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
@@ -223,7 +223,7 @@ WORKDIR /actions-runner
 # Architecture detection: Map Docker architecture names to GitHub runner architecture names
 RUN --mount=type=cache,target=/tmp/downloads,uid=1001,gid=1001 \
     set -e; \
-    case ${TARGETARCH} in \
+    case "${TARGETARCH}" in \
         "amd64")  RUNNER_ARCH="x64"    ;; \
         "arm64")  RUNNER_ARCH="arm64"  ;; \
         *)        echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
@@ -269,7 +269,8 @@ WORKDIR /home/runner
 
 # --- VERIFICATION, HEALTHCHECK AND ENTRYPOINT ---
 COPY --chown=runner:runner entrypoint-chrome.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY --chown=runner:runner utils.sh /usr/local/bin/utils.sh
+RUN chmod +x /entrypoint.sh /usr/local/bin/utils.sh
 
 # Copy Prometheus metrics scripts (Phase 2: Prometheus Monitoring)
 # TASK-015: Add metrics scripts to Chrome-Go runner

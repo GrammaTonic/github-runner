@@ -22,6 +22,15 @@ JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
 JOB_STATE_DIR="${JOB_STATE_DIR:-/tmp/job_state}"
 HOOK_LOG="${HOOK_LOG:-/tmp/job-hooks.log}"
 
+# Source shared utility functions
+if [ -f "/usr/local/bin/utils.sh" ]; then
+	# shellcheck source=/dev/null
+	source /usr/local/bin/utils.sh
+elif [ -f "$(dirname "$0")/utils.sh" ]; then
+	# shellcheck source=docker/utils.sh
+	source "$(dirname "$0")/utils.sh"
+fi
+
 # Logging function
 log() {
 	echo "[$(date +'%Y-%m-%d %H:%M:%S')] [job-completed] $*" | tee -a "$HOOK_LOG"
@@ -31,6 +40,11 @@ log() {
 get_job_id() {
 	local run_id="${GITHUB_RUN_ID:-0}"
 	local job_name="${GITHUB_JOB:-unknown}"
+
+	# Validate inputs to prevent path traversal/injection
+	validate_alphanumeric_dash "GITHUB_RUN_ID" "$run_id" || run_id="invalid"
+	validate_alphanumeric_dash "GITHUB_JOB" "$job_name" || job_name="invalid"
+
 	echo "${run_id}_${job_name}"
 }
 
@@ -41,7 +55,8 @@ iso_to_epoch() {
 	if date -d "$ts" +%s 2>/dev/null; then
 		return
 	fi
-	python3 -c "from datetime import datetime; print(int(datetime.fromisoformat('${ts}'.replace('Z','+00:00')).timestamp()))" 2>/dev/null || echo "0"
+	# Securely pass timestamp as argument to python to avoid command injection
+	python3 -c "import sys; from datetime import datetime; print(int(datetime.fromisoformat(sys.argv[1].replace('Z','+00:00')).timestamp()))" "$ts" 2>/dev/null || echo "0"
 }
 
 # Determine job status from available signals
@@ -122,8 +137,9 @@ main() {
 
 	# Remove the preliminary "running" entry and append final entry
 	# Use a temp file for atomic update to avoid race conditions
-	local temp_log="${JOBS_LOG}.tmp.$$"
 	if [[ -f "$JOBS_LOG" ]]; then
+		local temp_log
+		temp_log=$(mktemp "${JOBS_LOG}.XXXXXX")
 		# Remove matching running entry for this job_id
 		grep -v ",${job_id},running," "$JOBS_LOG" >"$temp_log" 2>/dev/null || true
 		mv "$temp_log" "$JOBS_LOG"

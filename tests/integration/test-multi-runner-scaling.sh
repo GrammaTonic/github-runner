@@ -19,7 +19,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 # Validate unique port assignments
 PORTS=(9091 9092 9093)
 for port in "${PORTS[@]}"; do
-  if lsof -i :$port; then
+  if lsof -i :"$port"; then
     log_info "Port $port is in use as expected."
   else
     log_error "Port $port is NOT in use. Runner may not be running."

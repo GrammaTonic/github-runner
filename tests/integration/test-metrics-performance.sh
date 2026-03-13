@@ -209,7 +209,8 @@ measure_response_time() {
     sleep 0.5
   done
 
-  local avg_ms=$((total_ms / samples))
+  local avg_ms
+  avg_ms=$((total_ms / samples))
 
   if [[ "$avg_ms" -lt "$MAX_RESPONSE_MS" ]]; then
     log_pass "$label: Avg response ${avg_ms}ms < ${MAX_RESPONSE_MS}ms threshold"

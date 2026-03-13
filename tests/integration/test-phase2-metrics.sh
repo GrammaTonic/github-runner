@@ -32,7 +32,8 @@ log_error() {
 wait_for_metrics() {
 	local port=$1
 	local runner_type=$2
-	local start_time=$(date +%s)
+	local start_time
+	start_time=$(date +%s)
 
 	log_info "Waiting for $runner_type metrics endpoint on port $port..."
 
@@ -42,10 +43,12 @@ wait_for_metrics() {
 			return 0
 		fi
 
-		local current_time=$(date +%s)
-		local elapsed=$((current_time - start_time))
+		local current_time
+		current_time=$(date +%s)
+		local elapsed
+		elapsed=$((current_time - start_time))
 
-		if [ $elapsed -gt $TIMEOUT ]; then
+		if [ "$elapsed" -gt "$TIMEOUT" ]; then
 			log_error "$runner_type metrics endpoint not available after ${TIMEOUT}s"
 			return 1
 		fi
@@ -62,7 +65,8 @@ validate_metrics() {
 	log_info "Validating $test_name metrics..."
 
 	# Fetch metrics
-	local metrics=$(curl -sf "http://localhost:${port}/metrics")
+	local metrics
+	metrics=$(curl -sf "http://localhost:${port}/metrics")
 
 	if [ -z "$metrics" ]; then
 		log_error "No metrics returned from port $port"
@@ -165,8 +169,10 @@ test_concurrent_deployment() {
 	# Verify no port conflicts
 	log_info "Verifying no port conflicts..."
 
-	local chrome_metrics=$(curl -sf "http://localhost:${CHROME_METRICS_PORT}/metrics")
-	local chrome_go_metrics=$(curl -sf "http://localhost:${CHROME_GO_METRICS_PORT}/metrics")
+	local chrome_metrics
+	chrome_metrics=$(curl -sf "http://localhost:${CHROME_METRICS_PORT}/metrics")
+	local chrome_go_metrics
+	chrome_go_metrics=$(curl -sf "http://localhost:${CHROME_GO_METRICS_PORT}/metrics")
 
 	if echo "$chrome_metrics" | grep -q "runner_type=\"chrome\"" && \
 		! echo "$chrome_metrics" | grep -q "runner_type=\"chrome-go\""; then
