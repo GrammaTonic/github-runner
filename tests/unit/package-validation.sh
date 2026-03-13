@@ -152,8 +152,9 @@ test_get_package_warning() {
 	done
 
 	# Test unknown package case
-	if get_package_warning "unknown-package-123" >/dev/null 2>&1; then
-		log_error "✗ Expected failure for unknown package 'unknown-package-123' but got success"
+	local unknown_result
+	if unknown_result=$(get_package_warning "unknown-package-123" 2>&1); then
+		log_error "✗ Expected failure for unknown package 'unknown-package-123' but got success: $unknown_result"
 		failed=true
 	fi
 
