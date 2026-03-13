@@ -24,15 +24,24 @@ RUNNER_DIR="/actions-runner"
 
 # --- METRICS SETUP (Phase 1: Prometheus Monitoring) ---
 # Start metrics services BEFORE token validation to enable standalone testing
-# TASK-003: Initialize job log
-JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
-echo "Initializing job log: ${JOBS_LOG}"
-touch "${JOBS_LOG}"
 
 # TASK-004: Start metrics collection services
 METRICS_PORT="${METRICS_PORT:-9091}"
 METRICS_FILE="${METRICS_FILE:-/tmp/runner_metrics.prom}"
+METRICS_UPDATE_INTERVAL="${METRICS_UPDATE_INTERVAL:-30}"
 RUNNER_TYPE="${RUNNER_TYPE:-standard}"
+
+# TASK-003: Initialize job log
+JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
+
+# Validate metrics configurations
+validate_number "METRICS_PORT" "$METRICS_PORT" || exit 1
+validate_number "METRICS_UPDATE_INTERVAL" "$METRICS_UPDATE_INTERVAL" || exit 1
+validate_path "METRICS_FILE" "$METRICS_FILE" "prom" || exit 1
+validate_path "JOBS_LOG" "$JOBS_LOG" "log" || exit 1
+
+echo "Initializing job log: ${JOBS_LOG}"
+touch "${JOBS_LOG}"
 
 echo "Starting Prometheus metrics services..."
 echo "  - Metrics endpoint: http://localhost:${METRICS_PORT}/metrics"
@@ -44,7 +53,7 @@ if [ -f "/usr/local/bin/metrics-collector.sh" ]; then
 		RUNNER_TYPE="${RUNNER_TYPE}" \
 		METRICS_FILE="${METRICS_FILE}" \
 		JOBS_LOG="${JOBS_LOG}" \
-		UPDATE_INTERVAL="${METRICS_UPDATE_INTERVAL:-30}" \
+		UPDATE_INTERVAL="${METRICS_UPDATE_INTERVAL}" \
 		/usr/local/bin/metrics-collector.sh &
 	COLLECTOR_PID=$!
 	echo "Metrics collector started (PID: ${COLLECTOR_PID})"
