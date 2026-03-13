@@ -27,10 +27,14 @@ cleanup_temp() {
 }
 trap cleanup_temp EXIT
 
+# Determine the absolute path to the target integration script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+TARGET_SCRIPT="$SCRIPT_DIR/../integration/comprehensive-tests.sh"
+
 # Source the comprehensive tests but override the execution
 # We create a temporary script that sources the functions without running main
 # Remove the main call and cleanup trap to avoid side effects
-sed -e '/^main "\$@"/d' -e 's/^trap cleanup EXIT/# trap cleanup EXIT/' tests/integration/comprehensive-tests.sh > "$TEMP_TEST_SCRIPT"
+sed -e '/^main "\$@"/d' -e 's/^trap cleanup EXIT/# trap cleanup EXIT/' "$TARGET_SCRIPT" > "$TEMP_TEST_SCRIPT"
 
 # Create a temporary directory structure to trick $(dirname "$0")/../../config
 mkdir -p "$TEMP_BASE/a/b"
