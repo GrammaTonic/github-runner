@@ -112,30 +112,45 @@ cd /actions-runner
 
 # Request a registration token from the GitHub API
 echo "Requesting registration token for ${GITHUB_REPOSITORY}..."
-# Using curl with silent mode and proper error handling to prevent token exposure
-RUNNER_TOKEN_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-	-H "Authorization: token ${GITHUB_TOKEN}" \
-	-H "Accept: application/vnd.github.v3+json" \
-	"https://api.${GITHUB_HOST}/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token" 2>&1)
 
-# Extract HTTP status code and response body
-HTTP_STATUS=$(echo "$RUNNER_TOKEN_RESPONSE" | tail -n1)
-RESPONSE_BODY=$(echo "$RUNNER_TOKEN_RESPONSE" | sed '$d')
-RUNNER_TOKEN=$(echo "$RESPONSE_BODY" | jq -r '.token // empty' 2>/dev/null)
+# Use secure temporary files for headers and response to prevent token exposure in shell traces
+HEADER_FILE=$(mktemp)
+RESPONSE_FILE=$(mktemp)
+
+# Create header file with token using heredoc (not leaked in set -x)
+cat <<EOF >"$HEADER_FILE"
+Authorization: token ${GITHUB_TOKEN}
+Accept: application/vnd.github.v3+json
+EOF
+
+# Using curl with silent mode and proper error handling to prevent token exposure
+HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" -X POST \
+	-H @"$HEADER_FILE" \
+	"https://api.${GITHUB_HOST}/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token")
+
+# Extract runner token from response file
+RUNNER_TOKEN=$(jq -r '.token // empty' "$RESPONSE_FILE" 2>/dev/null)
+
+# Securely clean up header file containing GITHUB_TOKEN immediately
+rm -f "$HEADER_FILE"
 
 # Validate response without exposing tokens in error messages
 if [ -z "$RUNNER_TOKEN" ] || [ "$RUNNER_TOKEN" == "null" ]; then
 	echo "Error: Failed to get registration token from GitHub API."
 	echo "HTTP Status: ${HTTP_STATUS}"
 	# Only show error message, never the token or full response
-	ERROR_MSG=$(echo "$RESPONSE_BODY" | jq -r '.message // "Unknown error"' 2>/dev/null || echo "Unable to parse error response")
+	ERROR_MSG=$(jq -r '.message // "Unknown error"' "$RESPONSE_FILE" 2>/dev/null || echo "Unable to parse error response")
 	echo "Error message: ${ERROR_MSG}"
 	echo "Please verify:"
 	echo "  1. GITHUB_TOKEN has 'repo' scope and is valid"
 	echo "  2. GITHUB_REPOSITORY is correct (format: owner/repo)"
 	echo "  3. Token has permissions for ${GITHUB_REPOSITORY}"
+	rm -f "$RESPONSE_FILE"
 	exit 1
 fi
+
+# Clean up response file
+rm -f "$RESPONSE_FILE"
 
 # --- JOB LIFECYCLE HOOKS (Phase 3: DORA Metrics) ---
 # TASK-028: Set runner hook env vars for job tracking
