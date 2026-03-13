@@ -44,11 +44,11 @@ serve_metrics() {
 
 	if [[ ! -f "$METRICS_FILE" ]]; then
 		log "ERROR: Metrics file not found: $METRICS_FILE"
-		# Return 503 Service Unavailable
+		# "Metrics file not available" is 26 chars + 1 for trailing newline = 27
 		cat <<EOF
 HTTP/1.0 503 Service Unavailable
 Content-Type: text/plain; charset=utf-8
-Content-Length: 28
+Content-Length: 27
 Connection: close
 
 Metrics file not available
@@ -59,7 +59,8 @@ EOF
 	# Read metrics file content
 	local metrics_content
 	metrics_content=$(cat "$METRICS_FILE")
-	local content_length=${#metrics_content}
+	# Account for trailing newline added by heredoc (+1)
+	local content_length=$(( ${#metrics_content} + 1 ))
 
 	# Send HTTP response with Prometheus text format
 	cat <<EOF
@@ -102,7 +103,7 @@ start_server() {
 		# -p: port number
 		# -q 0: quit 0 seconds after EOF on stdin
 		{
-			serve_metrics "$(date +'%s')"
+			serve_metrics "client"
 		} | nc -l -p "$METRICS_PORT" -q 0 2>/dev/null || {
 			# Handle errors gracefully
 			sleep 1
@@ -113,5 +114,7 @@ start_server() {
 # Handle signals for graceful shutdown
 trap 'log "Shutting down metrics server..."; exit 0' SIGTERM SIGINT
 
-# Start the server
-start_server
+# Start the server if script is executed directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+	start_server "$@"
+fi

@@ -91,6 +91,18 @@ run_unit_tests() {
 	local exit_code=0
 	TEST_RESULTS_DIR="$unit_results" "$unit_script" >"$unit_results/unit-tests.log" 2>&1 || exit_code=$?
 
+	# Run serve_metrics unit test
+	log_info "Running serve_metrics unit tests..."
+	local serve_metrics_script
+	serve_metrics_script="$(dirname "$0")/unit/test-serve-metrics.sh"
+	local serve_metrics_exit_code=0
+	bash "$serve_metrics_script" >>"$unit_results/unit-tests.log" 2>&1 || serve_metrics_exit_code=$?
+
+	# Preserve the first non-zero exit code
+	if [[ $exit_code -eq 0 ]]; then
+		exit_code=$serve_metrics_exit_code
+	fi
+
 	if [[ "$VERBOSE" == "true" ]]; then
 		cat "$unit_results/unit-tests.log"
 	fi
