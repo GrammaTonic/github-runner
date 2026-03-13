@@ -113,5 +113,7 @@ start_server() {
 # Handle signals for graceful shutdown
 trap 'log "Shutting down metrics server..."; exit 0' SIGTERM SIGINT
 
-# Start the server
-start_server
+# Start the server if script is executed directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+	start_server "$@"
+fi
