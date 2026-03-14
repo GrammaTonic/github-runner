@@ -38,6 +38,7 @@ ARG DIFF_VERSION="8.0.3"
 # Fixes: CVE-2025-64756 (glob), CVE-2026-26996, CVE-2026-27903, CVE-2026-27904 (minimatch)
 ARG NODE_GYP_GLOB_VERSION="10.5.0"
 ARG NESTED_MINIMATCH_VERSION="9.0.7"
+ARG GO_VERSION="1.26.1"
 
 # Environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -167,8 +168,7 @@ RUN --mount=type=cache,target=/tmp/npm-cache,uid=0,gid=0 \
 # Use BuildKit cache for Go download
 # Go supports both amd64 and arm64 architectures
 RUN --mount=type=cache,target=/tmp/downloads \
-    GO_VERSION="1.26.1" \
-    && case "${TARGETARCH}" in \
+    case "${TARGETARCH}" in \
         "amd64")  GO_ARCH="amd64"  ;; \
         "arm64")  GO_ARCH="arm64"  ;; \
         *)        echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
