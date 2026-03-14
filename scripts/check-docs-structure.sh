@@ -24,7 +24,7 @@ log_warning() {
 
 # Check for markdown files in root (excluding allowed ones)
 check_root_markdown() {
-	local allowed_files=("README.md" "README.md.backup")
+	local allowed_files=("README.md" "README.md.backup" "AGENTS.md")
 	local found_violations=()
 
 	# Find all .md files in root
@@ -136,7 +136,7 @@ auto_fix() {
 			[[ -f "$file" ]] || continue
 
 			case "$file" in
-			"README.md" | "README.md.backup")
+			"README.md" | "README.md.backup" | "AGENTS.md")
 				# Keep in root
 				;;
 			*"CODE_OF_CONDUCT"* | *"CONTRIBUTING"*)
