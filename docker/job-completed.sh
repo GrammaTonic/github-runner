@@ -41,7 +41,7 @@ iso_to_epoch() {
 	if date -d "$ts" +%s 2>/dev/null; then
 		return
 	fi
-	python3 -c "from datetime import datetime; print(int(datetime.fromisoformat('${ts}'.replace('Z','+00:00')).timestamp()))" 2>/dev/null || echo "0"
+	TS_ENV="$ts" python3 -c "import os; from datetime import datetime; print(int(datetime.fromisoformat(os.environ.get('TS_ENV', '').replace('Z','+00:00')).timestamp()))" 2>/dev/null || echo "0"
 }
 
 # Determine job status from available signals
