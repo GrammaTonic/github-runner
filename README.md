@@ -32,7 +32,7 @@ Note: Documentation workflows and repo prompts were recently improved — see
 | **GitHub Actions Runner** | v2.331.0         | v2.331.0         | v2.331.0         | ✅ Latest         |
 | **Base OS**               | Ubuntu 25.10 Resolute | Ubuntu 25.10 Resolute | Ubuntu 25.10 Resolute | ✅ Pre-release |
 | **Node.js**               | -                | 24.14.0          | 24.14.0          | ✅ Latest         |
-| **Go**                    | -                | -                | 1.26.0           | ✅ Latest         |
+| **Go**                    | -                | -                | 1.26.1           | ✅ Latest         |
 | **Python**                | 3.10+            | 3.10+            | 3.10+            | ✅ Latest         |
 | **Playwright**            | -                | v1.58.2          | v1.58.2          | ✅ Latest         |
 | **Cypress**               | -                | v15.11.0         | v15.11.0         | ✅ Latest         |
@@ -70,7 +70,7 @@ Note: Documentation workflows and repo prompts were recently improved — see
 - ✅ **Dependabot Automation**: Zero-touch dependency updates with auto-merge and hourly auto-rebase workflows
 - ✅ **Performance Optimizations**: BuildKit cache mounts reduce build times by 50-70% (19s standard, 24s Chrome, 4m34s Chrome-Go)
 - ✅ **Multi-Stage Builds**: Standard runner image reduced by 370MB (17% smaller) with improved security
-- ✅ **Chrome-Go Runner**: New variant combining Go 1.26.0 toolchain with browser testing capabilities
+- ✅ **Chrome-Go Runner**: New variant combining Go 1.26.1 toolchain with browser testing capabilities
 - ✅ **Cross-Branch Caching**: Feature branches leverage develop/main cache, eliminating redundant rebuilds
 - ✅ **Image Size Optimizations**: Standard ~1.8GB, Chrome ~4.1GB, Chrome-Go ~4.5GB (all optimized)
 - ✅ **CI/CD Enhancements**: Conditional Dependabot provisioning, artifact status files, clean logs
