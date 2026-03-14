@@ -464,6 +464,7 @@ jobs:
           output: "trivy-results.sarif"
           timeout: "10m"
           skip-dirs: "test-results,logs,.git"
+          skip-files: "AGENTS.md"
           skip-setup-trivy: true
       - name: Upload Trivy scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
