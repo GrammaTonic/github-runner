@@ -270,7 +270,7 @@ COPY --from=builder /actions-runner /actions-runner
 - Node.js: `24.14.0`
 - npm: `11.11.0`
 - Playwright: `1.58.2`
-- Go: `1.26.0`
+- Go: `1.26.1`
 - cross-spawn: `7.0.6`
 - tar: `7.5.9`
 - brace-expansion: `5.0.4`

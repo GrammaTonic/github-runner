@@ -13,7 +13,7 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 - **Image Versions**: Standard Runner v2.4.0, Chrome Runner v2.4.0, Chrome-Go Runner v2.4.0
 - **Base Image**: Switched to `ubuntu:resolute` (25.10) across all Dockerfiles for latest browser dependencies
 - **Browser Stack**: Chrome for Testing **146.0.7680.31**, Playwright **1.58.2**, Cypress **15.11.0**, Node.js **24.14.0** (LTS Krypton), npm **11.11.0**
-- **Go Toolchain**: Go **1.26.0** in Chrome-Go runner
+- **Go Toolchain**: Go **1.26.1** in Chrome-Go runner
 - **GitHub Actions Runner**: Bumped to **v2.331.0**
 - **Security Overrides**: `tar@7.5.9`, `brace-expansion@5.0.4`, `@isaacs/brace-expansion@5.0.1`, `glob@13.0.6`, `minimatch@10.2.4`, `diff@8.0.3`
 - **CI/CD Fix**: Trivy scanner now installs via apt repository (fixes broken wget download); `trivy-action` pinned to `0.34.1`
@@ -46,7 +46,7 @@ Welcome to the comprehensive documentation for the GitHub Actions Self-Hosted Ru
 | **Chrome for Testing**    | -               | 146.0.7680.31      | 146.0.7680.31      | ✅ Latest               |
 | **Playwright**            | -               | 1.58.2             | 1.58.2             | ✅ Latest               |
 | **Cypress**               | -               | 15.11.0            | 15.11.0            | ✅ Latest               |
-| **Go**                    | -               | -                  | 1.26.0             | ✅ Chrome-Go Only       |
+| **Go**                    | -               | -                  | 1.26.1             | ✅ Chrome-Go Only       |
 
 > 📋 **Full Version Details**: [Version Overview](../docs/VERSION_OVERVIEW.md)
 
