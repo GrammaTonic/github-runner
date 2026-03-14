@@ -277,7 +277,7 @@ All external dependencies pinned to specific versions:
 - Chrome: `142.0.7444.162`
 - Node.js: `24.14.0`
 - npm: `11.11.0`
-- Go: `1.26.0`
+- Go: `1.26.1`
 
 **Result:** Consistent cache keys, better cache hit rates
 
