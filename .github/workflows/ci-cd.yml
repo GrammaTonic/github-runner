@@ -523,7 +523,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
       - name: Extract normal runner metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -623,7 +623,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
       - name: Extract Chrome runner metadata
         id: meta-chrome
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_CHROME_NAME }}
           tags: |
@@ -724,7 +724,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
       - name: Extract Chrome-Go runner metadata
         id: meta-chrome-go
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_CHROME_GO_NAME }}
           tags: |
