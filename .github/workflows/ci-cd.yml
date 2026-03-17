@@ -1179,7 +1179,7 @@ jobs:
         with:
           fetch-depth: 1
       - name: Install Trivy
-        uses: ./.github/actions/install-trivy
+        uses: aquasecurity/trivy-action@0.2.5
       - name: Run Trivy vulnerability scanner on container
         uses: aquasecurity/trivy-action@0.35.0
         with:
@@ -1209,7 +1209,7 @@ jobs:
         with:
           fetch-depth: 1
       - name: Install Trivy
-        uses: ./.github/actions/install-trivy
+        uses: aquasecurity/trivy-action@0.2.5
       - name: Run Trivy vulnerability scanner on Chrome container
         uses: aquasecurity/trivy-action@0.35.0
         with:
@@ -1239,7 +1239,7 @@ jobs:
         with:
           fetch-depth: 1
       - name: Install Trivy
-        uses: ./.github/actions/install-trivy
+        uses: aquasecurity/trivy-action@0.2.5
       - name: Run Trivy vulnerability scanner on Chrome-Go container
         uses: aquasecurity/trivy-action@0.35.0
         with:
@@ -1272,7 +1272,7 @@ jobs:
         with:
           fetch-depth: 1
       - name: Install Trivy
-        uses: ./.github/actions/install-trivy
+        uses: aquasecurity/trivy-action@0.2.5
       - name: Generate SBOM for normal image
         uses: aquasecurity/trivy-action@0.35.0
         with:
