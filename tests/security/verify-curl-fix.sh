@@ -23,7 +23,7 @@ fi
 
 echo "Verifying that token is NOT in process list (this is a bit tricky to catch mid-flight, but we check if we see any 'curl.*ghp_test_token')"
 # Run it in background and check ps
-(printf "header = \"Authorization: token %s\"\n" "$GH_PAT" | curl -s -K- https://example.com > /dev/null) &
+(printf "header = \"Authorization: token %s\"\n" "$GH_PAT" | curl -s -K- https://httpbin.org/delay/1 > /dev/null) &
 PID=$!
 if ps -fp $PID | grep -q "ghp_test_token"; then
     echo "FAILURE: Token found in process list!"
