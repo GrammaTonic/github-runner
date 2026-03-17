@@ -1172,16 +1172,23 @@ jobs:
     needs: [build]
     permissions:
       contents: read
+      packages: read
       security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+      - name: Log in to Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Trivy vulnerability scanner on container
         uses: aquasecurity/trivy-action@0.35.0
         with:
-          image-ref: ${{ needs.build.outputs.digest }}
+          image-ref: ${{ needs.build.outputs.normal-image-digest }}
           format: "sarif"
           output: "trivy-container-results.sarif"
           timeout: "15m"
@@ -1200,12 +1207,19 @@ jobs:
     needs: [build-chrome]
     permissions:
       contents: read
+      packages: read
       security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+      - name: Log in to Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Trivy vulnerability scanner on Chrome container
         uses: aquasecurity/trivy-action@0.35.0
         with:
@@ -1228,12 +1242,19 @@ jobs:
     needs: [build-chrome-go]
     permissions:
       contents: read
+      packages: read
       security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+      - name: Log in to Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Trivy vulnerability scanner on Chrome-Go container
         uses: aquasecurity/trivy-action@0.35.0
         with:
