@@ -288,7 +288,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 
 ```dockerfile
 # Go toolchain
-ARG GO_VERSION=1.25.4
+ARG GO_VERSION=1.25.7
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
         GO_ARCH="amd64"; \
     elif [ "$TARGETARCH" = "arm64" ]; then \
