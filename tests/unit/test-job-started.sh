@@ -47,6 +47,9 @@ echo ""
 # Extract get_job_id function from job-started.sh for testing
 tmp_script=$(mktemp)
 trap 'rm -f "$tmp_script"' EXIT
+# Source utility functions directly to test against the real implementation
+source "docker/utils.sh"
+# Extract only the get_job_id function for isolated testing
 sed -n '/^get_job_id()/,/^}/p' docker/job-started.sh > "$tmp_script"
 source "$tmp_script"
 
@@ -95,13 +98,13 @@ else
 	test_result "get_job_id with empty string vars" "FAIL" "Expected 0_unknown, got $(get_job_id)"
 fi
 
-# Test 6: Spaces in GITHUB_JOB
+# Test 6: Spaces in GITHUB_JOB (should be sanitized now)
 export GITHUB_RUN_ID="12345"
 export GITHUB_JOB="test job with spaces"
-if [[ "$(get_job_id)" == "12345_test job with spaces" ]]; then
+if [[ "$(get_job_id)" == "12345_test_job_with_spaces" ]]; then
 	test_result "get_job_id with spaces in job name" "PASS"
 else
-	test_result "get_job_id with spaces in job name" "FAIL" "Expected '12345_test job with spaces', got $(get_job_id)"
+	test_result "get_job_id with spaces in job name" "FAIL" "Expected '12345_test_job_with_spaces', got $(get_job_id)"
 fi
 
 

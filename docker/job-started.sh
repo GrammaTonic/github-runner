@@ -14,6 +14,11 @@
 
 set -euo pipefail
 
+# Import utilities
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+# shellcheck source=docker/utils.sh
+source "${SCRIPT_DIR}/utils.sh"
+
 # Configuration
 JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
 JOB_STATE_DIR="${JOB_STATE_DIR:-/tmp/job_state}"
@@ -28,6 +33,8 @@ log() {
 get_job_id() {
 	local run_id="${GITHUB_RUN_ID:-0}"
 	local job_name="${GITHUB_JOB:-unknown}"
+	# Sanitize job_name to prevent path traversal
+	job_name=$(sanitize_name "$job_name")
 	# Combine run_id and job_name for uniqueness within a workflow
 	echo "${run_id}_${job_name}"
 }
