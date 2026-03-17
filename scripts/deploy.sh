@@ -397,10 +397,7 @@ update_runners() {
 validate_container_name() {
 	local name="$1"
 	# Docker container names must match [a-zA-Z0-9][a-zA-Z0-9_.-]*
-	if ! echo "$name" | grep -qE '^[a-zA-Z0-9][a-zA-Z0-9_.-]*$'; then
-		return 1
-	fi
-	return 0
+        [[ "$name" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]]
 }
 
 # Health check
