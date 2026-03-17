@@ -165,7 +165,7 @@ The interactive script will guide you through:
 
 - **Standard Runner**: General CI/CD with Docker, Node.js, Python (optimized with multi-stage build)
 - **Chrome Runner**: UI testing with Chrome, Selenium, Playwright, Cypress
-- **Chrome-Go Runner**: Go development + browser testing (Go 1.25.4 + all Chrome runner features)
+  - **Chrome-Go Runner**: Go development + browser testing (Go 1.25.7 + all Chrome runner features)
 - **All Runners**: Deploy all three types with separate configurations for comprehensive coverage
 
 ### Manual Setup (Alternative)

@@ -76,8 +76,6 @@ This report documents the current performance characteristics of the GitHub Runn
 
 **Inherits all Chrome Runner issues PLUS:**
 
-- Go installation (1.25.4) - ~130MB download
-- Additional PATH complexity
 
 **Identified Issues:**
 
@@ -85,7 +83,7 @@ This report documents the current performance characteristics of the GitHub Runn
 2. ❌ **No Go Build Caching** - Would benefit from BuildKit cache for Go modules
 3. ❌ **Same Chrome Runner Issues** - Inherits all inefficiencies from Dockerfile.chrome
 
----
+ Go installation (1.25.7) - ~130MB download
 
 ## 2. CI/CD Pipeline Performance Analysis
 

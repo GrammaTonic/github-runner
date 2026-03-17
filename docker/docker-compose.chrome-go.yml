@@ -22,7 +22,7 @@ services:
       - METRICS_PORT=9091
       - METRICS_UPDATE_INTERVAL=${METRICS_UPDATE_INTERVAL:-30}
       # Go-specific environment variables
-      - GO_VERSION=${GO_VERSION:-1.25.4}
+      - GO_VERSION=${GO_VERSION:-1.25.7}
       - GOPATH=${GOPATH:-/home/runner/go}
       - GOROOT=${GOROOT:-/usr/local/go}
       - GO111MODULE=${GO111MODULE:-on}

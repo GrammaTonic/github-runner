@@ -293,11 +293,9 @@ All Dockerfiles leverage BuildKit cache mounts for maximum performance:
   - Playwright chromium browser binaries
   - Image size: ~4.1GB
   
-- **Chrome-Go Runners**: `docker-compose.chrome-go.yml` for Go + browser testing
-  - All Chrome runner features
-  - Go 1.25.4 toolchain
-  - BuildKit cache for Go downloads
-  - Image size: ~4.5GB
+  - **Chrome-Go Runners**: `docker-compose.chrome-go.yml` for Go + browser testing
+    - All Chrome runner features
+    - Go 1.25.7 toolchain
   
 - **Mixed Deployment**: Deploy multiple runner types simultaneously for comprehensive CI/CD coverage
 - **Cache-Optimized**: All runner types include persistent volume mounts and BuildKit caching
