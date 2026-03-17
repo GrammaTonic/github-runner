@@ -31,3 +31,11 @@ validate_path() {
 	fi
 	return 0
 }
+
+# Sanitize a string for use in file paths by replacing unsafe characters with underscores
+sanitize_name() {
+	local input="$1"
+	# Replace anything that isn't alphanumeric, underscore, or dash
+	# We exclude dots to prevent path traversal like ../
+	echo "${input//[^a-zA-Z0-9_-]/_}"
+}
