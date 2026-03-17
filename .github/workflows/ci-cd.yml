@@ -40,16 +40,6 @@ on:
         required: false
         default: false
         type: boolean
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-permissions:
-  contents: read
-  packages: write
-  security-events: write
-  pull-requests: write
-  checks: write
-  actions: read
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -57,6 +47,7 @@ env:
   IMAGE_CHROME_GO_NAME: ${{ github.repository }}-chrome-go
   DOCKER_BUILDKIT: 1
   COMPOSE_DOCKER_CLI_BUILD: 1
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   provision-normal-runner:
     name: Provision Normal Runner
@@ -474,7 +465,7 @@ jobs:
           sarif_file: "trivy-results.sarif"
           category: "cicd-filesystem-scan"
       - name: Check for secrets in repository
-        uses: trufflesecurity/trufflehog@v3.93.7
+        uses: trufflesecurity/trufflehog@v3.93.8
         with:
           path: ./
           base: ${{ github.event.before }}
@@ -523,7 +514,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
       - name: Extract normal runner metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -623,7 +614,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
       - name: Extract Chrome runner metadata
         id: meta-chrome
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_CHROME_NAME }}
           tags: |
@@ -724,7 +715,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
       - name: Extract Chrome-Go runner metadata
         id: meta-chrome-go
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_CHROME_GO_NAME }}
           tags: |
@@ -851,7 +842,7 @@ jobs:
           mkdir -p test-results/${{ matrix.test-suite }}
           find tests/ -name "*.sh" -type f -exec chmod +x {} \;
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.npm
