@@ -1178,8 +1178,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Install Trivy
-        uses: aquasecurity/trivy-action@0.2.5
       - name: Run Trivy vulnerability scanner on container
         uses: aquasecurity/trivy-action@0.35.0
         with:
@@ -1188,7 +1186,7 @@ jobs:
           output: "trivy-container-results.sarif"
           timeout: "15m"
           severity: "CRITICAL,HIGH"
-          skip-setup-trivy: true
+          skip-setup-trivy: false
       - name: Upload container scan results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
@@ -1208,8 +1206,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Install Trivy
-        uses: aquasecurity/trivy-action@0.2.5
       - name: Run Trivy vulnerability scanner on Chrome container
         uses: aquasecurity/trivy-action@0.35.0
         with:
@@ -1218,7 +1214,7 @@ jobs:
           output: "trivy-chrome-results.sarif"
           timeout: "15m"
           severity: "CRITICAL,HIGH"
-          skip-setup-trivy: true
+          skip-setup-trivy: false
       - name: Upload Chrome container scan results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
@@ -1238,8 +1234,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Install Trivy
-        uses: aquasecurity/trivy-action@0.2.5
       - name: Run Trivy vulnerability scanner on Chrome-Go container
         uses: aquasecurity/trivy-action@0.35.0
         with:
@@ -1248,7 +1242,7 @@ jobs:
           output: "trivy-chrome-go-results.sarif"
           timeout: "15m"
           severity: "CRITICAL,HIGH"
-          skip-setup-trivy: true
+          skip-setup-trivy: false
       - name: Upload Chrome-Go container scan results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
@@ -1271,8 +1265,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Install Trivy
-        uses: aquasecurity/trivy-action@0.2.5
       - name: Generate SBOM for normal image
         uses: aquasecurity/trivy-action@0.35.0
         with:
@@ -1280,7 +1272,7 @@ jobs:
           format: cyclonedx
           output: sbom-normal.cdx
           timeout: "10m"
-          skip-setup-trivy: true
+          skip-setup-trivy: false
       - name: Generate SBOM for chrome image
         uses: aquasecurity/trivy-action@0.35.0
         with:
