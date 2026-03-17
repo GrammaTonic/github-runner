@@ -437,8 +437,7 @@ health_check() {
 
 		echo -n "Checking $container... "
 
-		health_output=$(docker exec -- "$container" "$ENTRYPOINT_PATH" health-check 2>&1)
-		if docker exec -- "$container" "$ENTRYPOINT_PATH" health-check >/dev/null 2>&1; then
+                if health_output=$(docker exec -- "$container" "$ENTRYPOINT_PATH" health-check 2>&1); then
 			echo -e "${GREEN}HEALTHY${NC}"
 			healthy=$((healthy + 1))
 		else
