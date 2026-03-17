@@ -286,7 +286,21 @@ show_status() {
 	# Get container names and handle empty result safely
 	container_names=$(docker ps --filter "name=github-runner" --format "{{.Names}}" 2>/dev/null || echo "")
 	if [[ -n "$container_names" ]]; then
-		echo "$container_names" | xargs docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"
+		# Filter names to ensure they are valid before passing to xargs
+		valid_containers=""
+		while IFS= read -r name; do
+			[[ -z "$name" ]] && continue
+			if validate_container_name "$name"; then
+				valid_containers+="$name "
+			fi
+		done <<< "$container_names"
+
+		if [[ -n "$valid_containers" ]]; then
+			# shellcheck disable=SC2086
+			docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" -- $valid_containers
+		else
+			echo "No valid GitHub runner containers found"
+		fi
 	else
 		echo "No GitHub runner containers found"
 	fi
@@ -380,6 +394,16 @@ update_runners() {
 	log_success "Update completed"
 }
 
+# Validate container name to prevent injection
+validate_container_name() {
+	local name="$1"
+	# Docker container names must match [a-zA-Z0-9][a-zA-Z0-9_.-]*
+	if ! echo "$name" | grep -qE '^[a-zA-Z0-9][a-zA-Z0-9_.-]*$'; then
+		return 1
+	fi
+	return 0
+}
+
 # Health check
 health_check() {
 	log_info "Checking runner health..."
@@ -403,12 +427,18 @@ health_check() {
 
 	while IFS= read -r container; do
 		[[ -z "$container" ]] && continue
+
+		if ! validate_container_name "$container"; then
+			log_warning "Skipping invalid container name: $container"
+			continue
+		fi
+
 		total=$((total + 1))
 
 		echo -n "Checking $container... "
 
-		health_output=$(docker exec "$container" "$ENTRYPOINT_PATH" health-check 2>&1)
-		if docker exec "$container" "$ENTRYPOINT_PATH" health-check >/dev/null 2>&1; then
+		health_output=$(docker exec -- "$container" "$ENTRYPOINT_PATH" health-check 2>&1)
+		if docker exec -- "$container" "$ENTRYPOINT_PATH" health-check >/dev/null 2>&1; then
 			echo -e "${GREEN}HEALTHY${NC}"
 			healthy=$((healthy + 1))
 		else
