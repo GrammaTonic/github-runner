@@ -31,3 +31,12 @@ validate_path() {
 	fi
 	return 0
 }
+
+# Sanitize a string for use in file paths by replacing unsafe characters with underscores
+sanitize_name() {
+	local input="$1"
+	# Replace anything that isn't alphanumeric, underscore, or dash
+	# We exclude dots to prevent path traversal like ../
+	# Using printf to handle inputs starting with hyphens safely
+	printf "%s" "$input" | sed 's/[^a-zA-Z0-9_-]/_/g'
+}
