@@ -1392,7 +1392,7 @@ jobs:
       - name: Generate SBOM for normal image
         uses: aquasecurity/trivy-action@0.35.0
         with:
-          image-ref: ${{ needs.build.outputs.digest }}
+          image-ref: ${{ needs.build.outputs.normal-image-digest }}
           format: cyclonedx
           output: sbom-normal.cdx
           timeout: "10m"
@@ -1417,7 +1417,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.35.0
         if: always()
         with:
-          image-ref: ${{ needs.build.outputs.digest }}
+          image-ref: ${{ needs.build.outputs.normal-image-digest }}
           format: sarif
           output: trivy-normal-results.sarif
           timeout: "15m"
