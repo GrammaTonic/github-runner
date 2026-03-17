@@ -47,11 +47,10 @@ echo ""
 # Extract get_job_id function from job-started.sh for testing
 tmp_script=$(mktemp)
 trap 'rm -f "$tmp_script"' EXIT
-# Include the source line for utils.sh and the function definition
-# We mock sanitize_name if utils.sh isn't easily sourceable in this environment
-# or we just source it.
-echo 'sanitize_name() { echo "$1" | sed "s/[^a-zA-Z0-9_-]/_/g"; }' > "$tmp_script"
-sed -n '/^get_job_id()/,/^}/p' docker/job-started.sh >> "$tmp_script"
+# Source utility functions directly to test against the real implementation
+source "docker/utils.sh"
+# Extract only the get_job_id function for isolated testing
+sed -n '/^get_job_id()/,/^}/p' docker/job-started.sh > "$tmp_script"
 source "$tmp_script"
 
 # Test 1: Both GITHUB_RUN_ID and GITHUB_JOB are set
