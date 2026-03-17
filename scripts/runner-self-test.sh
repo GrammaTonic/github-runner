@@ -18,8 +18,8 @@ export RUNNER_LABEL
 docker compose -f "$COMPOSE_FILE" up -d
 
 check_runner_registered() {
-	curl -s -H "Authorization: token $GH_PAT" \
-		"https://api.github.com/repos/${GH_REPO}/actions/runners" |
+	printf "header = \"Authorization: token %s\"\n" "$GH_PAT" |
+		curl -s -K- "https://api.github.com/repos/${GH_REPO}/actions/runners" |
 		jq -e --arg label "$RUNNER_LABEL" '.runners[]?.labels[]?.name | select(. == $label)' >/dev/null 2>&1
 }
 
