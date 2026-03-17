@@ -23,6 +23,7 @@ services:
       - RUNNER_TYPE=chrome
       - METRICS_PORT=9091
       - METRICS_UPDATE_INTERVAL=${METRICS_UPDATE_INTERVAL:-30}
+      - FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - chrome-cache:/home/runner/_work

@@ -19,6 +19,7 @@ services:
       - RUNNER_TYPE=standard
       - METRICS_PORT=9091
       - METRICS_UPDATE_INTERVAL=${METRICS_UPDATE_INTERVAL:-30}
+      - FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true
     ports:
       # TASK-006: Expose Prometheus metrics endpoint
       - "9091:9091"

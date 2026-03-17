@@ -40,16 +40,6 @@ on:
         required: false
         default: false
         type: boolean
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-permissions:
-  contents: read
-  packages: write
-  security-events: write
-  pull-requests: write
-  checks: write
-  actions: read
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -57,6 +47,7 @@ env:
   IMAGE_CHROME_GO_NAME: ${{ github.repository }}-chrome-go
   DOCKER_BUILDKIT: 1
   COMPOSE_DOCKER_CLI_BUILD: 1
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   provision-normal-runner:
     name: Provision Normal Runner
