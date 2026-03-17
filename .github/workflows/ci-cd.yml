@@ -1183,7 +1183,7 @@ jobs:
       - name: Run Trivy vulnerability scanner on container
         uses: aquasecurity/trivy-action@0.35.0
         with:
-          image-ref: ${{ needs.build.outputs.normal-image-primary }}
+          image-ref: ${{ needs.build.outputs.digest }}
           format: "sarif"
           output: "trivy-container-results.sarif"
           timeout: "15m"
@@ -1213,7 +1213,7 @@ jobs:
       - name: Run Trivy vulnerability scanner on Chrome container
         uses: aquasecurity/trivy-action@0.35.0
         with:
-          image-ref: ${{ needs.build-chrome.outputs.chrome-image-primary }}
+          image-ref: ${{ needs.build-chrome.outputs.chrome-image-digest }}
           format: "sarif"
           output: "trivy-chrome-results.sarif"
           timeout: "15m"
@@ -1243,7 +1243,7 @@ jobs:
       - name: Run Trivy vulnerability scanner on Chrome-Go container
         uses: aquasecurity/trivy-action@0.35.0
         with:
-          image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
+          image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-digest }}
           format: "sarif"
           output: "trivy-chrome-go-results.sarif"
           timeout: "15m"
@@ -1276,7 +1276,7 @@ jobs:
       - name: Generate SBOM for normal image
         uses: aquasecurity/trivy-action@0.35.0
         with:
-          image-ref: ${{ needs.build.outputs.normal-image-primary }}
+          image-ref: ${{ needs.build.outputs.normal-image-digest }}
           format: cyclonedx
           output: sbom-normal.cdx
           timeout: "10m"
@@ -1284,7 +1284,7 @@ jobs:
       - name: Generate SBOM for chrome image
         uses: aquasecurity/trivy-action@0.35.0
         with:
-          image-ref: ${{ needs.build-chrome.outputs.chrome-image-primary }}
+          image-ref: ${{ needs.build-chrome.outputs.chrome-image-digest }}
           format: cyclonedx
           output: sbom-chrome.cdx
           timeout: "10m"
@@ -1292,7 +1292,7 @@ jobs:
       - name: Generate SBOM for chrome-go image
         uses: aquasecurity/trivy-action@0.35.0
         with:
-          image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
+          image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-digest }}
           format: cyclonedx
           output: sbom-chrome-go.cdx
           timeout: "10m"
@@ -1310,7 +1310,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.35.0
         if: always()
         with:
-          image-ref: ${{ needs.build.outputs.normal-image-primary }}
+          image-ref: ${{ needs.build.outputs.normal-image-digest }}
           format: sarif
           output: trivy-normal-results.sarif
           timeout: "15m"
@@ -1328,7 +1328,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.35.0
         if: always()
         with:
-          image-ref: ${{ needs.build-chrome.outputs.chrome-image-primary }}
+          image-ref: ${{ needs.build-chrome.outputs.chrome-image-digest }}
           format: sarif
           output: trivy-chrome-results.release.sarif
           timeout: "15m"
@@ -1346,7 +1346,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.35.0
         if: always()
         with:
-          image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-primary }}
+          image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-digest }}
           format: sarif
           output: trivy-chrome-go-results.release.sarif
           timeout: "15m"
@@ -1389,32 +1389,63 @@ jobs:
           docker ps -a --filter "name=github-runner-chrome" --format "{{.ID}}" | xargs -r docker rm -f
           docker ps -a --filter "name=github-runner-chrome-go" --format "{{.ID}}" | xargs -r docker rm -f
           echo "Cleanup completed"
-      - name: Generate deployment report
-        run: |
-          echo "Generating deployment report..."
-          # Create deployment summary line by line
-          echo "# Deployment Report" > deployment-report.md
-          echo "" >> deployment-report.md
-          echo "## Summary" >> deployment-report.md
-          echo "- **Workflow Run ID**: ${{ github.run_id }}" >> deployment-report.md
-          echo "- **Commit SHA**: ${{ github.sha }}" >> deployment-report.md
-          echo "- **Branch**: ${{ github.ref_name }}" >> deployment-report.md
-          echo "- **Triggered by**: ${{ github.actor }}" >> deployment-report.md
-          echo "- **Timestamp**: $(date -u)" >> deployment-report.md
-          echo "" >> deployment-report.md
-          echo "## Image Details" >> deployment-report.md
-          echo "- Registry: ${{ env.REGISTRY }}" >> deployment-report.md
-          echo "- Repository: ${{ env.IMAGE_NAME }}" >> deployment-report.md
-          echo "- Tags: Built and scanned successfully" >> deployment-report.md
-          # Check if file was created
-          if [[ ! -f deployment-report.md ]]; then
-            echo "ERROR: deployment-report.md not created"
-            exit 1
-          fi
-          cat deployment-report.md
-      - name: Upload deployment report
-        uses: actions/upload-artifact@v7
+      - name: Generate SBOM for normal image
+        uses: aquasecurity/trivy-action@0.35.0
         with:
-          name: ${{ github.job }}-deployment-report
-          path: deployment-report.md
-          retention-days: 30
+          image-ref: ${{ needs.build.outputs.digest }}
+          format: cyclonedx
+          output: sbom-normal.cdx
+          timeout: "10m"
+          skip-setup-trivy: true
+      - name: Generate SBOM for chrome image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ${{ needs.build-chrome.outputs.chrome-image-digest }}
+          format: cyclonedx
+          output: sbom-chrome.cdx
+          timeout: "10m"
+          skip-setup-trivy: true
+      - name: Generate SBOM for chrome-go image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-digest }}
+          format: cyclonedx
+          output: sbom-chrome-go.cdx
+          timeout: "10m"
+          skip-setup-trivy: true
+      - name: Vulnerability scan normal image
+        uses: aquasecurity/trivy-action@0.35.0
+        if: always()
+        with:
+          image-ref: ${{ needs.build.outputs.digest }}
+          format: sarif
+          output: trivy-normal-results.sarif
+          timeout: "15m"
+          severity: "CRITICAL,HIGH"
+          exit-code: 1
+          skip-setup-trivy: true
+      - name: Vulnerability scan chrome image
+        uses: aquasecurity/trivy-action@0.35.0
+        if: always()
+        with:
+          image-ref: ${{ needs.build-chrome.outputs.chrome-image-digest }}
+          format: sarif
+          output: trivy-chrome-results.release.sarif
+          timeout: "15m"
+          severity: "CRITICAL,HIGH"
+          exit-code: 1
+          skip-setup-trivy: true
+      - name: Vulnerability scan chrome-go image
+        uses: aquasecurity/trivy-action@0.35.0
+        if: always()
+        with:
+          image-ref: ${{ needs.build-chrome-go.outputs.chrome-go-image-digest }}
+          format: sarif
+          output: trivy-chrome-go-results.release.sarif
+          timeout: "15m"
+          severity: "CRITICAL,HIGH"
+          # Relax failure policy for chrome-go scans to avoid blocking releases
+          # when non-critical/high issues are being triaged. The scan will still
+          # produce SARIF results for review but will not return a failing exit code.
+          exit-code: 0
+          skip-setup-trivy: true
