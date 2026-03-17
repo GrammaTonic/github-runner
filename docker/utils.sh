@@ -37,6 +37,5 @@ sanitize_name() {
 	local input="$1"
 	# Replace anything that isn't alphanumeric, underscore, or dash
 	# We exclude dots to prevent path traversal like ../
-	# Using printf to handle inputs starting with hyphens safely
-	printf "%s" "$input" | sed 's/[^a-zA-Z0-9_-]/_/g'
+	echo "${input//[^a-zA-Z0-9_-]/_}"
 }
