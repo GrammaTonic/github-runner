@@ -287,17 +287,16 @@ show_status() {
 	container_names=$(docker ps --filter "name=github-runner" --format "{{.Names}}" 2>/dev/null || echo "")
 	if [[ -n "$container_names" ]]; then
 		# Filter names to ensure they are valid before passing to xargs
-		valid_containers=""
-		while IFS= read -r name; do
-			[[ -z "$name" ]] && continue
-			if validate_container_name "$name"; then
-				valid_containers+="$name "
-			fi
-		done <<< "$container_names"
+                valid_containers=()
+                while IFS= read -r name; do
+                        [[ -z "$name" ]] && continue
+                        if validate_container_name "$name"; then
+                                valid_containers+=("$name")
+                        fi
+                done <<< "$container_names"
 
-		if [[ -n "$valid_containers" ]]; then
-			# shellcheck disable=SC2086
-			docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" -- $valid_containers
+                if [[ ${#valid_containers[@]} -gt 0 ]]; then
+                        docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" -- "${valid_containers[@]}"
 		else
 			echo "No valid GitHub runner containers found"
 		fi
