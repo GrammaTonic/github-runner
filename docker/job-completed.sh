@@ -18,7 +18,7 @@
 set -euo pipefail
 
 # Import utilities
-SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 # shellcheck source=docker/utils.sh
 source "${SCRIPT_DIR}/utils.sh"
 
@@ -27,10 +27,9 @@ JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
 JOB_STATE_DIR="${JOB_STATE_DIR:-/tmp/job_state}"
 HOOK_LOG="${HOOK_LOG:-/tmp/job-hooks.log}"
 
-# Logging function
-log() {
-	echo "[$(date +'%Y-%m-%d %H:%M:%S')] [job-completed] $*" | tee -a "$HOOK_LOG"
-}
+# Logging configuration for shared log() in utils.sh
+LOG_FILE="$HOOK_LOG"
+LOG_TAG="job-completed"
 
 # Derive a unique job identifier (must match job-started.sh logic)
 get_job_id() {

@@ -8,15 +8,18 @@
 
 set -euo pipefail
 
+# Import utilities
+SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+# shellcheck source=docker/utils.sh
+source "${SCRIPT_DIR}/utils.sh"
+
 # Configuration
 METRICS_PORT="${METRICS_PORT:-9091}"
 METRICS_FILE="${METRICS_FILE:-/tmp/runner_metrics.prom}"
 SERVER_LOG="${SERVER_LOG:-/tmp/metrics-server.log}"
 
-# Logging function
-log() {
-	echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*" | tee -a "$SERVER_LOG"
-}
+# Logging configuration for shared log() in utils.sh
+LOG_FILE="$SERVER_LOG"
 
 # Initialize metrics file if it doesn't exist
 initialize_metrics() {

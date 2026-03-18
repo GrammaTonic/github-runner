@@ -39,3 +39,22 @@ sanitize_name() {
 	# We exclude dots to prevent path traversal like ../
 	echo "${input//[^a-zA-Z0-9_-]/_}"
 }
+
+# Shared logging function that writes to stdout and a file
+# Parameters:
+#   $* - Message to log
+# Environment:
+#   LOG_FILE - Path to the log file (defaults to /dev/null)
+#   LOG_TAG  - Optional tag to include in the log message
+log() {
+	local timestamp
+	timestamp=$(date +'%Y-%m-%d %H:%M:%S')
+	local tag="${LOG_TAG:-}"
+	local log_file="${LOG_FILE:-/dev/null}"
+
+	if [[ -n "$tag" ]]; then
+		echo "[$timestamp] [$tag] $*" | tee -a "$log_file"
+	else
+		echo "[$timestamp] $*" | tee -a "$log_file"
+	fi
+}

@@ -9,6 +9,11 @@
 
 set -euo pipefail
 
+# Import utilities
+SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+# shellcheck source=docker/utils.sh
+source "${SCRIPT_DIR}/utils.sh"
+
 # Configuration
 METRICS_FILE="${METRICS_FILE:-/tmp/runner_metrics.prom}"
 JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
@@ -25,10 +30,8 @@ START_TIME=$(date +%s)
 # le=60 (1min), le=300 (5min), le=600 (10min), le=1800 (30min), le=3600 (1hr), le=+Inf
 HISTOGRAM_BUCKETS=(60 300 600 1800 3600)
 
-# Logging function
-log() {
-	echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*" | tee -a "$COLLECTOR_LOG"
-}
+# Logging configuration for shared log() in utils.sh
+LOG_FILE="$COLLECTOR_LOG"
 
 # Initialize job log if it doesn't exist
 initialize_job_log() {

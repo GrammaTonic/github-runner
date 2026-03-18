@@ -9,11 +9,6 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Mock log function to avoid output pollution
-log() {
-    :
-}
-
 # Test counters
 TESTS_PASSED=0
 TESTS_FAILED=0
@@ -42,6 +37,11 @@ test_result() {
 # Source the script under test
 # shellcheck source=docker/metrics-server.sh
 source "$(dirname "$0")/../../docker/metrics-server.sh"
+
+# Mock log function to avoid output pollution after sourcing the script
+log() {
+    :
+}
 
 echo "========================================"
 echo "Testing serve_metrics function"
