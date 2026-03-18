@@ -39,3 +39,13 @@ sanitize_name() {
 	# We exclude dots to prevent path traversal like ../
 	echo "${input//[^a-zA-Z0-9_-]/_}"
 }
+
+# Shared logging function
+# Uses LOG_FILE for output destination and optional LOG_PREFIX for message prefixing
+log() {
+	local prefix=""
+	if [[ -n "${LOG_PREFIX:-}" ]]; then
+		prefix=" [${LOG_PREFIX}]"
+	fi
+	echo "[$(date +'%Y-%m-%d %H:%M:%S')]${prefix} $*" | tee -a "${LOG_FILE:-/dev/null}"
+}
