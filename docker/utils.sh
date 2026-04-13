@@ -51,10 +51,11 @@ log() {
 	timestamp=$(date +'%Y-%m-%d %H:%M:%S')
 	local tag="${LOG_TAG:-}"
 	local log_file="${LOG_FILE:-/dev/null}"
+	local log_prefix="[$timestamp]"
 
 	if [[ -n "$tag" ]]; then
-		echo "[$timestamp] [$tag] $*" | tee -a "$log_file"
-	else
-		echo "[$timestamp] $*" | tee -a "$log_file"
+		log_prefix+=" [$tag]"
 	fi
+
+	echo "$log_prefix $*" | tee -a "$log_file"
 }
