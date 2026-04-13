@@ -24,10 +24,9 @@ JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
 JOB_STATE_DIR="${JOB_STATE_DIR:-/tmp/job_state}"
 HOOK_LOG="${HOOK_LOG:-/tmp/job-hooks.log}"
 
-# Logging function
-log() {
-	echo "[$(date +'%Y-%m-%d %H:%M:%S')] [job-started] $*" | tee -a "$HOOK_LOG"
-}
+# Global variables for shared utilities
+export LOG_FILE="$HOOK_LOG"
+export LOG_PREFIX="job-started"
 
 # Derive a unique job identifier from available environment variables
 get_job_id() {

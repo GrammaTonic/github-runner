@@ -9,6 +9,11 @@
 
 set -euo pipefail
 
+# Import utilities
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+# shellcheck source=docker/utils.sh
+source "${SCRIPT_DIR}/utils.sh"
+
 # Configuration
 METRICS_FILE="${METRICS_FILE:-/tmp/runner_metrics.prom}"
 JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
@@ -18,17 +23,15 @@ RUNNER_TYPE="${RUNNER_TYPE:-standard}"
 RUNNER_VERSION="${RUNNER_VERSION:-2.332.0}"
 COLLECTOR_LOG="${COLLECTOR_LOG:-/tmp/metrics-collector.log}"
 
+# Global variables for shared utilities
+export LOG_FILE="$COLLECTOR_LOG"
+
 # Start time for uptime calculation
 START_TIME=$(date +%s)
 
 # TASK-029: Histogram bucket boundaries (in seconds)
 # le=60 (1min), le=300 (5min), le=600 (10min), le=1800 (30min), le=3600 (1hr), le=+Inf
 HISTOGRAM_BUCKETS=(60 300 600 1800 3600)
-
-# Logging function
-log() {
-	echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*" | tee -a "$COLLECTOR_LOG"
-}
 
 # Initialize job log if it doesn't exist
 initialize_job_log() {
