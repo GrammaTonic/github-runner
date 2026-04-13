@@ -158,7 +158,7 @@ jobs:
 
       - name: Manage version update issues
         if: always()
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const owner = context.repo.owner;
@@ -524,7 +524,7 @@ jobs:
       packages: write
     steps:
       - name: Delete old workflow runs
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             // Delete workflow runs older than 90 days (extended retention)
@@ -571,7 +571,7 @@ jobs:
             console.log(`Deleted ${deletedCount} old workflow runs`);
 
       - name: Cleanup caches from closed PRs
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const owner = context.repo.owner;
@@ -628,7 +628,7 @@ jobs:
             }
 
       - name: Cleanup caches from deleted branches
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const owner = context.repo.owner;

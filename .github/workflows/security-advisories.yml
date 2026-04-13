@@ -366,7 +366,7 @@ jobs:
       # Create GitHub issue when critical vulnerabilities are found
       - name: Create issue for critical vulnerabilities
         if: steps.summary.outputs.critical-count > 0
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const critical = '${{ steps.summary.outputs.critical-count }}';
@@ -493,7 +493,7 @@ jobs:
 
     steps:
       - name: Delete old security scan artifacts
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const { data: artifacts } = await github.rest.actions.listArtifactsForRepo({
