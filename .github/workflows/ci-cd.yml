@@ -1185,6 +1185,8 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Lowercase image names for OCI registry compatibility
+        run: echo "IMAGE_NAME=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
       - name: Run Trivy vulnerability scanner on container
         uses: aquasecurity/trivy-action@0.35.0
         with:
@@ -1220,6 +1222,8 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Lowercase image names for OCI registry compatibility
+        run: echo "IMAGE_CHROME_NAME=$(echo '${{ env.IMAGE_CHROME_NAME }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
       - name: Run Trivy vulnerability scanner on Chrome container
         uses: aquasecurity/trivy-action@0.35.0
         with:
@@ -1255,6 +1259,8 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Lowercase image names for OCI registry compatibility
+        run: echo "IMAGE_CHROME_GO_NAME=$(echo '${{ env.IMAGE_CHROME_GO_NAME }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
       - name: Run Trivy vulnerability scanner on Chrome-Go container
         uses: aquasecurity/trivy-action@0.35.0
         with:
@@ -1292,6 +1298,13 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Lowercase image names for OCI registry compatibility
+        run: |
+          {
+            echo "IMAGE_NAME=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')"
+            echo "IMAGE_CHROME_NAME=$(echo '${{ env.IMAGE_CHROME_NAME }}' | tr '[:upper:]' '[:lower:]')"
+            echo "IMAGE_CHROME_GO_NAME=$(echo '${{ env.IMAGE_CHROME_GO_NAME }}' | tr '[:upper:]' '[:lower:]')"
+          } >> "$GITHUB_ENV"
       - name: Generate SBOM for normal image
         uses: aquasecurity/trivy-action@0.35.0
         with:
