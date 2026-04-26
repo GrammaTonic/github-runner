@@ -20,7 +20,7 @@ JOBS_LOG="${JOBS_LOG:-/tmp/jobs.log}"
 UPDATE_INTERVAL="${UPDATE_INTERVAL:-30}"
 RUNNER_NAME="${RUNNER_NAME:-unknown}"
 RUNNER_TYPE="${RUNNER_TYPE:-standard}"
-RUNNER_VERSION="${RUNNER_VERSION:-2.332.0}"
+RUNNER_VERSION="${RUNNER_VERSION:-2.334.0}"
 COLLECTOR_LOG="${COLLECTOR_LOG:-/tmp/metrics-collector.log}"
 
 # Global variables for shared utilities

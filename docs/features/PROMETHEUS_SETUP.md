@@ -240,7 +240,7 @@ These variables control metrics behavior in runner containers:
 | `METRICS_UPDATE_INTERVAL` | `30` | Seconds between metrics updates |
 | `RUNNER_NAME` | `unknown` | Runner name label in metrics |
 | `RUNNER_TYPE` | `standard` | Runner type label (`standard`, `chrome`, `chrome-go`) |
-| `RUNNER_VERSION` | `2.332.0` | Runner version in `github_runner_info` |
+| `RUNNER_VERSION` | `2.334.0` | Runner version in `github_runner_info` |
 | `JOBS_LOG` | `/tmp/jobs.log` | Path to the job log file |
 | `JOB_STATE_DIR` | `/tmp/job_state` | Directory for per-job state files |
 

@@ -76,7 +76,7 @@ count by (runner_type) (github_runner_status == 1)
 ```
 # HELP github_runner_info Runner information
 # TYPE github_runner_info gauge
-github_runner_info{runner_name="docker-runner",runner_type="standard",version="2.332.0"} 1
+github_runner_info{runner_name="docker-runner",runner_type="standard",version="2.334.0"} 1
 ```
 
 **PromQL examples:**
@@ -86,7 +86,7 @@ github_runner_info{runner_name="docker-runner",runner_type="standard",version="2
 github_runner_info
 
 # Filter by version
-github_runner_info{version="2.332.0"}
+github_runner_info{version="2.334.0"}
 ```
 
 ---
