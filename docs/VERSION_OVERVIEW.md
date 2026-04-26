@@ -24,9 +24,9 @@ This document provides a comprehensive overview of all software versions, depend
 
 ### GitHub Actions Runner
 
-- **Version**: `2.332.0`
+- **Version**: `2.334.0`
 - **Source**: GitHub official releases
-- **Download URL**: `https://github.com/actions/runner/releases/download/v2.332.0/`
+- **Download URL**: `https://github.com/actions/runner/releases/download/v2.334.0/`
 - **Security Status**: ✅ Latest stable version
 
 ### Operating System
@@ -268,6 +268,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 ### Recent Changes
 
+- **2026-04-26**: Updated GitHub Actions Runner to v2.334.0 across all runner variants.
 - **2025-11-14**: Release v2.2.0 with npm `tar@7.5.2` override, Chrome 142.0.7444.162, Playwright 1.55.1, Cypress 13.15.0, and refreshed Resolute-based documentation.
 - **2025-09-14**: Updated to Ubuntu 25.10 Resolute, image version v2.0.9, Chrome 142.0.7444.162, Playwright 1.55.0, Cypress 15.1.0, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)
 - **2025-09-10**: Extensive documentation update for Ubuntu 24.04 LTS, image version v2.0.2, Node.js 24.11.1 (Chrome Runner only), and architecture enforcement (amd64 only)

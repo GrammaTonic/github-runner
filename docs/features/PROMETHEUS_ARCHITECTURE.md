@@ -123,7 +123,7 @@ This document describes the internal architecture of the Prometheus monitoring s
 | `UPDATE_INTERVAL` | `30` | Seconds between updates |
 | `RUNNER_NAME` | `unknown` | Runner name label |
 | `RUNNER_TYPE` | `standard` | Runner type label |
-| `RUNNER_VERSION` | `2.332.0` | Runner version label |
+| `RUNNER_VERSION` | `2.334.0` | Runner version label |
 
 ### 3. Job Hook Scripts (`docker/job-started.sh`, `docker/job-completed.sh`)
 
